@@ -1,11 +1,32 @@
 <script setup>
-import appLayout from './components/layout/appLayout.vue'
+import { ref } from 'vue'
+
+const theme = ref('dark')
 </script>
 
 <template>
-  <appLayout>
-    <template #content>
-      <h1>application picture here</h1>
-    </template>
-  </appLayout>
+  <v-responsive>
+    <v-app :theme="theme">
+      <v-app-bar class="px-3">
+        <v-spacer></v-spacer>
+        <v-btn append-icon="mdi-account-circle" prepend-icon="mdi-check-circle">
+          <template v-slot:prepend>
+            <!-- <v-icon color="success"></v-icon> -->
+          </template>
+          <RouterLink style="text-decoration: none" to="/login" text-decoration-none
+            >Login</RouterLink
+          >
+          <template v-slot:append>
+            <v-icon color="warning"></v-icon>
+          </template>
+        </v-btn>
+      </v-app-bar>
+
+      <v-main>
+        <v-container>
+          <h1>Application picture here</h1>
+        </v-container>
+      </v-main>
+    </v-app>
+  </v-responsive>
 </template>
