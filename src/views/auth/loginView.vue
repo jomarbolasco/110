@@ -13,9 +13,7 @@ const theme = ref('dark')
           <template v-slot:prepend>
             <!-- <v-icon color="success"></v-icon> -->
           </template>
-
           Login
-
           <template v-slot:append>
             <v-icon color="warning"></v-icon>
           </template>
@@ -24,7 +22,30 @@ const theme = ref('dark')
 
       <v-main>
         <v-container>
-          <h1>log in page here</h1>
+          <v-row>
+            <v-col cols="12" md="6" class="mx-auto">
+              <v-card
+                class="mx-auto"
+                prepend-icon="mdi-account"
+                subtitle="short description here"
+                width="400"
+              >
+                <template v-slot:title>
+                  <span class="font-weight-black">App Title here</span>
+                </template>
+
+                <v-card-text class="bg-surface-light pt-4">
+                  <v-form fast-fail @submit.prevent>
+                    <v-text-field label="First name"></v-text-field>
+
+                    <v-text-field label="Last name"></v-text-field>
+
+                    <v-btn class="mt-2" type="submit" block>Submit</v-btn>
+                  </v-form>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
         </v-container>
       </v-main>
     </v-app>
