@@ -13,9 +13,17 @@ const theme = ref('dark')
           <template v-slot:prepend>
             <!-- <v-icon color="success"></v-icon> -->
           </template>
-          <RouterLink style="text-decoration: none" to="/login" text-decoration-none
-            >Login</RouterLink
-          >
+          <RouterLink style="text-decoration: none" to="/login">Login</RouterLink>
+          <template v-slot:append>
+            <v-icon color="warning"></v-icon>
+          </template>
+        </v-btn>
+
+        <v-btn append-icon="mdi-account-plus" prepend-icon="mdi-check-circle">
+          <template v-slot:prepend>
+            <!-- <v-icon color="success"></v-icon> -->
+          </template>
+          <RouterLink style="text-decoration: none" to="/login">Sign-up</RouterLink>
           <template v-slot:append>
             <v-icon color="warning"></v-icon>
           </template>
