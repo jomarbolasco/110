@@ -1,5 +1,5 @@
 <script setup>
-import LoginForm from '@/components/auth/LoginForm.vue'
+import RegisterForm from '@/components/auth/RegisterForm.vue'
 import { ref } from 'vue' //theme color
 
 const theme = ref('dark') //theme color
@@ -15,7 +15,7 @@ const theme = ref('dark') //theme color
           <template v-slot:prepend>
             <!-- <v-icon color="success"></v-icon> -->
           </template>
-          <RouterLink style="text-decoration: none" to="/login">Login</RouterLink>
+          <RouterLink style="text-decoration: none" to="/register">Register</RouterLink>
           <template v-slot:append>
             <v-icon color="warning"></v-icon>
           </template>
@@ -32,8 +32,22 @@ const theme = ref('dark') //theme color
                   max-width="228"
                   src="https://cdn.vuetifyjs.com/docs/images/logos/vuetify-logo-v3-slim-text-light.svg"
                 ></v-img>
+                <v-card class="mx-auto pa-12 pb-8" elevation="8" max-width="448" rounded="lg">
+                  <v-divider class="mb-5" />
 
-                <LoginForm></LoginForm>
+                  <RegisterForm />
+
+                  <v-divider class="my-5" />
+                  <v-card-text class="text-center">
+                    <RouterLink
+                      to="/login"
+                      class="text-blue text-decoration-none"
+                      rel="noopener noreferrer"
+                    >
+                      Login now <v-icon icon="mdi-login"></v-icon>
+                    </RouterLink>
+                  </v-card-text>
+                </v-card>
               </div>
             </v-col>
           </v-row>
