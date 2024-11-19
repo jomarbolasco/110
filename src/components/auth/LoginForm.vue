@@ -84,9 +84,12 @@ export default {
     </v-btn>
 
     <v-card-text class="text-center">
-      <RouterLink to="/register" class="text-blue text-decoration-none" rel="noopener noreferrer">
-        Sign up now <v-icon icon="mdi-chevron-right"></v-icon>
-      </RouterLink>
+      <p>
+        Don't have account?
+        <RouterLink to="/register" class="text-blue text-decoration-none" rel="noopener noreferrer">
+          Sign up now <v-icon icon="mdi-account-plus-outline"></v-icon>
+        </RouterLink>
+      </p>
     </v-card-text>
   </v-form>
 </template>

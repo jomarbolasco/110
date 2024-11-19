@@ -56,15 +56,18 @@ const theme = ref('dark')
 
                   <RegisterForm />
 
-                  <v-divider class="my-5" />
+                  <v-divider class="my-3" />
                   <v-card-text class="text-center">
-                    <RouterLink
-                      to="/login"
-                      class="text-blue text-decoration-none"
-                      rel="noopener noreferrer"
-                    >
-                      Login now <v-icon icon="mdi-login"></v-icon>
-                    </RouterLink>
+                    <p>
+                      Already have an account?
+                      <RouterLink
+                        to="/login"
+                        class="text-blue text-decoration-none"
+                        rel="noopener noreferrer"
+                      >
+                        Login <v-icon icon="mdi-login"></v-icon>
+                      </RouterLink>
+                    </p>
                   </v-card-text>
                 </v-card>
               </div>
