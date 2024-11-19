@@ -1,8 +1,8 @@
 <script setup>
 import RegisterForm from '@/components/auth/RegisterForm.vue'
-import { ref } from 'vue' //theme color
+import { ref } from 'vue'
 
-const theme = ref('dark') //theme color
+const theme = ref('dark')
 </script>
 
 <template>
