@@ -51,8 +51,9 @@ const theme = ref('dark') //theme color
                   max-width="228"
                   src="https://cdn.vuetifyjs.com/docs/images/logos/vuetify-logo-v3-slim-text-light.svg"
                 ></v-img>
-
-                <LoginForm></LoginForm>
+                <v-card class="mx-auto pa-12 pb-8" elevation="8" max-width="448" rounded="lg">
+                  <LoginForm></LoginForm>
+                </v-card>
               </div>
             </v-col>
           </v-row>
