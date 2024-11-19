@@ -9,13 +9,32 @@ const theme = ref('dark') //theme color
   <v-responsive>
     <v-app :theme="theme">
       <v-app-bar class="px-3">
+        <v-btn append-icon="mdi-home" prepend-icon="mdi-check-circle">
+          <template v-slot:prepend>
+            <!-- <v-icon color="success"></v-icon> -->
+          </template>
+          <RouterLink style="text-decoration: none" to="/">HOME</RouterLink>
+          <template v-slot:append>
+            <v-icon color="warning"></v-icon>
+          </template>
+        </v-btn>
         <v-spacer></v-spacer>
+
+        <v-btn append-icon="mdi-account" prepend-icon="mdi-check-circle">
+          <template v-slot:prepend>
+            <!-- <v-icon color="success"></v-icon> -->
+          </template>
+          <RouterLink style="text-decoration: none" to="/login">Login</RouterLink>
+          <template v-slot:append>
+            <v-icon color="warning"></v-icon>
+          </template>
+        </v-btn>
 
         <v-btn active append-icon="mdi-account-plus" prepend-icon="mdi-check-circle">
           <template v-slot:prepend>
             <!-- <v-icon color="success"></v-icon> -->
           </template>
-          <RouterLink style="text-decoration: none" to="/register">Register</RouterLink>
+          <RouterLink style="text-decoration: none" to="/register">Sign-up</RouterLink>
           <template v-slot:append>
             <v-icon color="warning"></v-icon>
           </template>
