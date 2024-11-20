@@ -6,6 +6,10 @@ import {
   confirmedValidator,
 } from '@/components/util/validators'
 import { ref } from 'vue'
+import { supabase, formActionDefault } from '@/components/util/supabase.js'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const formDataDefault = {
   firstname: '',
@@ -19,10 +23,35 @@ const formData = ref({
   ...formDataDefault,
 })
 
+const formAction = ref({
+  ...formActionDefault,
+})
+
 const refVForm = ref()
 
-const onSubmit = () => {
-  alert(formData.value.email)
+const onSubmit = async () => {
+  formAction.value = { ...formActionDefault }
+  formAction.value.formProcess = true
+
+  const { data, error } = await supabase.auth.signUp({
+    email: formData.value.email,
+    password: formData.value.email,
+    options: {
+      data: {
+        firstname: formData.value.firstname,
+        lastname: formData.value.lastname,
+      },
+    },
+  })
+
+  if (error) {
+    console.log(error)
+  } else if (data) {
+    console.log(data)
+    // refVForm.value?.reset()
+    router.replace('/dashboard')
+  }
+  formAction.value.formProcess = false
 }
 
 const onFormSubmit = () => {
@@ -104,7 +133,16 @@ export default {
           @click:append-inner="visible = !visible"
         ></v-text-field>
 
-        <v-btn class="mb-8" color="blue" size="large" variant="tonal" block type="submit">
+        <v-btn
+          class="mb-8"
+          color="blue"
+          size="large"
+          variant="tonal"
+          block
+          type="submit"
+          :disabled="formActionDefault.formProcess"
+          :loading="formActionDefault.formProcess"
+        >
           Log In
         </v-btn>
       </v-col>
