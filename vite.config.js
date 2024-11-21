@@ -6,6 +6,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    'process.env': {},
+  },
   plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
@@ -14,3 +17,4 @@ export default defineConfig({
   },
   base: '/',
 })
+//i dont know how but the deployment fixed
