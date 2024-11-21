@@ -45,13 +45,34 @@ const onSubmit = async () => {
   })
 
   if (error) {
-    console.log(error)
-  } else if (data) {
-    console.log(data)
-    // refVForm.value?.reset()
+    console.error('Error during sign-up:', error)
+    formAction.value.formProcess = false
+    return
+  }
+
+  if (data) console.log('Auth data:', data)
+  // Insert the user data into the Users table
+  const { error: insertError } = await supabase.from('Users').insert({
+    name: `${formData.value.firstname} ${formData.value.lastname}`,
+    email: formData.value.email,
+    password_hash: await hashPassword(formData.value.password), // You can replace this with a hashing function
+  })
+
+  if (insertError) {
+    console.error('Error inserting into Users table:', insertError)
+  } else {
+    console.log('User successfully inserted into Users table')
+    // Redirect to dashboard after successful insertion
     router.replace('/dashboard')
   }
+
   formAction.value.formProcess = false
+}
+
+// Hash password using a function (use a library for hashing, e.g., bcrypt.js or a secure API call)
+const hashPassword = async (password) => {
+  // Replace this with a real hash function
+  return btoa(password) // Simple example, not for production
 }
 
 const onFormSubmit = () => {
@@ -143,7 +164,7 @@ export default {
           :disabled="formActionDefault.formProcess"
           :loading="formActionDefault.formProcess"
         >
-          Log In
+          Register
         </v-btn>
       </v-col>
     </v-row>
