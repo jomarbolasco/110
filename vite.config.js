@@ -17,3 +17,4 @@ export default defineConfig({
   },
   base: '/',
 })
+//i dont know how but the deployment fixed
