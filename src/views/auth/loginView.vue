@@ -20,7 +20,7 @@ const theme = ref('dark') //theme color
         </v-btn>
         <v-spacer></v-spacer>
 
-        <v-btn active append-icon="mdi-account-plus" prepend-icon="mdi-check-circle">
+        <v-btn active append-icon="mdi-account" prepend-icon="mdi-check-circle">
           <template v-slot:prepend>
             <!-- <v-icon color="success"></v-icon> -->
           </template>

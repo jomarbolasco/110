@@ -161,8 +161,8 @@ export default {
           variant="tonal"
           block
           type="submit"
-          :disabled="formActionDefault.formProcess"
-          :loading="formActionDefault.formProcess"
+          :disabled="formAction.formProcess"
+          :loading="formAction.formProcess"
         >
           Register
         </v-btn>

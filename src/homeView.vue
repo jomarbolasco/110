@@ -4,6 +4,22 @@ import { ref } from 'vue'
 const theme = ref('dark')
 </script>
 
+<script>
+export default {
+  data() {
+    return {
+      slides: [
+        { image: '/src/components/image/aceHospital.png' },
+        { image: '/src/components/image/mjSantos.jpg' },
+        { image: '/src/components/image/doctors.jpg' },
+        { image: '/src/components/image/bmc.jpg' },
+        { image: '/src/components/image/colorom.jpg' },
+      ],
+    }
+  },
+}
+</script>
+
 <template>
   <v-responsive>
     <v-app :theme="theme">
@@ -33,7 +49,22 @@ const theme = ref('dark')
 
       <v-main>
         <v-container>
-          <h1>Application picture here</h1>
+          <v-carousel height="400" :show-arrows="false" cycle hide-delimiter-background>
+            <v-carousel-item v-for="(slide, i) in slides" :key="i">
+              <!-- Add the image here -->
+              <v-img
+                :src="slide.image"
+                height="100%"
+                class="d-flex justify-center align-center"
+                cover
+              >
+                <!-- Overlay text -->
+                <div class="text-h2 white--text">
+                  {{ slide.text }}
+                </div>
+              </v-img>
+            </v-carousel-item>
+          </v-carousel>
         </v-container>
       </v-main>
     </v-app>
