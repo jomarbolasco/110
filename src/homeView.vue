@@ -9,11 +9,11 @@ export default {
   data() {
     return {
       slides: [
-        { image: '/src/components/image/aceHospital.png' },
-        { image: '/src/components/image/mjSantos.jpg' },
-        { image: '/src/components/image/doctors.jpg' },
-        { image: '/src/components/image/bmc.jpg' },
-        { image: '/src/components/image/colorom.jpg' },
+        { image: '/public/image/aceHospital.png' },
+        { image: '/public/image/mjSantos.jpg' },
+        { image: '/public/image/doctors.jpg' },
+        { image: '/public/image/bmc.jpg' },
+        { image: '/public/image/colorom.jpg' },
       ],
     }
   },
