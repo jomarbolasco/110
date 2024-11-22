@@ -1,8 +1,12 @@
 <script setup>
 import { requiredValidator, emailValidator } from '@/components/util/validators'
 import { ref } from 'vue'
+import { supabase } from '@/components/util/supabase'
+import { useRouter } from 'vue-router'
 
 const refVForm = ref()
+
+const router = useRouter()
 
 const formDataDefault = {
   email: '',
@@ -13,8 +17,33 @@ const formData = ref({
   ...formDataDefault,
 })
 
-const onSubmit = () => {
-  alert(formData.value.email)
+const loading = ref(false)
+const errorMessage = ref('')
+
+const onSubmit = async () => {
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    const { error, data } = await supabase.auth.signInWithPassword({
+      email: formData.value.email,
+      password: formData.value.password,
+    })
+
+    if (error) {
+      errorMessage.value = error.message
+    } else {
+      // Redirect to a protected route or dashboard
+      alert('Login successful!')
+      console.log(data)
+      router.replace('/dashboard')
+    }
+  } catch (error) {
+    errorMessage.value = 'An unexpected error occurred. Please try again.'
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
 }
 
 const onFormSubmit = () => {
@@ -79,9 +108,20 @@ export default {
                     </v-card-text>
                   </v-card> -->
 
-    <v-btn class="mb-8" color="blue" size="large" variant="tonal" block type="submit">
-      Log In
+    <v-btn
+      :disabled="loading"
+      class="mb-8"
+      color="blue"
+      size="large"
+      variant="tonal"
+      block
+      type="submit"
+    >
+      <span v-if="loading">Logging in...</span>
+      <span v-else>Log In</span>
     </v-btn>
+
+    <p v-if="errorMessage" class="text-red text-caption">{{ errorMessage }}</p>
 
     <v-card-text class="text-center">
       <p>
