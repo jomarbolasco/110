@@ -9,6 +9,7 @@ const theme = ref('dark')
     <v-app :theme="theme">
       <v-app-bar class="px-3">
         <v-spacer></v-spacer>
+
         <v-btn append-icon="mdi-account-circle" prepend-icon="mdi-check-circle">
           <template v-slot:prepend>
             <!-- <v-icon color="success"></v-icon> -->
