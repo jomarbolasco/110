@@ -49,7 +49,7 @@ const theme = ref('dark')
                 <v-img
                   class="mx-auto my-6"
                   max-width="228"
-                  src="/src/components/image/logoname.png"
+                  src="/public/image/logoname.png"
                 ></v-img>
                 <v-card class="mx-auto pa-12 pb-8" elevation="8" max-width="448" rounded="lg">
                   <v-divider class="mb-5" />
