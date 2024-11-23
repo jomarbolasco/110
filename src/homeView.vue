@@ -9,11 +9,26 @@ export default {
   data() {
     return {
       slides: [
-        { image: '/public/image/aceHospital.png' },
-        { image: '/public/image/mjSantos.jpg' },
-        { image: '/public/image/doctors.jpg' },
-        { image: '/public/image/bmc.jpg' },
-        { image: '/public/image/colorom.jpg' },
+        {
+          image:
+            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital1.png',
+        },
+        {
+          image:
+            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital2.jpg',
+        },
+        {
+          image:
+            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital3.jpg',
+        },
+        {
+          image:
+            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital4.jpg',
+        },
+        {
+          image:
+            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital5.jpg',
+        },
       ],
     }
   },
