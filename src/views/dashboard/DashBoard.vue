@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import HeroSectionView from './dashBoardComponents/heroSection/heroSectionView.vue'
+import UntitledAreaOne from './dashBoardComponents/untitledAreaOne/untitledAreaOne.vue'
 </script>
 
 <template>
@@ -9,7 +10,7 @@ import HeroSectionView from './dashBoardComponents/heroSection/heroSectionView.v
       <HeroSectionView />
     </v-col>
     <v-col cols="12" lg="4" class="d-flex align-items-stretch">
-      <!-- <DailyActivities /> -->
+      <UntitledAreaOne />
     </v-col>
     <v-col cols="12" lg="8" class="d-flex align-items-stretch">
       <!-- <ProductMonthTable /> -->
