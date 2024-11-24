@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import HeroSectionView from './dashBoardComponents/heroSection/heroSectionView.vue'
 import UntitledAreaOne from './dashBoardComponents/untitledAreaOne/untitledAreaOne.vue'
+import UntitledAreaTwo from './dashBoardComponents/untitledAreaTwo/untitledAreaTwo.vue'
 </script>
 
 <template>
@@ -13,7 +14,7 @@ import UntitledAreaOne from './dashBoardComponents/untitledAreaOne/untitledAreaO
       <UntitledAreaOne />
     </v-col>
     <v-col cols="12" lg="8" class="d-flex align-items-stretch">
-      <!-- <ProductMonthTable /> -->
+      <UntitledAreaTwo />
     </v-col>
     <v-col cols="12" sm="12">
       <!-- <BlogCard /> -->
