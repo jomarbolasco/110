@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import sideBarItems from './sideBarItems'
-// import logoDark from '../logo/logoDark.vue'
 
 const sidebarMenu = ref(sideBarItems)
 </script>
@@ -13,6 +12,9 @@ const sidebarMenu = ref(sideBarItems)
     <!-- ---------------------------------------------- -->
     <div class="pa-4">
       <!-- <logoDark /> -->
+      <div class="logo">
+        <img src="/src/assets/images/logos/logoname.png" alt="Logo" width="200" height="100" />
+      </div>
     </div>
     <!-- ---------------------------------------------- -->
     <!---Navigation -->
@@ -38,12 +40,8 @@ const sidebarMenu = ref(sideBarItems)
     <div class="pa-4 ma-4 bg-light-primary rounded-lg text-center">
       <img src="" />
       <h4 class="font-weight-regular mb-3">Get Template for Free</h4>
-      <v-btn class="mb-2" href="https://www.wrappixel.com/templates/flexy-vuejs-admin-free/" block
-        >Download Free</v-btn
-      >
-      <v-btn color="info" href="https://www.wrappixel.com/templates/flexy-vuetify-dashboard/" block
-        >Check Pro</v-btn
-      >
+      <v-btn class="mb-2" href="" block>sample button</v-btn>
+      <v-btn color="info" href="" block>button sample</v-btn>
     </div>
   </div>
 </template>

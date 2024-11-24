@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import homeView from '@/homeView.vue'
 import loginView from '@/views/auth/loginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
-import FullLayout from '@/components/layout/full/fullLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,13 +27,12 @@ const router = createRouter({
     //   component: FullLayout,
     // },
     {
-      // path: "/",
-      redirect: '/dashboard',
+      path: '/dashboard',
       component: () => import('@/components/layout/full/fullLayout.vue'),
       children: [
         {
           name: 'Dashboard',
-          path: '/dashboard',
+          path: '',
           component: () => import('@/views/dashboard/DashBoard.vue'),
         },
         // {
@@ -67,6 +65,10 @@ const router = createRouter({
         //   component: () =>
         //     import("@/views/ui-components/Tables.vue"),
         // },
+        {
+          path: '/:pathMatch(.*)*',
+          redirect: '/',
+        },
       ],
     },
   ],

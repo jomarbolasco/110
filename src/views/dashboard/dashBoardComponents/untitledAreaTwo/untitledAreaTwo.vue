@@ -49,7 +49,7 @@ const monthtable = ref([
 </script>
 
 <template>
-  <v-card flat class="w-100 h-100">
+  <v-card class="w-100 h-100">
     <v-card-text>
       <div class="d-sm-flex align-center">
         <div>

@@ -20,8 +20,8 @@ const userprofile = ref(profile)
           plain
           :ripple="false"
         >
-          <v-avatar size="35">
-            <img src="" alt="Julia" />
+          <v-avatar size="50">
+            <img src="./images/me (2 x 2 in).png" alt="profile-pic" width="60" height="60" />
           </v-avatar>
         </v-btn>
       </template>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<!-- <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 </script>
 
@@ -8,4 +8,4 @@ import { RouterLink } from 'vue-router'
       <img src="/src/assets/images/logos/logo-dark.svg" />
     </RouterLink>
   </div>
-</template>
+</template> -->
