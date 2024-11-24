@@ -42,8 +42,6 @@ onMounted(() => {
       <!-- User Profile -->
       <!-- ---------------------------------------------- -->
       <HeaderVue />
-
-      <!-- Uncommented and using PascalCase -->
     </v-app-bar>
 
     <!-- ---------------------------------------------- -->
