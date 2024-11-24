@@ -62,6 +62,7 @@ const onSubmit = async () => {
     console.error('Error inserting into Users table:', insertError)
   } else {
     console.log('User successfully inserted into Users table')
+    alert('Login successful!')
     // Redirect to dashboard after successful insertion
     router.replace('/dashboard')
   }
@@ -91,6 +92,11 @@ export default {
 </script>
 
 <template>
+  <AlertNotification
+    :form-success-message="formAction.formSuccessMessage"
+    :form-error-message="formAction.formErrorMessage"
+  ></AlertNotification>
+
   <v-form ref="refVForm" @submit.prevent="onFormSubmit">
     <v-row>
       <v-col cols="12" md="6">
