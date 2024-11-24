@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import homeView from '@/homeView.vue'
 import loginView from '@/views/auth/loginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
-import DashBoard from '@/views/dashboard/DashBoard.vue'
+import FullLayout from '@/components/layout/full/fullLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,7 +25,7 @@ const router = createRouter({
     {
       path: '/dashboard',
       name: 'dashboard',
-      component: DashBoard,
+      component: FullLayout,
     },
   ],
 })
