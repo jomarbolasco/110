@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import HeroSectionView from './dashBoardComponents/heroSection/heroSectionView.vue'
 import UntitledAreaOne from './dashBoardComponents/untitledAreaOne/untitledAreaOne.vue'
 import UntitledAreaTwo from './dashBoardComponents/untitledAreaTwo/untitledAreaTwo.vue'
+import UntitledAreaThree from './dashBoardComponents/untitledAreaThree/untitledAreaThree.vue'
 </script>
 
 <template>
@@ -17,7 +18,7 @@ import UntitledAreaTwo from './dashBoardComponents/untitledAreaTwo/untitledAreaT
       <UntitledAreaTwo />
     </v-col>
     <v-col cols="12" sm="12">
-      <!-- <BlogCard /> -->
+      <UntitledAreaThree />
     </v-col>
   </v-row>
 </template>
