@@ -2,7 +2,7 @@ export default [
   {
     title: 'Dashboard',
     icon: 'mdi-view-dashboard-outline',
-    to: '/dashboard/dashboard',
+    to: '/dashboard',
   },
   {
     title: 'Alert',

@@ -13,7 +13,7 @@ const sidebarMenu = ref(sideBarItems)
     <div class="pa-4">
       <!-- <logoDark /> -->
       <div class="logo">
-        <img src="/src/assets/images/logos/logoname.png" alt="Logo" width="200" height="100" />
+        <img src="/src/assets/images/logos/logoname.png" alt="Logo" width="200" height="80" />
       </div>
     </div>
     <!-- ---------------------------------------------- -->
