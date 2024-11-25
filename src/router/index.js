@@ -35,11 +35,11 @@ const router = createRouter({
           path: '',
           component: () => import('@/views/dashboard/DashBoard.vue'),
         },
-        // {
-        //   name: 'Alerts',
-        //   path: 'ui-components/alert',
-        //   component: () => import('@/views/ui-components/Alerts.vue'),
-        // },
+        {
+          name: 'Alerts',
+          path: 'ui-components/alert',
+          component: () => import('@/views/ui-components/Alerts.vue'),
+        },
         // {
         //   name: 'Buttons',
         //   path: 'ui-components/buttons',
@@ -60,10 +60,10 @@ const router = createRouter({
         //   path: 'ui-components/tables',
         //   component: () => import('@/views/ui-components/Tables.vue'),
         // },
-        {
-          path: '/:pathMatch(.*)*',
-          redirect: '/',
-        },
+        // {
+        //   path: '/:pathMatch(.*)*',
+        //   redirect: '/',
+        // },
       ],
     },
   ],

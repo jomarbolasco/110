@@ -7,7 +7,7 @@ export default [
   {
     title: 'Alert',
     icon: 'mdi-alert-circle-outline',
-    to: '/ui-components/alert',
+    to: '/dashboard/ui-components/alert',
   },
   {
     title: 'Buttons',
