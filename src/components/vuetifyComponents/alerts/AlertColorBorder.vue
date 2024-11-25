@@ -11,10 +11,11 @@
       prop removes the alert background in order to accent the
       <span class="font-weight-bold">border</span>
       prop. If a
-      <span class="font-weight-bold">type</span> is set, it will use the types default color. If no
-      <span class="font-weight-bold">color</span> or <span class="font-weight-bold">type</span> is
-      set, the color will default to the inverted color of the applied theme (black for light and
-      white/gray for dark).
+      <span class="font-weight-bold">type</span> is set, it will use the types
+      default color. If no <span class="font-weight-bold">color</span> or
+      <span class="font-weight-bold">type</span> is set, the color will default
+      to the inverted color of the applied theme (black for light and white/gray
+      for dark).
     </p>
     <div class="mt-4">
       <v-alert class="mb-3" border="start" border-color="deep-purple accent-4">

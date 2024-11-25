@@ -40,30 +40,30 @@ const router = createRouter({
           path: 'ui-components/alert',
           component: () => import('@/views/ui-components/Alerts.vue'),
         },
-        // {
-        //   name: 'Buttons',
-        //   path: 'ui-components/buttons',
-        //   component: () => import('@/views/ui-components/Buttons.vue'),
-        // },
-        // {
-        //   name: 'Cards',
-        //   path: 'ui-components/cards',
-        //   component: () => import('@/views/ui-components/Cards.vue'),
-        // },
-        // {
-        //   name: 'Menus',
-        //   path: 'ui-components/menus',
-        //   component: () => import('@/views/ui-components/Menus.vue'),
-        // },
-        // {
-        //   name: 'Tables',
-        //   path: 'ui-components/tables',
-        //   component: () => import('@/views/ui-components/Tables.vue'),
-        // },
-        // {
-        //   path: '/:pathMatch(.*)*',
-        //   redirect: '/',
-        // },
+        {
+          name: 'Buttons',
+          path: 'ui-components/buttons',
+          component: () => import('@/views/ui-components/Buttons.vue'),
+        },
+        {
+          name: 'Cards',
+          path: 'ui-components/cards',
+          component: () => import('@/views/ui-components/Cards.vue'),
+        },
+        {
+          name: 'Menus',
+          path: 'ui-components/menus',
+          component: () => import('@/views/ui-components/Menus.vue'),
+        },
+        {
+          name: 'Tables',
+          path: 'ui-components/tables',
+          component: () => import('@/views/ui-components/Tables.vue'),
+        },
+        {
+          path: '/:pathMatch(.*)*',
+          redirect: '/',
+        },
       ],
     },
   ],
