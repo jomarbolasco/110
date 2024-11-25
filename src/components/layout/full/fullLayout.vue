@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import { ref, onMounted } from 'vue'
-import SideBar from './sidebar/sideBar.vue' // Import in PascalCase
+import SideBar from './sidebar/sideBar.vue'
 
 import HeaderVue from './header/header.vue'
+
+const theme = ref(localStorage.getItem('theme') ?? 'dark')
 
 const drawer = ref(true)
 const innerW = window.innerWidth
@@ -16,7 +18,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-app>
+  <v-app :theme="theme">
     <!-- ---------------------------------------------- -->
     <!---Sidebar -->
     <!-- ---------------------------------------------- -->

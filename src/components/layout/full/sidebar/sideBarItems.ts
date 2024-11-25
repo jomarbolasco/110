@@ -2,30 +2,30 @@ export default [
   {
     title: 'Dashboard',
     icon: 'mdi-view-dashboard-outline',
-    to: '/dashboard/dashboard',
+    to: '/dashboard',
   },
   {
-    title: 'Alert',
+    title: 'option1',
     icon: 'mdi-alert-circle-outline',
     to: '/dashboard/ui-components/alert',
   },
   {
-    title: 'Buttons',
+    title: 'option2',
     icon: 'mdi-radiobox-blank',
     to: '/dashboard/ui-components/buttons',
   },
   {
-    title: 'Cards',
+    title: 'option3',
     icon: 'mdi-card-outline',
     to: '/dashboard/ui-components/cards',
   },
   {
-    title: 'Menus',
+    title: 'option4',
     icon: 'mdi-form-dropdown',
     to: '/dashboard/ui-components/menus',
   },
   {
-    title: 'Tables',
+    title: 'option5',
     icon: 'mdi-table',
     to: '/dashboard/ui-components/tables',
   },

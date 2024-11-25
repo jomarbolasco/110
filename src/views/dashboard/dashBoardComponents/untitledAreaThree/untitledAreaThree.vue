@@ -4,11 +4,9 @@
   <v-row>
     <v-col cols="12" lg="4">
       <v-card>
-        <img style="width: 100%" src="" />
+        <img style="width: 100%" src="./images/me (2 x 2 in).png" />
         <v-card-text>
-          <h5 class="title font-weight-medium mb-2 text-h6">
-            Super awesome, Vue 3 is coming soon!
-          </h5>
+          <h5 class="title font-weight-medium mb-2 text-h6">Backend Developer</h5>
           <p class="mb-3 text-body-2 text-grey-darken-1">
             Some quick example text to build on the card title and make up the bulk of the card's
             content.
@@ -19,11 +17,9 @@
     </v-col>
     <v-col cols="12" lg="4">
       <v-card>
-        <img style="width: 100%" src="" />
+        <img style="width: 100%" src="./images/batonghinog.png" />
         <v-card-text>
-          <h5 class="title font-weight-medium mb-2 text-h6">
-            Super awesome, Vue 3 is coming soon!
-          </h5>
+          <h5 class="title font-weight-medium mb-2 text-h6">System Analyst</h5>
           <p class="mb-3 text-body-2 text-grey-darken-1">
             Some quick example text to build on the card title and make up the bulk of the card's
             content.
@@ -34,11 +30,9 @@
     </v-col>
     <v-col cols="12" lg="4">
       <v-card>
-        <img style="width: 100%" src="" />
+        <img style="width: 100%" src="./images/silab.jpg" />
         <v-card-text>
-          <h5 class="title font-weight-medium mb-2 text-h6">
-            Super awesome, Vue 3 is coming soon!
-          </h5>
+          <h5 class="title font-weight-medium mb-2 text-h6">Frontend Developer</h5>
           <p class="mb-3 text-body-2 text-grey-darken-1">
             Some quick example text to build on the card title and make up the bulk of the card's
             content.
