@@ -2,31 +2,31 @@ export default [
   {
     title: 'Dashboard',
     icon: 'mdi-view-dashboard-outline',
-    to: '/dashboard',
+    to: '/dashboard/dashboard',
   },
   {
     title: 'Alert',
     icon: 'mdi-alert-circle-outline',
-    to: '/ui-components/alert',
+    to: '/dashboard/ui-components/alert',
   },
   {
     title: 'Buttons',
     icon: 'mdi-radiobox-blank',
-    to: '/ui-components/buttons',
+    to: '/dashboard/ui-components/buttons',
   },
   {
     title: 'Cards',
     icon: 'mdi-card-outline',
-    to: '/ui-components/cards',
+    to: '/dashboard/ui-components/cards',
   },
   {
     title: 'Menus',
     icon: 'mdi-form-dropdown',
-    to: '/ui-components/menus',
+    to: '/dashboard/ui-components/menus',
   },
   {
     title: 'Tables',
     icon: 'mdi-table',
-    to: '/ui-components/tables',
+    to: '/dashboard/ui-components/tables',
   },
 ]

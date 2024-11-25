@@ -3,7 +3,7 @@ import { RouterView } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import SideBar from './sidebar/sideBar.vue' // Import in PascalCase
 
-import HeaderVue from './header/header.vue' //ignore
+import HeaderVue from './header/header.vue'
 
 const drawer = ref(true)
 const innerW = window.innerWidth
