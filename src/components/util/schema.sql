@@ -79,3 +79,7 @@ ALTER TABLE "Appointments" ADD CONSTRAINT "fk_user_appointments" FOREIGN KEY ("u
 ALTER TABLE "Appointments" ADD CONSTRAINT "fk_doctor_appointments" FOREIGN KEY ("doctor_id") REFERENCES "Doctors" ("id") ON DELETE CASCADE;
 
 ALTER TABLE "Symptoms" ADD CONSTRAINT "fk_appointment_symptoms" FOREIGN KEY ("appointment_id") REFERENCES "Appointments" ("id") ON DELETE CASCADE;
+
+-- No changes are necessary in your schema for this functionality. However, if you need to track user roles (Patient vs Admin), consider adding a role column in the Users table.
+ALTER TABLE "Users" ADD COLUMN "role" VARCHAR(50) DEFAULT 'Patient';
+

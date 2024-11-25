@@ -8,8 +8,13 @@ import {
 import { ref } from 'vue'
 import { supabase, formActionDefault } from '@/components/util/supabase.js'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
+// Initialize the router and user store
 const router = useRouter()
+const userStore = useUserStore() // Create an instance of the user store
+
+// const router = useRouter()
 
 const formDataDefault = {
   firstname: '',
@@ -29,51 +34,68 @@ const formAction = ref({
 
 const refVForm = ref()
 
+const visible = ref(false)
+
 const onSubmit = async () => {
-  formAction.value = { ...formActionDefault }
   formAction.value.formProcess = true
 
-  const { data, error } = await supabase.auth.signUp({
-    email: formData.value.email,
-    password: formData.value.password,
-    options: {
-      data: {
-        firstname: formData.value.firstname,
-        lastname: formData.value.lastname,
+  try {
+    // Register the user in Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+      email: formData.value.email,
+      password: formData.value.password,
+      options: {
+        data: {
+          firstname: formData.value.firstname,
+          lastname: formData.value.lastname,
+        },
       },
-    },
-  })
+    })
 
-  if (error) {
-    console.error('Error during sign-up:', error)
+    if (error) throw error
+
+    // Insert user data into the "Users" table
+    const { error: insertError } = await supabase.from('Users').insert({
+      name: `${formData.value.firstname} ${formData.value.lastname}`,
+      email: formData.value.email,
+      password_hash: await hashPassword(formData.value.password),
+    })
+
+    if (insertError) throw insertError
+
+    // Automatically log the user in
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email: formData.value.email,
+      password: formData.value.password,
+    })
+
+    if (loginError) throw loginError
+
+    // Fetch user profile
+    const { data: profileData, error: profileError } = await supabase
+      .from('Users')
+      .select('*')
+      .eq('email', formData.value.email)
+      .single()
+
+    if (profileError) throw profileError
+
+    // Save user profile in the store
+    userStore.setUser(profileData)
+
+    // Redirect to profile page
+    router.push('/dashboard')
+  } catch (error) {
+    console.error('Error during registration:', error.message)
+    formAction.value.formErrorMessage = error.message
+  } finally {
     formAction.value.formProcess = false
-    return
   }
-
-  if (data) console.log('Auth data:', data)
-  // Insert the user data into the Users table
-  const { error: insertError } = await supabase.from('Users').insert({
-    name: `${formData.value.firstname} ${formData.value.lastname}`,
-    email: formData.value.email,
-    password_hash: await hashPassword(formData.value.password), // You can replace this with a hashing function
-  })
-
-  if (insertError) {
-    console.error('Error inserting into Users table:', insertError)
-  } else {
-    console.log('User successfully inserted into Users table')
-    alert('Login successful!')
-    // Redirect to dashboard after successful insertion
-    router.replace('/dashboard')
-  }
-
-  formAction.value.formProcess = false
 }
 
 // Hash password using a function (use a library for hashing, e.g., bcrypt.js or a secure API call)
 const hashPassword = async (password) => {
-  // Replace this with a real hash function
-  return btoa(password) // Simple example, not for production
+  return btoa(password) // Replace with a real hash function for production
 }
 
 const onFormSubmit = () => {
@@ -92,11 +114,6 @@ export default {
 </script>
 
 <template>
-  <AlertNotification
-    :form-success-message="formAction.formSuccessMessage"
-    :form-error-message="formAction.formErrorMessage"
-  ></AlertNotification>
-
   <v-form ref="refVForm" @submit.prevent="onFormSubmit">
     <v-row>
       <v-col cols="12" md="6">
@@ -106,7 +123,7 @@ export default {
           label="First name"
           density="compact"
           variant="outlined"
-        ></v-text-field>
+        />
       </v-col>
 
       <v-col cols="12" md="6">
@@ -116,7 +133,7 @@ export default {
           label="Last name"
           density="compact"
           variant="outlined"
-        ></v-text-field>
+        />
       </v-col>
 
       <v-col cols="12">
@@ -127,7 +144,7 @@ export default {
           label="Email"
           density="compact"
           variant="outlined"
-        ></v-text-field>
+        />
       </v-col>
 
       <v-col cols="12">
@@ -141,16 +158,13 @@ export default {
           density="compact"
           variant="outlined"
           @click:append-inner="visible = !visible"
-        ></v-text-field>
+        />
       </v-col>
 
       <v-col cols="12">
         <v-text-field
           v-model="formData.password_confirmation"
-          :rules="[
-            requiredValidator,
-            confirmedValidator(formData.password_confirmation, formData.password),
-          ]"
+          :rules="[confirmedValidator(formData.password_confirmation, formData.password)]"
           prepend-inner-icon="mdi-lock-outline"
           :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
           :type="visible ? 'text' : 'password'"
@@ -158,8 +172,7 @@ export default {
           density="compact"
           variant="outlined"
           @click:append-inner="visible = !visible"
-        ></v-text-field>
-
+        />
         <v-btn
           class="mb-8"
           color="blue"
