@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import VueFeather from 'vue-feather'
 
 const items = ref([
   { title: 'Click Me' },
@@ -13,13 +14,13 @@ const items = ref([
   <v-card class="w-100 h-100">
     <v-card-text>
       <div class="d-flex align-center mb-5">
-        <h2 class="title text-h6 font-weight-medium">Daily Activities</h2>
+        <h2 class="title text-h6 font-weight-medium">Doctor Appointments</h2>
         <v-spacer></v-spacer>
         <div class="ml-auto">
           <v-menu bottom left>
             <template v-slot:activator="{ props }">
               <v-btn icon color="inherit" v-bind="props">
-                <vue-feather type="more-horizontal" size="20"></vue-feather>
+                <VueFeather type="more-horizontal" size="20" />
               </v-btn>
             </template>
 
@@ -38,41 +39,10 @@ const items = ref([
             <span class="title text-body-2 font-weight-bold">09.50</span>
           </template>
           <v-card-title class="text-subtitle-2 font-weight-medium text-grey-darken-1"
-            >Meeting with John
-          </v-card-title>
+            >Meeting with John</v-card-title
+          >
         </v-timeline-item>
-        <v-timeline-item dot-color="primary" fill-dot size="x-small">
-          <template v-slot:opposite>
-            <span class="title text-body-2 font-weight-bold">09.46</span>
-          </template>
-          <v-card-title class="text-subtitle-2 font-weight-medium text-grey-darken-1"
-            >Payment received of $385.90
-          </v-card-title>
-        </v-timeline-item>
-        <v-timeline-item dot-color="secondary" fill-dot size="x-small">
-          <template v-slot:opposite>
-            <span class="title text-body-2 font-weight-bold">09.47</span>
-          </template>
-          <v-card-title class="text-subtitle-2 font-weight-medium text-grey-darken-1"
-            >Project Meeting
-          </v-card-title>
-        </v-timeline-item>
-        <v-timeline-item dot-color="warning" fill-dot size="x-small">
-          <template v-slot:opposite>
-            <span class="title text-body-2 font-weight-bold">09.48</span>
-          </template>
-          <v-card-title class="text-subtitle-2 font-weight-medium text-grey-darken-1"
-            >New Sale recorded #ML-3467
-          </v-card-title>
-        </v-timeline-item>
-        <v-timeline-item dot-color="error" fill-dot size="x-small">
-          <template v-slot:opposite>
-            <span class="title text-body-2 font-weight-bold">09.49</span>
-          </template>
-          <v-card-title class="text-subtitle-2 font-weight-medium text-grey-darken-1"
-            >Payment was made to Michael Anderson
-          </v-card-title>
-        </v-timeline-item>
+        <!-- Add other timeline items here -->
       </v-timeline>
     </v-card-text>
   </v-card>
