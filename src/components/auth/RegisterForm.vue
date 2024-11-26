@@ -71,7 +71,6 @@ const onSubmit = async () => {
         email: session.session.user.email || '',
       })
     }
-    if (loginError) throw loginError
 
     // Fetch user profile
     const { data: profileData, error: profileError } = await supabase

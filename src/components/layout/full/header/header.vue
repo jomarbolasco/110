@@ -1,32 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue' // Add onMounted import
+import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/components/util/supabase'
 
-// User store and router setup
+// Store and router
 const userStore = useUserStore()
 const router = useRouter()
-
-// Fetch user profile from Supabase
-const fetchUserProfile = async () => {
-  const { data: session, error } = await supabase.auth.getSession()
-  if (error) {
-    console.error('Failed to fetch session:', error.message)
-    return
-  }
-  if (session?.session?.user) {
-    // Corrected session object structure
-    userStore.setUser({
-      name: session.session.user.user_metadata?.name || '',
-      email: session.session.user.email || '',
-    })
-  }
-}
-
-onMounted(async () => {
-  await userStore.initializeUser() // Centralized session handling
-})
 
 // Logout function
 const logout = async () => {
@@ -35,31 +15,16 @@ const logout = async () => {
   router.push('/login')
 }
 
-// Dynamic profile items (example)
+// Profile menu items
 const profile = ref([
-  {
-    title: 'My Profile',
-    desc: 'Account Settings',
-    action: () => router.push('/profile'),
-  },
-  {
-    title: 'My Inbox',
-    desc: 'Messages & Emails',
-    action: () => router.push('/inbox'),
-  },
-  {
-    title: 'My Tasks',
-    desc: 'To-do and Daily Tasks',
-    action: () => router.push('/tasks'),
-  },
+  { title: 'My Profile', desc: 'Account Settings', action: () => router.push('/profile') },
+  { title: 'My Inbox', desc: 'Messages & Emails', action: () => router.push('/inbox') },
+  { title: 'My Tasks', desc: 'To-do and Daily Tasks', action: () => router.push('/tasks') },
 ])
 </script>
 
 <template>
   <div>
-    <!-- ---------------------------------------------- -->
-    <!-- User Profile Dropdown -->
-    <!-- ---------------------------------------------- -->
     <v-menu anchor="bottom end" origin="auto" min-width="300">
       <template v-slot:activator="{ props }">
         <v-btn
@@ -77,7 +42,6 @@ const profile = ref([
       </template>
 
       <v-list class="pa-6" elevation="10" rounded="lg">
-        <!-- Dynamic user info -->
         <v-list-item class="pa-3 mb-4">
           <div>
             <h3>Welcome, {{ userStore.user?.name }}</h3>
@@ -85,7 +49,6 @@ const profile = ref([
           </div>
         </v-list-item>
 
-        <!-- Profile menu items -->
         <v-list-item
           class="pa-3 mb-2"
           v-for="(item, i) in profile"
@@ -96,7 +59,6 @@ const profile = ref([
           @click="item.action"
         ></v-list-item>
 
-        <!-- Logout button -->
         <v-btn block color="secondary" variant="elevated" class="mt-4 py-4" @click="logout">
           Logout
         </v-btn>
