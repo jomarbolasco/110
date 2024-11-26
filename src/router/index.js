@@ -58,10 +58,10 @@ const router = createRouter({
           path: 'ui-components/tables',
           component: () => import('@/views/ui-components/Tables.vue'),
         },
-        {
-          path: '/:pathMatch(.*)*',
-          redirect: '/',
-        },
+        // {
+        //   path: '/:pathMatch(.*)*',
+        //   redirect: '/',
+        // },
       ],
     },
   ],
