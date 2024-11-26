@@ -43,6 +43,8 @@ const onSubmit = async () => {
         })
       }
 
+      await userStore.initializeUser() // Automatically fetch user profile after login
+
       // Redirect to the dashboard
       alert('Login successful!')
       router.replace('/dashboard')

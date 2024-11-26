@@ -5,27 +5,27 @@ export default [
     to: '/dashboard',
   },
   {
-    title: 'option1',
-    icon: 'mdi-alert-circle-outline',
+    title: 'ignore this area',
+    icon: 'mdi-check-underline-circle-outline',
     to: '/dashboard/ui-components/alert',
   },
   {
-    title: 'option2',
+    title: 'ignore this area',
     icon: 'mdi-radiobox-blank',
     to: '/dashboard/ui-components/buttons',
   },
   {
-    title: 'option3',
+    title: 'ignore this area',
     icon: 'mdi-card-outline',
     to: '/dashboard/ui-components/cards',
   },
   {
-    title: 'option4',
+    title: 'ignore this area',
     icon: 'mdi-form-dropdown',
     to: '/dashboard/ui-components/menus',
   },
   {
-    title: 'option5',
+    title: 'ignore this area',
     icon: 'mdi-table',
     to: '/dashboard/ui-components/tables',
   },
