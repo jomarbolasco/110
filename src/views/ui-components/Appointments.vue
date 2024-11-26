@@ -117,13 +117,13 @@ const bookAppointment = async () => {
 </script>
 
 <template>
-  <div class="appointment-container">
-    <h2>Book an Appointment</h2>
+  <div class="appointment-container bg-green-darken-2">
+    <h2 class="text-black">Book an Appointment</h2>
 
-    <div v-if="formStatus === 'error'" class="error-message">
+    <div v-if="formStatus === 'error'" class="message error-message">
       {{ formMessage }}
     </div>
-    <div v-if="formStatus === 'success'" class="success-message">
+    <div v-if="formStatus === 'success'" class="message success-message">
       {{ formMessage }}
     </div>
 
@@ -152,12 +152,16 @@ const bookAppointment = async () => {
       </select>
     </div>
 
-    <button @click="bookAppointment" :disabled="!selectedDate || !selectedTime || !selectedDoctor">
+    <button
+      class="text-black bg-blue"
+      @click="bookAppointment"
+      :disabled="!selectedDate || !selectedTime || !selectedDoctor"
+    >
       Book Appointment
     </button>
 
     <h3>Your Current Appointments</h3>
-    <ul>
+    <ul class="appointments-list">
       <li v-for="appointment in appointments" :key="appointment.id">
         {{ appointment.appointment_date }} with Dr. {{ appointment.doctor_id }} (Status:
         {{ appointment.status }})
@@ -167,26 +171,133 @@ const bookAppointment = async () => {
 </template>
 
 <style scoped>
+/* Base styles */
+* {
+  font-family: 'Roboto', sans-serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f4511e;
+  color: #444;
+  font-size: 16px;
+}
+
 .appointment-container {
-  max-width: 600px;
-  margin: 0 auto;
+  max-width: 750px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.appointment-container:hover {
+  transform: scale(1.02);
+}
+
+h2,
+h3 {
+  text-align: center;
+  color: #333;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  margin-top: 2rem;
+  font-size: 1.5rem;
 }
 
 .form-group {
-  margin-bottom: 1em;
+  margin-bottom: 1.5em;
 }
 
-.error-message {
-  color: red;
-  font-weight: bold;
+label {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.5em;
+  color: #444;
 }
 
-.success-message {
-  color: green;
-  font-weight: bold;
+select,
+input {
+  width: 100%;
+  padding: 0.75em;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: border 0.3s;
+  color: black;
+  background-color: #2ecc71;
+}
+
+select:focus,
+input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 1em;
+  font-size: 1.2rem;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #27ae60;
 }
 
 button:disabled {
-  background-color: #ccc;
+  background-color: #dfe6e9;
+}
+
+.message {
+  display: block;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+.error-message {
+  color: #fff;
+  background-color: #e74c3c;
+}
+
+.success-message {
+  color: #fff;
+  background-color: #2ecc71;
+}
+
+.appointments-list {
+  list-style: none;
+  padding: 0;
+  color: #fff;
+  background-color: #2ecc71;
+}
+
+.appointments-list li {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  font-size: 1rem;
+  color: #333;
+}
+
+.appointments-list li:last-child {
+  border-bottom: none;
 }
 </style>
