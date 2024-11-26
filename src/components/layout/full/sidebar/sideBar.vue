@@ -10,7 +10,7 @@ const sidebarMenu = ref([
   {
     title: 'Appointments',
     icon: 'mdi-check-underline-circle-outline',
-    to: '/dashboard/ui-components/alert',
+    to: '/dashboard/ui-components/Appointments',
   },
   {
     title: 'ignore this area',

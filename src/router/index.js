@@ -4,6 +4,7 @@ import { useUserStore } from '@/stores/user'
 import homeView from '@/homeView.vue'
 import loginView from '@/views/auth/loginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
+import Appointments from '@/views/ui-components/Appointments.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,9 +35,9 @@ const router = createRouter({
           component: () => import('@/views/dashboard/DashBoard.vue'),
         },
         {
-          name: 'Alerts',
-          path: 'ui-components/alert',
-          component: () => import('@/views/ui-components/Alerts.vue'),
+          name: '/Appointments',
+          path: 'ui-components/Appointments',
+          component: () => import('@/views/ui-components/Appointments.vue'),
         },
         {
           name: 'Buttons',
