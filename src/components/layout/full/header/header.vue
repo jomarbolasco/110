@@ -10,14 +10,16 @@ const router = useRouter()
 
 // Fetch user profile from Supabase
 const fetchUserProfile = async () => {
-  const { data, error } = await supabase.auth.getUser()
-  if (data) {
-    userStore.setUser({
-      name: data.user?.user_metadata.name || '',
-      email: data.user?.email || '',
-    })
+  if (!userStore.user) {
+    await userStore.initializeUser() // Initialize user if not already loaded
   }
 }
+
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  fetchUserProfile()
+})
 
 // Logout function
 const logout = async () => {
@@ -25,6 +27,7 @@ const logout = async () => {
   userStore.logout()
   router.push('/login')
 }
+
 // Dynamic profile items (example)
 const profile = ref([
   {
