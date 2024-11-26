@@ -34,9 +34,9 @@ const router = createRouter({
           component: () => import('@/views/dashboard/DashBoard.vue'),
         },
         {
-          name: 'Alerts',
-          path: 'ui-components/alert',
-          component: () => import('@/views/ui-components/Alerts.vue'),
+          name: '/Appointments',
+          path: 'ui-components/Appointments',
+          component: () => import('@/views/ui-components/Appointments.vue'),
         },
         {
           name: 'Buttons',
@@ -58,10 +58,10 @@ const router = createRouter({
           path: 'ui-components/tables',
           component: () => import('@/views/ui-components/Tables.vue'),
         },
-        {
-          path: '/:pathMatch(.*)*',
-          redirect: '/',
-        },
+        // {
+        //   path: '/:pathMatch(.*)*',
+        //   redirect: '/',
+        // },
       ],
     },
   ],
