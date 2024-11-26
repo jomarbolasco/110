@@ -26,7 +26,11 @@ const fetchDoctors = async () => {
 }
 
 // Fetch available schedules based on doctor
-const fetchSchedules = async (doctorId) => {
+const fetchSchedules = async () => {
+  if (!selectedDoctor.value) return // Ensure we have a selected doctor
+
+  const doctorId = selectedDoctor.value.id
+  console.log('Fetching schedules for doctor:', doctorId) // Debug log
   const { data, error } = await supabase
     .from('Schedule')
     .select('id, date, start_time, end_time, available_slots')
@@ -36,6 +40,7 @@ const fetchSchedules = async (doctorId) => {
   if (error) {
     console.error('Error fetching schedules:', error.message)
   } else {
+    console.log('Fetched schedules:', data) // Debug log
     availableSchedules.value = data
   }
 }
@@ -50,8 +55,8 @@ const submitForm = async () => {
   try {
     const { data, error } = await supabase.from('Appointments').insert([
       {
-        user_id: userStore.user.id, // Assuming the user is logged in
-        doctor_id: selectedDoctor.value,
+        user_id: userStore.user.id, // Ensure logged-in user ID
+        doctor_id: selectedDoctor.value.id, // Pass the doctor ID, not the whole object
         appointment_date: selectedSchedule.value.date,
       },
     ])
@@ -77,6 +82,13 @@ const submitForm = async () => {
   }
 }
 
+const formattedSchedules = computed(() =>
+  availableSchedules.value.map((schedule) => ({
+    ...schedule,
+    display: `${schedule.date} (${schedule.start_time} - ${schedule.end_time})`,
+  })),
+)
+
 onMounted(() => {
   fetchDoctors()
 })
@@ -92,7 +104,7 @@ onMounted(() => {
           item-value="id"
           item-title="name"
           v-model="selectedDoctor"
-          @change="fetchSchedules(selectedDoctor)"
+          @change="fetchSchedules"
           return-object
         ></v-select>
       </v-col>
@@ -100,11 +112,9 @@ onMounted(() => {
       <v-col cols="12" md="6">
         <v-select
           label="Select Schedule"
-          :items="availableSchedules"
+          :items="formattedSchedules"
           v-model="selectedSchedule"
-          :item-title="
-            (schedule) => `${schedule.date} (${schedule.start_time} - ${schedule.end_time})`
-          "
+          item-title="display"
           item-value="id"
           return-object
         ></v-select>
