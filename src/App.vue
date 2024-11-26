@@ -1,24 +1,24 @@
 <script setup>
 import { RouterView } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { useRouter } from 'vue-router'
+// import { useUserStore } from '@/stores/user'
+// import { useRouter } from 'vue-router'
 
-const userStore = useUserStore()
-const router = useRouter()
+// const userStore = useUserStore()
+// const router = useRouter()
 
-router.beforeEach(async (to, from, next) => {
-  if (!userStore.user && userStore.initializeUser) {
-    await userStore.initializeUser()
-  }
+// router.beforeEach(async (to, from, next) => {
+//   if (!userStore.user && userStore.initializeUser) {
+//     await userStore.initializeUser()
+//   }
 
-  if (to.meta.requiresAuth && !userStore.user) {
-    next('/login') // Redirect unauthenticated users
-  } else if ((to.path === '/login' || to.path === '/register') && userStore.user) {
-    next('/dashboard') // Redirect logged-in users
-  } else {
-    next()
-  }
-})
+//   if (to.meta.requiresAuth && !userStore.user) {
+//     next('/login') // Redirect unauthenticated users
+//   } else if ((to.path === '/login' || to.path === '/register') && userStore.user) {
+//     next('/dashboard') // Redirect logged-in users
+//   } else {
+//     next()
+//   }
+// })
 </script>
 
 <template>
