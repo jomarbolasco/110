@@ -9,15 +9,19 @@ export const useUserStore = defineStore('user', {
     async setUser(userData) {
       this.user = userData
     },
-    logout() {
+    async logout() {
+      await supabase.auth.signOut() // Clear Supabase session
       this.user = null
     },
     async initializeUser() {
-      const { data } = await supabase.auth.getUser()
-      if (data.user) {
+      const { data: session, error } = await supabase.auth.getSession()
+      if (error || !session?.session?.user) {
+        console.warn('No active session found:', error?.message || 'User is not logged in.')
+        this.user = null
+      } else {
         this.user = {
-          name: data.user.user_metadata?.name || '',
-          email: data.user.email,
+          name: session.session.user.user_metadata?.name || '',
+          email: session.session.user.email,
         }
       }
     },

@@ -26,32 +26,36 @@ const onSubmit = async () => {
   errorMessage.value = ''
 
   try {
-    const { error, data } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.value.email,
       password: formData.value.password,
     })
 
     if (error) {
-      errorMessage.value = error.message
-    } else {
-      // Fetch and store user profile data
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      if (userData) {
-        userStore.setUser({
-          name: userData.user?.user_metadata.name || '',
-          email: userData.user?.email || '',
-        })
-      }
-
-      await userStore.initializeUser() // Automatically fetch user profile after login
-
-      // Redirect to the dashboard
-      alert('Login successful!')
-      router.replace('/dashboard')
+      errorMessage.value = 'Invalid email or password. Please try again.'
+      console.error(error.message)
+      return
     }
-  } catch (error) {
+
+    // Store user session
+    userStore.setUser({
+      name: data.user.user_metadata?.name || '',
+      email: data.user.email,
+    })
+
+    const { data: session } = await supabase.auth.getSession()
+    if (session?.session?.user) {
+      userStore.setUser({
+        name: session.session.user.user_metadata?.name || '',
+        email: session.session.user.email,
+      })
+    }
+
+    alert('Login successful!')
+    router.replace('/dashboard')
+  } catch (err) {
     errorMessage.value = 'An unexpected error occurred. Please try again.'
-    console.error(error)
+    console.error(err)
   } finally {
     loading.value = false
   }

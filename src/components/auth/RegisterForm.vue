@@ -64,11 +64,13 @@ const onSubmit = async () => {
     if (insertError) throw insertError
 
     // Automatically log the user in
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-      email: formData.value.email,
-      password: formData.value.password,
-    })
-
+    const { data: session } = await supabase.auth.getSession()
+    if (session?.session?.user) {
+      userStore.setUser({
+        name: session.session.user.user_metadata?.name || '',
+        email: session.session.user.email || '',
+      })
+    }
     if (loginError) throw loginError
 
     // Fetch user profile
