@@ -79,3 +79,11 @@ CREATE TABLE "Symptoms" (
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "fk_appointment_symptoms" FOREIGN KEY ("appointment_id") REFERENCES "Appointments" ("id") ON DELETE CASCADE
 );
+
+
+ALTER TABLE "Appointments"
+ADD COLUMN user_id UUID;
+
+UPDATE "Appointments"
+SET user_id = gen_random_uuid();
+
