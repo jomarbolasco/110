@@ -83,3 +83,19 @@ ALTER TABLE "Symptoms" ADD CONSTRAINT "fk_appointment_symptoms" FOREIGN KEY ("ap
 -- No changes are necessary in your schema for this functionality. However, if you need to track user roles (Patient vs Admin), consider adding a role column in the Users table.
 ALTER TABLE "Users" ADD COLUMN "role" VARCHAR(50) DEFAULT 'Patient';
 
+--n your Appointments table, make sure that the user_id in the Appointments table refers to the Patient table (which should have the user_id as the reference). This means you should have a relationship like:
+
+SELECT conname
+FROM pg_constraint
+WHERE conname = 'fk_user_appointments';
+
+ALTER TABLE "Appointments"
+DROP CONSTRAINT IF EXISTS "fk_user_appointments";
+
+ALTER TABLE "Appointments"
+ADD CONSTRAINT "fk_user_appointments"
+FOREIGN KEY ("user_id")
+REFERENCES "Patient" ("p_id")
+ON DELETE CASCADE;
+
+
