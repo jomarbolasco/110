@@ -101,7 +101,7 @@ const onSubmit = async () => {
     if (formData.value.role === 'Admin') {
       router.push('/admin-dashboard')
     } else {
-      router.push('@/components/layout/full/fullLayout.vue')
+      router.push('/dashboard')
     }
   } catch (error) {
     console.error('Error during registration:', error.message)
