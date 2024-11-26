@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue' // Add onMounted import
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/components/util/supabase'
@@ -10,15 +10,22 @@ const router = useRouter()
 
 // Fetch user profile from Supabase
 const fetchUserProfile = async () => {
-  if (!userStore.user) {
-    await userStore.initializeUser() // Initialize user if not already loaded
+  const { data: session, error } = await supabase.auth.getSession()
+  if (error) {
+    console.error('Failed to fetch session:', error.message)
+    return
+  }
+  if (session?.session?.user) {
+    // Corrected session object structure
+    userStore.setUser({
+      name: session.session.user.user_metadata?.name || '',
+      email: session.session.user.email || '',
+    })
   }
 }
 
-import { onMounted } from 'vue'
-
-onMounted(() => {
-  fetchUserProfile()
+onMounted(async () => {
+  await userStore.initializeUser() // Centralized session handling
 })
 
 // Logout function
@@ -46,10 +53,6 @@ const profile = ref([
     action: () => router.push('/tasks'),
   },
 ])
-
-// import { profile } from './data'
-
-// const userprofile = ref(profile)
 </script>
 
 <template>
