@@ -12,9 +12,7 @@ import { useUserStore } from '@/stores/user'
 
 // Initialize the router and user store
 const router = useRouter()
-const userStore = useUserStore() // Create an instance of the user store
-
-// const router = useRouter()
+const userStore = useUserStore()
 
 const formDataDefault = {
   firstname: '',
@@ -22,6 +20,8 @@ const formDataDefault = {
   email: '',
   password: '',
   password_confirmation: '',
+  role: 'Patient', // default role
+  check_up_type: '', // Patient-specific field
 }
 
 const formData = ref({
@@ -48,6 +48,7 @@ const onSubmit = async () => {
         data: {
           firstname: formData.value.firstname,
           lastname: formData.value.lastname,
+          role: formData.value.role, // role can be Patient or Admin
         },
       },
     })
@@ -59,9 +60,20 @@ const onSubmit = async () => {
       name: `${formData.value.firstname} ${formData.value.lastname}`,
       email: formData.value.email,
       password_hash: await hashPassword(formData.value.password),
+      role: formData.value.role, // Assign the role to the user
     })
 
     if (insertError) throw insertError
+
+    // Insert patient data if the role is 'Patient'
+    if (formData.value.role === 'Patient') {
+      const { error: patientError } = await supabase.from('Patient').insert({
+        name: `${formData.value.firstname} ${formData.value.lastname}`,
+        check_up_type: formData.value.check_up_type,
+      })
+
+      if (patientError) throw patientError
+    }
 
     // Automatically log the user in
     const { data: session } = await supabase.auth.getSession()
@@ -69,10 +81,11 @@ const onSubmit = async () => {
       userStore.setUser({
         name: session.session.user.user_metadata?.name || '',
         email: session.session.user.email || '',
+        role: formData.value.role,
       })
     }
 
-    // Fetch user profile
+    // Fetch user profile from the "Users" table
     const { data: profileData, error: profileError } = await supabase
       .from('Users')
       .select('*')
@@ -84,8 +97,12 @@ const onSubmit = async () => {
     // Save user profile in the store
     userStore.setUser(profileData)
 
-    // Redirect to profile page
-    router.push('/dashboard')
+    // Redirect to dashboard or relevant page
+    if (formData.value.role === 'Admin') {
+      router.push('/admin-dashboard')
+    } else {
+      router.push('/dashboard')
+    }
   } catch (error) {
     console.error('Error during registration:', error.message)
     formAction.value.formErrorMessage = error.message
@@ -174,19 +191,41 @@ export default {
           variant="outlined"
           @click:append-inner="visible = !visible"
         />
-        <v-btn
-          class="mb-8"
-          color="blue"
-          size="large"
-          variant="tonal"
-          block
-          type="submit"
-          :disabled="formAction.formProcess"
-          :loading="formAction.formProcess"
-        >
-          Register
-        </v-btn>
       </v-col>
+
+      <v-col cols="12">
+        <v-select
+          v-model="formData.role"
+          :items="['Patient', 'Admin']"
+          label="Role"
+          density="compact"
+          variant="outlined"
+        />
+      </v-col>
+
+      <!-- Additional field for patient checkup type -->
+      <v-col cols="12" v-if="formData.role === 'Patient'">
+        <v-text-field
+          v-model="formData.check_up_type"
+          :rules="[requiredValidator]"
+          label="Check-Up Type"
+          density="compact"
+          variant="outlined"
+        />
+      </v-col>
+
+      <v-btn
+        class="mb-8"
+        color="blue"
+        size="large"
+        variant="tonal"
+        block
+        type="submit"
+        :disabled="formAction.formProcess"
+        :loading="formAction.formProcess"
+      >
+        Register
+      </v-btn>
     </v-row>
   </v-form>
 </template>

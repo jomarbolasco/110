@@ -80,6 +80,7 @@ export default {
   <div class="text-subtitle-1 text-medium-emphasis">Account</div>
 
   <v-form ref="refVForm" @submit.prevent="onFormSubmit">
+    <!-- Email Field -->
     <v-text-field
       v-model="formData.email"
       :rules="[requiredValidator, emailValidator]"
@@ -89,6 +90,7 @@ export default {
       variant="outlined"
     ></v-text-field>
 
+    <!-- Password Field -->
     <div class="text-subtitle-1 text-medium-emphasis d-flex align-center justify-space-between">
       Password
     </div>
@@ -105,6 +107,7 @@ export default {
       @click:append-inner="visible = !visible"
     ></v-text-field>
 
+    <!-- Submit Button -->
     <v-btn
       :disabled="loading"
       class="mb-8"
@@ -118,8 +121,10 @@ export default {
       <span v-else>Log In</span>
     </v-btn>
 
+    <!-- Error Message -->
     <p v-if="errorMessage" class="text-red text-caption">{{ errorMessage }}</p>
 
+    <!-- Sign Up Link -->
     <v-card-text class="text-center">
       <p>
         Don't have an account?
