@@ -28,7 +28,12 @@ app.use(router)
 app.use(vuetify)
 
 // Now safely use the store
-const userStore = useUserStore(pinia) // Pass the Pinia instance to initialize the store
-await userStore.initializeUser() // Initialize user session after the store is available
+// const userStore = useUserStore(pinia) // Pass the Pinia instance to initialize the store
+// await userStore.initializeUser() // Initialize user session after the store is available
 
-app.mount('#app')
+const initializeApp = async () => {
+  const userStore = useUserStore(pinia) // Pass the Pinia instance to initialize the store
+  await userStore.initializeUser() // Initialize user session after the store is available
+  app.mount('#app') // Mount the app after initialization
+}
+initializeApp()
