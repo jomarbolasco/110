@@ -3,10 +3,11 @@ import { requiredValidator, emailValidator } from '@/components/util/validators'
 import { ref } from 'vue'
 import { supabase } from '@/components/util/supabase'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const refVForm = ref()
-
 const router = useRouter()
+const userStore = useUserStore()
 
 const formDataDefault = {
   email: '',
@@ -25,22 +26,36 @@ const onSubmit = async () => {
   errorMessage.value = ''
 
   try {
-    const { error, data } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.value.email,
       password: formData.value.password,
     })
 
     if (error) {
-      errorMessage.value = error.message
-    } else {
-      // Redirect to a protected route or dashboard
-      alert('Login successful!')
-      console.log(data)
-      router.replace('/dashboard')
+      errorMessage.value = 'Invalid email or password. Please try again.'
+      console.error(error.message)
+      return
     }
-  } catch (error) {
+
+    // Store user session
+    userStore.setUser({
+      name: data.user.user_metadata?.name || '',
+      email: data.user.email,
+    })
+
+    const { data: session } = await supabase.auth.getSession()
+    if (session?.session?.user) {
+      userStore.setUser({
+        name: session.session.user.user_metadata?.name || '',
+        email: session.session.user.email,
+      })
+    }
+
+    alert('Login successful!')
+    router.replace('/dashboard')
+  } catch (err) {
     errorMessage.value = 'An unexpected error occurred. Please try again.'
-    console.error(error)
+    console.error(err)
   } finally {
     loading.value = false
   }
@@ -65,6 +80,7 @@ export default {
   <div class="text-subtitle-1 text-medium-emphasis">Account</div>
 
   <v-form ref="refVForm" @submit.prevent="onFormSubmit">
+    <!-- Email Field -->
     <v-text-field
       v-model="formData.email"
       :rules="[requiredValidator, emailValidator]"
@@ -74,18 +90,9 @@ export default {
       variant="outlined"
     ></v-text-field>
 
+    <!-- Password Field -->
     <div class="text-subtitle-1 text-medium-emphasis d-flex align-center justify-space-between">
       Password
-
-      <!-- change password button -->
-      <!-- <a
-                      class="text-caption text-decoration-none text-blue"
-                      href="#"
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      Forgot login password?</a
-                    > -->
     </div>
 
     <v-text-field
@@ -100,14 +107,7 @@ export default {
       @click:append-inner="visible = !visible"
     ></v-text-field>
 
-    <!-- <v-card class="mb-12" color="surface-variant" variant="tonal">
-                    <v-card-text class="text-medium-emphasis text-caption">
-                      Warning: After 3 consecutive failed login attempts, you account will be
-                      temporarily locked for three hours. If you must login now, you can also click
-                      "Forgot login password?" below to reset the login password.
-                    </v-card-text>
-                  </v-card> -->
-
+    <!-- Submit Button -->
     <v-btn
       :disabled="loading"
       class="mb-8"
@@ -121,11 +121,13 @@ export default {
       <span v-else>Log In</span>
     </v-btn>
 
+    <!-- Error Message -->
     <p v-if="errorMessage" class="text-red text-caption">{{ errorMessage }}</p>
 
+    <!-- Sign Up Link -->
     <v-card-text class="text-center">
       <p>
-        Don't have account?
+        Don't have an account?
         <RouterLink to="/register" class="text-blue text-decoration-none" rel="noopener noreferrer">
           Sign up now <v-icon icon="mdi-account-plus-outline"></v-icon>
         </RouterLink>
