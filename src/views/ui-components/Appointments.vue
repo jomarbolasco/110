@@ -28,7 +28,6 @@ onMounted(async () => {
 
     // Fetch user and their appointments
     const { data: userData, error: userError } = await supabase.auth.getUser()
-    if (userError) throw userError
 
     user.value = userData?.user
     if (user.value) {
@@ -46,7 +45,7 @@ const fetchDoctors = async () => {
     const { data: doctorData, error: doctorError } = await supabase
       .from('Doctors')
       .select('*')
-      .eq('hospital_id', selectedHospital.value)
+      .eq('id', selectedHospital.value)
 
     if (doctorError) throw doctorError
     doctors.value = doctorData
@@ -62,7 +61,7 @@ const fetchSchedules = async () => {
     const { data: scheduleData, error: scheduleError } = await supabase
       .from('Schedule')
       .select('*')
-      .eq('doctor_id', selectedDoctor.value)
+      .eq('id', selectedDoctor.value)
       .gt('available_slots', 0)
 
     if (scheduleError) throw scheduleError
@@ -140,6 +139,8 @@ const refreshAppointments = async () => {
       )
       .eq('user_id', user.value.id)
 
+    console.log(appointmentData) // Log to check the data structure
+
     if (appointmentError) throw appointmentError
     appointments.value = appointmentData
   } catch (error) {
@@ -210,14 +211,16 @@ const editAppointment = (appointment) => {
 
     <!-- Appointments List -->
     <h3>Your Appointments</h3>
-    <ul>
+    <ul v-if="appointments.length > 0">
       <li v-for="appointment in appointments" :key="appointment.id">
-        {{ appointment.appointment_date }} with Dr. {{ appointment.Doctors.name }} at
-        {{ appointment.Hospitals.name }} (Status: {{ appointment.status }})
+        {{ appointment.appointment_date }} with
+        {{ appointment.Hospitals?.name || 'Unknown Hospital' }}
+        (Status: {{ appointment.status }})
         <button @click="editAppointment(appointment)">Edit</button>
         <button @click="deleteAppointment(appointment.id)">Delete</button>
       </li>
     </ul>
+    <p v-else>No appointments found</p>
   </div>
 </template>
 
