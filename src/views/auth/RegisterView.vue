@@ -34,7 +34,6 @@ const theme = ref('dark')
         </template>
       </v-btn>
     </template>
-
     <template #content
       ><v-container>
         <v-row>
@@ -47,9 +46,7 @@ const theme = ref('dark')
               ></v-img>
               <v-card class="mx-auto pa-12 pb-8" elevation="8" max-width="448" rounded="lg">
                 <v-divider class="mb-5" />
-
                 <RegisterForm />
-
                 <v-divider class="my-3" />
                 <v-card-text class="text-center">
                   <p>
