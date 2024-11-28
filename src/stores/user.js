@@ -20,7 +20,6 @@ export const useUserStore = defineStore('user', {
         this.user = null
       } else {
         this.user = {
-          id: session.session.user.id, // Ensure to fetch the user ID for appointments
           name: session.session.user.user_metadata?.name || '',
           email: session.session.user.email,
         }
