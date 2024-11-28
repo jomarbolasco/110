@@ -14,7 +14,7 @@ const items = ref([
   <v-card class="w-100 h-100">
     <v-card-text>
       <div class="d-flex align-center mb-5">
-        <h2 class="title text-h6 font-weight-medium">Doctor Appointments</h2>
+        <h2 class="title text-h6 font-weight-medium">Your Appointments</h2>
         <v-spacer></v-spacer>
         <div class="ml-auto">
           <v-menu bottom left>
