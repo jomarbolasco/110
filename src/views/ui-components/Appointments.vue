@@ -135,11 +135,15 @@ const refreshAppointments = async () => {
     const { data: appointmentData, error: appointmentError } = await supabase
       .from('Appointments')
       .select(
-        'id, appointment_date, appointment_time, status, Doctors(name, specialty), Hospitals(name)',
+        `id,
+        appointment_date,
+        appointment_time,
+        status,
+        Doctors (id, name, specialty),
+        Hospitals (id, name)`,
       )
       .eq('user_id', user.value.id)
-
-    console.log(appointmentData) // Log to check the data structure
+    console.log(appointmentData)
 
     if (appointmentError) throw appointmentError
     appointments.value = appointmentData
@@ -212,10 +216,11 @@ const editAppointment = (appointment) => {
     <!-- Appointments List -->
     <h3>Your Appointments</h3>
     <ul v-if="appointments.length > 0">
-      <li v-for="appointment in appointments" :key="appointment.id">
-        {{ appointment.appointment_date }} with
-        {{ appointment.Hospitals?.name || 'Unknown Hospital' }}
-        (Status: {{ appointment.status }})
+      <li v-for="appointment in appointments" :key="appointments.id">
+        {{ appointment.appointment_date }} at {{ appointment.appointment_time }} with
+        {{ appointment.Doctors?.name || 'Unknown Doctor' }}
+        ({{ appointment.Doctors?.specialty || 'No Specialty' }}) in
+        {{ appointment.Hospitals?.name || 'Unknown Hospital' }} (Status: {{ appointment.status }})
         <button @click="editAppointment(appointment)">Edit</button>
         <button @click="deleteAppointment(appointment.id)">Delete</button>
       </li>

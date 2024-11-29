@@ -1,49 +1,85 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import VueFeather from 'vue-feather'
+import { supabase } from '@/components/util/supabase' // Correct named import
 
-const items = ref([
-  { title: 'Click Me' },
-  { title: 'Click Me' },
-  { title: 'Click Me' },
-  { title: 'Click Me 2' },
-])
+const items = ref([{ title: 'Manage Appointments' }, { title: 'Settings' }, { title: 'Help' }])
+
+const appointments = ref([])
+
+// Fetch appointments using Supabase
+const fetchAppointments = async () => {
+  try {
+    const { data, error } = await supabase.from('Appointments').select(`
+        appointment_time,
+        appointment_date,
+        status,
+        doctor: Doctors(name)
+      `)
+
+    if (error) {
+      console.error('Error fetching appointments:', error)
+      return
+    }
+
+    // Map the fetched data into the required format
+    appointments.value = data.map((appointment: any) => ({
+      time: appointment.appointment_time,
+      date: appointment.appointment_date,
+      doctor: appointment.doctor.name,
+      status: appointment.status,
+    }))
+  } catch (error) {
+    console.error('Unexpected error fetching appointments:', error)
+  }
+}
+
+onMounted(fetchAppointments)
 </script>
 
 <template>
   <v-card class="w-100 h-100">
-    <v-card-text>
-      <div class="d-flex align-center mb-5">
-        <h2 class="title text-h6 font-weight-medium">Your Appointments</h2>
-        <v-spacer></v-spacer>
-        <div class="ml-auto">
-          <v-menu bottom left>
-            <template v-slot:activator="{ props }">
-              <v-btn icon color="inherit" v-bind="props">
-                <VueFeather type="more-horizontal" size="20" />
-              </v-btn>
-            </template>
+    <!-- Card Title -->
+    <v-card-title class="text-h6 font-weight-bold"> Your Appointments </v-card-title>
 
-            <v-list>
-              <v-list-item v-for="(item, i) in items" :key="i">
-                <v-list-item-title>{{ item.title }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </div>
-      </div>
-      <!-- timeline -->
-      <v-timeline class="theme-timeline mt-10">
-        <v-timeline-item dot-color="success" fill-dot size="x-small">
-          <template v-slot:opposite>
-            <span class="title text-body-2 font-weight-bold">09.50</span>
-          </template>
-          <v-card-title class="text-subtitle-2 font-weight-medium text-grey-darken-1"
-            >Meeting with John</v-card-title
-          >
-        </v-timeline-item>
-        <!-- Add other timeline items here -->
-      </v-timeline>
+    <!-- Appointments List -->
+    <v-card-text>
+      <v-list>
+        <!-- Iterate over the appointments array -->
+        <v-list-item v-for="(appointment, index) in appointments" :key="index" class="mb-4">
+          <v-avatar>
+            <v-icon color="primary" size="32">mdi-calendar</v-icon>
+          </v-avatar>
+
+          <v-list-item>
+            <!-- Appointment Date and Time -->
+            <v-list-item-title class="text-subtitle-1 font-weight-medium">
+              {{ appointment.date }} at {{ appointment.time }}
+            </v-list-item-title>
+            <!-- Doctor Name and Appointment Status -->
+            <v-list-item-subtitle class="text-body-2">
+              <strong>Doctor:</strong> {{ appointment.doctor }}<br />
+              <strong>Status:</strong>
+              <span
+                :class="{
+                  'text-success': appointment.status === 'Confirmed',
+                  'text-warning': appointment.status === 'Pending',
+                  'text-error': appointment.status === 'Cancelled',
+                }"
+              >
+                {{ appointment.status }}
+              </span>
+            </v-list-item-subtitle>
+          </v-list-item>
+        </v-list-item>
+      </v-list>
     </v-card-text>
+
+    <!-- Optional Action Buttons -->
+    <v-card-actions>
+      <v-btn variant="outlined" color="primary">View All</v-btn>
+      <v-spacer></v-spacer>
+      <v-btn color="primary">Schedule New</v-btn>
+    </v-card-actions>
   </v-card>
 </template>
