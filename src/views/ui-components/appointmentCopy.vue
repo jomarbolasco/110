@@ -57,7 +57,7 @@ const fetchSchedules = async () => {
   try {
     if (!selectedDoctor.value) return
     const { data: scheduleData, error: scheduleError } = await supabase
-      .from('Schedule')
+      .from('schedule')
       .select('*')
       .eq('id', selectedDoctor.value)
       .gt('available_slots', 0)
