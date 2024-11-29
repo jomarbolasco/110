@@ -21,7 +21,7 @@ onMounted(async () => {
   try {
     // Fetch hospitals
     const { data: hospitalData, error: hospitalError } = await supabase
-      .from('Hospitals')
+      .from('hospitals')
       .select('*')
     if (hospitalError) throw hospitalError
     hospitals.value = hospitalData
@@ -43,9 +43,9 @@ const fetchDoctors = async () => {
   try {
     if (!selectedHospital.value) return
     const { data: doctorData, error: doctorError } = await supabase
-      .from('Doctors')
+      .from('doctors')
       .select('*')
-      .eq('id', selectedHospital.value)
+      .eq('hospital_id', selectedHospital.value) // Correct column reference
 
     if (doctorError) throw doctorError
     doctors.value = doctorData
@@ -59,7 +59,7 @@ const fetchSchedules = async () => {
   try {
     if (!selectedDoctor.value) return
     const { data: scheduleData, error: scheduleError } = await supabase
-      .from('Schedule')
+      .from('schedule')
       .select('*')
       .eq('id', selectedDoctor.value)
       .gt('available_slots', 0)
@@ -87,7 +87,7 @@ const saveAppointment = async () => {
 
     const payload = {
       user_id: user.value.id,
-      doctor_id: selectedDoctor.value,
+      doctor_id: selectedDoctor.value, // Ensure this is a UUID
       appointment_date: selectedDate.value,
       appointment_time: selectedTime.value,
       status: 'Pending',
@@ -96,7 +96,7 @@ const saveAppointment = async () => {
     let response
     if (editAppointmentId.value) {
       response = await supabase
-        .from('Appointments')
+        .from('appointments')
         .update(payload)
         .eq('id', editAppointmentId.value)
     } else {
@@ -121,7 +121,7 @@ const saveAppointment = async () => {
 // Delete an appointment
 const deleteAppointment = async (id) => {
   try {
-    const { error } = await supabase.from('Appointments').delete().eq('id', id)
+    const { error } = await supabase.from('appointments').delete().eq('id', id)
     if (error) throw error
     await refreshAppointments()
   } catch (error) {
@@ -133,13 +133,23 @@ const deleteAppointment = async (id) => {
 const refreshAppointments = async () => {
   try {
     const { data: appointmentData, error: appointmentError } = await supabase
-      .from('Appointments')
+      .from('appointments')
       .select(
-        'id, appointment_date, appointment_time, status, Doctors(name, specialty), Hospitals(name)',
+        `
+    id,
+    appointment_date,
+    appointment_time,
+    status,
+    doctors (
+      name,
+      specialty,
+      hospitals (name)
+    )
+  `,
       )
       .eq('user_id', user.value.id)
 
-    console.log(appointmentData) // Log to check the data structure
+    console.log(appointmentData) // Check the structure of the data
 
     if (appointmentError) throw appointmentError
     appointments.value = appointmentData
@@ -151,8 +161,8 @@ const refreshAppointments = async () => {
 // Populate form for editing
 const editAppointment = (appointment) => {
   editAppointmentId.value = appointment.id
-  selectedHospital.value = appointment.Hospitals?.id || null
-  selectedDoctor.value = appointment.Doctors?.id || null
+  selectedHospital.value = appointment.hospitals?.id || null
+  selectedDoctor.value = appointment.doctors?.id || null
   selectedDate.value = appointment.appointment_date
   selectedTime.value = appointment.appointment_time
 }

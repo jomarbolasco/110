@@ -9,11 +9,11 @@ const router = useRouter() // Router instance
 // Fetch appointments using Supabase
 const fetchAppointments = async () => {
   try {
-    const { data, error } = await supabase.from('Appointments').select(`
+    const { data, error } = await supabase.from('appointments').select(`
         appointment_time,
         appointment_date,
         status,
-        doctor: Doctors(name)
+        doctor: doctors(name)
       `)
 
     if (error) {
