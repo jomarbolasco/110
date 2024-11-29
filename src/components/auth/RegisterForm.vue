@@ -56,7 +56,7 @@ const onSubmit = async () => {
     if (error) throw error
 
     // Insert user data into the "Users" table
-    const { error: insertError } = await supabase.from('Users').insert({
+    const { error: insertError } = await supabase.from('users').insert({
       name: `${formData.value.firstname} ${formData.value.lastname}`,
       email: formData.value.email,
       password_hash: await hashPassword(formData.value.password),
@@ -87,7 +87,7 @@ const onSubmit = async () => {
 
     // Fetch user profile from the "Users" table
     const { data: profileData, error: profileError } = await supabase
-      .from('Users')
+      .from('users')
       .select('*')
       .eq('email', formData.value.email)
       .single()

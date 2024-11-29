@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router' // Import router for navigation
 import { supabase } from '@/components/util/supabase' // Correct named import
 
-const appointments = ref([]) // State for appointments
+const appointments = ref<Array<{ date: string; time: string; doctor: string; status: string }>>([]) // Type declaration for appointments
 const router = useRouter() // Router instance
 
 // Fetch appointments using Supabase
@@ -25,7 +25,7 @@ const fetchAppointments = async () => {
     appointments.value = data.map((appointment: any) => ({
       time: appointment.appointment_time,
       date: appointment.appointment_date,
-      doctor: appointment.doctor.name,
+      doctor: appointment.doctor.name, // Fix for doctor name
       status: appointment.status,
     }))
   } catch (error) {
@@ -43,13 +43,13 @@ const handleScheduleNew = () => {
   router.push('/schedule-appointment') // Navigate to a scheduling page
 }
 
-onMounted(fetchAppointments)
+onMounted(fetchAppointments) // Run fetchAppointments when the component is mounted
 </script>
 
 <template>
   <v-card class="w-100 h-100">
     <!-- Card Title -->
-    <v-card-title class="text-h6 font-weight-bold"> Your Appointments </v-card-title>
+    <v-card-title class="text-h6 font-weight-bold">Your Appointments</v-card-title>
 
     <!-- Appointments List -->
     <v-card-text>
