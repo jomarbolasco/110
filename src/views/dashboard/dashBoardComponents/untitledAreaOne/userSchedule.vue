@@ -60,26 +60,24 @@ onMounted(fetchAppointments)
             <v-icon color="primary" size="32">mdi-calendar</v-icon>
           </v-avatar>
 
-          <v-list-item-content>
-            <!-- Appointment Date and Time -->
-            <v-list-item-title class="text-subtitle-1 font-weight-medium">
-              {{ appointment.date }} at {{ appointment.time }}
-            </v-list-item-title>
-            <!-- Doctor Name and Appointment Status -->
-            <v-list-item-subtitle class="text-body-2">
-              <strong>Doctor:</strong> {{ appointment.doctor }}<br />
-              <strong>Status:</strong>
-              <span
-                :class="{
-                  'text-success': appointment.status === 'Confirmed',
-                  'text-warning': appointment.status === 'Pending',
-                  'text-error': appointment.status === 'Cancelled',
-                }"
-              >
-                {{ appointment.status }}
-              </span>
-            </v-list-item-subtitle>
-          </v-list-item-content>
+          <!-- Appointment Date and Time -->
+          <v-list-item-title class="text-subtitle-1 font-weight-medium">
+            {{ appointment.date }} at {{ appointment.time }}
+          </v-list-item-title>
+          <!-- Doctor Name and Appointment Status -->
+          <v-list-item-subtitle class="text-body-2">
+            <strong>Doctor:</strong> {{ appointment.doctor }}<br />
+            <strong>Status:</strong>
+            <span
+              :class="{
+                'text-success': appointment.status === 'Confirmed',
+                'text-warning': appointment.status === 'Pending',
+                'text-error': appointment.status === 'Cancelled',
+              }"
+            >
+              {{ appointment.status }}
+            </span>
+          </v-list-item-subtitle>
         </v-list-item>
       </v-list>
     </v-card-text>

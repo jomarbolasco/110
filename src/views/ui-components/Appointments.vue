@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
-// import { useVuetify } from 'vuetify'
 
 // Reactive state
 const user = ref(null)
@@ -13,21 +12,24 @@ const selectedHospital = ref(null)
 const selectedDoctor = ref(null)
 const selectedDate = ref('')
 const selectedTime = ref('')
+const editAppointmentId = ref(null)
 const formStatus = ref('')
 const formMessage = ref('')
 
 // Fetch data on mount
 onMounted(async () => {
   try {
+    // Fetch hospitals
     const { data: hospitalData, error: hospitalError } = await supabase
       .from('Hospitals')
       .select('*')
     if (hospitalError) throw hospitalError
     hospitals.value = hospitalData
 
+    // Fetch user and their appointments
     const { data: userData, error: userError } = await supabase.auth.getUser()
-    user.value = userData?.user
 
+    user.value = userData?.user
     if (user.value) {
       await refreshAppointments()
     }
@@ -69,7 +71,7 @@ const fetchSchedules = async () => {
   }
 }
 
-// Book an appointment
+// Book or update an appointment
 const saveAppointment = async () => {
   try {
     if (
@@ -91,16 +93,39 @@ const saveAppointment = async () => {
       status: 'Pending',
     }
 
-    const response = await supabase.from('Appointments').insert(payload)
+    let response
+    if (editAppointmentId.value) {
+      response = await supabase
+        .from('Appointments')
+        .update(payload)
+        .eq('id', editAppointmentId.value)
+    } else {
+      response = await supabase.from('Appointments').insert(payload)
+    }
+
     if (response.error) throw response.error
 
     formStatus.value = 'success'
-    formMessage.value = 'Appointment booked successfully!'
+    formMessage.value = editAppointmentId.value
+      ? 'Appointment updated successfully!'
+      : 'Appointment booked successfully!'
+    editAppointmentId.value = null
     await refreshAppointments()
   } catch (error) {
     formStatus.value = 'error'
     formMessage.value = error.message
     console.error('Error saving appointment:', error.message)
+  }
+}
+
+// Delete an appointment
+const deleteAppointment = async (id) => {
+  try {
+    const { error } = await supabase.from('Appointments').delete().eq('id', id)
+    if (error) throw error
+    await refreshAppointments()
+  } catch (error) {
+    console.error('Error deleting appointment:', error.message)
   }
 }
 
@@ -110,14 +135,11 @@ const refreshAppointments = async () => {
     const { data: appointmentData, error: appointmentError } = await supabase
       .from('Appointments')
       .select(
-        `id,
-        appointment_date,
-        appointment_time,
-        status,
-        Doctors (id, name, specialty),
-        Hospitals (id, name)`,
+        'id, appointment_date, appointment_time, status, Doctors(name, specialty), Hospitals(name)',
       )
       .eq('user_id', user.value.id)
+
+    console.log(appointmentData) // Log to check the data structure
 
     if (appointmentError) throw appointmentError
     appointments.value = appointmentData
@@ -125,97 +147,211 @@ const refreshAppointments = async () => {
     console.error('Error fetching appointments:', error.message)
   }
 }
+
+// Populate form for editing
+const editAppointment = (appointment) => {
+  editAppointmentId.value = appointment.id
+  selectedHospital.value = appointment.Hospitals?.id || null
+  selectedDoctor.value = appointment.Doctors?.id || null
+  selectedDate.value = appointment.appointment_date
+  selectedTime.value = appointment.appointment_time
+}
 </script>
 
 <template>
-  <v-container>
-    <v-card elevation="2" class="pa-4">
-      <v-card-title>Book Appointment</v-card-title>
+  <div class="appointment-container">
+    <h2>Book or Edit Appointment</h2>
 
-      <v-alert v-if="formStatus === 'error'" type="error" dismissible>
-        {{ formMessage }}
-      </v-alert>
-      <v-alert v-if="formStatus === 'success'" type="success" dismissible>
-        {{ formMessage }}
-      </v-alert>
+    <!-- Form Messages -->
+    <div v-if="formStatus === 'error'" class="error-message">{{ formMessage }}</div>
+    <div v-if="formStatus === 'success'" class="success-message">{{ formMessage }}</div>
 
-      <v-form>
-        <v-select
-          label="Select Hospital"
-          v-model="selectedHospital"
-          :items="hospitals"
-          item-value="id"
-          item-text="name"
-          @change="fetchDoctors"
-          outlined
-        ></v-select>
+    <!-- Appointment Form -->
+    <div class="form-group">
+      <label for="hospital">Select Hospital:</label>
+      <select v-model="selectedHospital" @change="fetchDoctors">
+        <option value="" disabled>Select a hospital</option>
+        <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">
+          {{ hospital.name }}
+        </option>
+      </select>
+    </div>
 
-        <v-select
-          label="Select Doctor"
-          v-model="selectedDoctor"
-          :items="doctors"
-          item-value="id"
-          item-text="name"
-          :disabled="!selectedHospital"
-          @change="fetchSchedules"
-          outlined
-        ></v-select>
+    <div class="form-group">
+      <label for="doctor">Select Doctor:</label>
+      <select v-model="selectedDoctor" @change="fetchSchedules" :disabled="!selectedHospital">
+        <option value="" disabled>Select a doctor</option>
+        <option v-for="doctor in doctors" :key="doctor.id" :value="doctor.id">
+          {{ doctor.name }} - {{ doctor.specialty }}
+        </option>
+      </select>
+    </div>
 
-        <v-text-field
-          label="Select Date"
-          v-model="selectedDate"
-          type="date"
-          :disabled="!selectedDoctor"
-          outlined
-        ></v-text-field>
+    <div class="form-group">
+      <label for="appointment-date">Select Date:</label>
+      <input type="date" v-model="selectedDate" :disabled="!selectedDoctor" />
+    </div>
 
-        <v-select
-          label="Select Time"
-          v-model="selectedTime"
-          :items="
-            schedules.map((schedule) => ({
-              value: schedule.start_time,
-              text: `${schedule.start_time} - ${schedule.end_time}`,
-            }))
-          "
-          :disabled="!selectedDate"
-          outlined
-        ></v-select>
+    <div class="form-group">
+      <label for="appointment-time">Select Time:</label>
+      <select v-model="selectedTime" :disabled="!selectedDate">
+        <option value="" disabled>Select a time slot</option>
+        <option v-for="schedule in schedules" :key="schedule.id" :value="schedule.start_time">
+          {{ schedule.start_time }} - {{ schedule.end_time }}
+        </option>
+      </select>
+    </div>
 
-        <v-btn
-          :disabled="!selectedDate || !selectedTime || !selectedDoctor || !selectedHospital"
-          @click="saveAppointment"
-        >
-          Book Appointment
-        </v-btn>
-      </v-form>
+    <button
+      @click="saveAppointment"
+      :disabled="!selectedDate || !selectedTime || !selectedDoctor || !selectedHospital"
+    >
+      {{ editAppointmentId ? 'Update Appointment' : 'Book Appointment' }}
+    </button>
 
-      <v-divider class="my-4"></v-divider>
-
-      <v-card-title>Your Appointments</v-card-title>
-      <v-list v-if="appointments.length > 0">
-        <v-list-item v-for="appointment in appointments" :key="appointment.id">
-          <v-list-item>
-            <v-list-item-title>
-              {{ appointment.appointment_date }} at {{ appointment.appointment_time }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              {{ appointment.Doctors?.name || 'Unknown Doctor' }} ({{
-                appointment.Doctors?.specialty || 'No Specialty'
-              }}) in {{ appointment.Hospitals?.name || 'Unknown Hospital' }} (Status:
-              {{ appointment.status }})
-            </v-list-item-subtitle>
-          </v-list-item>
-        </v-list-item>
-      </v-list>
-      <v-alert v-else type="info">No appointments found.</v-alert>
-    </v-card>
-  </v-container>
+    <!-- Appointments List -->
+    <h3>Your Appointments</h3>
+    <ul v-if="appointments.length > 0">
+      <li v-for="appointment in appointments" :key="appointment.id">
+        {{ appointment.appointment_date }} with
+        {{ appointment.Hospitals?.name || 'Unknown Hospital' }}
+        (Status: {{ appointment.status }})
+        <button @click="editAppointment(appointment)">Edit</button>
+        <button @click="deleteAppointment(appointment.id)">Delete</button>
+      </li>
+    </ul>
+    <p v-else>No appointments found</p>
+  </div>
 </template>
 
 <style scoped>
-.v-card {
-  max-width: 600px;
-  margin: auto;
+/* Base styles */
+* {
+  font-family: 'Roboto', sans-serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f4511e;
+  color: #444;
+  font-size: 16px;
+}
+
+.appointment-container {
+  max-width: 750px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.appointment-container:hover {
+  transform: scale(1.02);
+}
+
+h2,
+h3 {
+  text-align: center;
+  color: #333;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5em;
+}
+
+label {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.5em;
+  color: #444;
+}
+
+select,
+input {
+  width: 100%;
+  padding: 0.75em;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: border 0.3s;
+  color: black;
+  background-color: #2ecc71;
+}
+
+select:focus,
+input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 1em;
+  font-size: 1.2rem;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #27ae60;
+}
+
+button:disabled {
+  background-color: #dfe6e9;
+}
+
+.message {
+  display: block;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+.error-message {
+  color: #fff;
+  background-color: #e74c3c;
+}
+
+.success-message {
+  color: #fff;
+  background-color: #2ecc71;
+}
+
+.appointments-list {
+  list-style: none;
+  padding: 0;
+  color: #fff;
+  background-color: #2ecc71;
+}
+
+.appointments-list li {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  font-size: 1rem;
+  color: #333;
+}
+
+.appointments-list li:last-child {
+  border-bottom: none;
 }
 </style>
