@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import VueFeather from 'vue-feather'
+import { useRouter } from 'vue-router' // Import router for navigation
 import { supabase } from '@/components/util/supabase' // Correct named import
 
-const items = ref([{ title: 'Manage Appointments' }, { title: 'Settings' }, { title: 'Help' }])
-
-const appointments = ref([])
+const appointments = ref([]) // State for appointments
+const router = useRouter() // Router instance
 
 // Fetch appointments using Supabase
 const fetchAppointments = async () => {
@@ -34,6 +33,16 @@ const fetchAppointments = async () => {
   }
 }
 
+// Handler for "View All" button
+const handleViewAll = () => {
+  router.push('/dashboard/ui-components/Appointments') // Navigate to an appointments page
+}
+
+// Handler for "Schedule New" button
+const handleScheduleNew = () => {
+  router.push('/schedule-appointment') // Navigate to a scheduling page
+}
+
 onMounted(fetchAppointments)
 </script>
 
@@ -51,7 +60,7 @@ onMounted(fetchAppointments)
             <v-icon color="primary" size="32">mdi-calendar</v-icon>
           </v-avatar>
 
-          <v-list-item>
+          <v-list-item-content>
             <!-- Appointment Date and Time -->
             <v-list-item-title class="text-subtitle-1 font-weight-medium">
               {{ appointment.date }} at {{ appointment.time }}
@@ -70,16 +79,16 @@ onMounted(fetchAppointments)
                 {{ appointment.status }}
               </span>
             </v-list-item-subtitle>
-          </v-list-item>
+          </v-list-item-content>
         </v-list-item>
       </v-list>
     </v-card-text>
 
-    <!-- Optional Action Buttons -->
+    <!-- Action Buttons -->
     <v-card-actions>
-      <v-btn variant="outlined" color="primary">View All</v-btn>
+      <v-btn variant="outlined" color="primary" @click="handleViewAll">View All</v-btn>
       <v-spacer></v-spacer>
-      <v-btn color="primary">Schedule New</v-btn>
+      <v-btn color="primary" @click="handleScheduleNew">Schedule New</v-btn>
     </v-card-actions>
   </v-card>
 </template>
