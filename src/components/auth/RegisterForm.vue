@@ -56,23 +56,35 @@ const onSubmit = async () => {
     if (error) throw error
 
     // Insert user data into the "Users" table
-    const { error: insertError } = await supabase.from('users').insert({
-      name: `${formData.value.firstname} ${formData.value.lastname}`,
-      email: formData.value.email,
-      password_hash: await hashPassword(formData.value.password),
-      role: formData.value.role, // Assign the role to the user
-    })
+    const { data: userData, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        name: `${formData.value.firstname} ${formData.value.lastname}`,
+        email: formData.value.email,
+        password_hash: await hashPassword(formData.value.password),
+        role: formData.value.role, // Assign the role to the user
+      })
+      .single()
 
     if (insertError) throw insertError
 
     // Insert patient data if the role is 'Patient'
-    if (formData.value.role === 'Patient') {
-      const { error: patientError } = await supabase.from('Patient').insert({
+    if (formData.value.role === 'patient') {
+      const { error: patientError } = await supabase.from('patient').insert({
         name: `${formData.value.firstname} ${formData.value.lastname}`,
         check_up_type: formData.value.check_up_type,
       })
 
       if (patientError) throw patientError
+    }
+
+    // Insert admin data if the role is 'Admin'
+    if (formData.value.role === 'admin') {
+      const { error: adminError } = await supabase.from('admin').insert({
+        name: `${formData.value.firstname} ${formData.value.lastname}`,
+      })
+
+      if (adminError) throw adminError
     }
 
     // Automatically log the user in
@@ -98,7 +110,7 @@ const onSubmit = async () => {
     userStore.setUser(profileData)
 
     // Redirect to dashboard or relevant page
-    if (formData.value.role === 'Admin') {
+    if (formData.value.role === 'admin') {
       router.push('/admin-dashboard')
     } else {
       router.push('/dashboard')
