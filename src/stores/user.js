@@ -19,7 +19,9 @@ export const useUserStore = defineStore('user', {
         console.warn('No active session found:', error?.message || 'User is not logged in.')
         this.user = null
       } else {
+        // Assign user details, including id
         this.user = {
+          id: session.session.user.id, // Add user id
           name: session.session.user.user_metadata?.name || '',
           email: session.session.user.email,
         }
