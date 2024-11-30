@@ -1,256 +1,304 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { supabase } from '@/components/util/supabase' // Adjust the path as per your file structure
+import { ref, onMounted } from 'vue'
+import { supabase } from '@/components/util/supabase'
 
-// Reactive state for form inputs
-const formData = reactive({
-  doctorId: '',
-  appointmentDate: '',
-  appointmentTime: '',
-  symptoms: '',
-  others: '',
-})
+const user = ref(null)
 
-// Reactive state for UI feedback and dropdowns
+// Reactive state for storing the appointments, doctor schedules, and form data
+const appointments = ref([])
 const doctors = ref([])
-const availableTimeSlots = ref([])
-const isLoading = ref(false)
-const message = ref('')
+const schedules = ref([])
+const selectedDoctor = ref(null)
+const selectedDate = ref('')
+const selectedTime = ref('')
+const formStatus = ref('')
+const formMessage = ref('')
 
-// Fetch list of doctors on component mount
-const fetchDoctors = async () => {
-  try {
-    const { data, error } = await supabase.from('doctors').select('id, name, specialty')
+// Fetch the available doctors and their schedules when the component is mounted
+onMounted(async () => {
+  const { data: doctorData, error: doctorError } = await supabase.from('Doctors').select('*')
 
-    if (error) throw error
-    doctors.value = data
-  } catch (err) {
-    console.error('Error fetching doctors:', err.message)
+  if (doctorError) {
+    console.error(doctorError.message)
+    return
   }
-}
+  doctors.value = doctorData
 
-// Fetch available slots when a doctor and date are selected
-const fetchAvailableSlots = async () => {
-  if (!formData.doctorId || !formData.appointmentDate) return
-
-  try {
-    const { data, error } = await supabase
-      .from('schedule')
-      .select('start_time, end_time, available_slots')
-      .eq('doctor_id', formData.doctorId)
-      .eq('date', formData.appointmentDate)
-
-    if (error) throw error
-
-    if (data.length) {
-      const slots = []
-      const start = data[0].start_time
-      const end = data[0].end_time
-      const available = data[0].available_slots
-
-      const startTime = new Date(`1970-01-01T${start}`)
-      const endTime = new Date(`1970-01-01T${end}`)
-      const interval = (endTime - startTime) / (available * 60000)
-
-      for (let i = 0; i < available; i++) {
-        const slot = new Date(startTime.getTime() + i * interval)
-        slots.push(slot.toISOString().substr(11, 5)) // Format as HH:mm
-      }
-
-      availableTimeSlots.value = slots
-    } else {
-      availableTimeSlots.value = []
-    }
-  } catch (err) {
-    console.error('Error fetching available slots:', err.message)
-  }
-}
-
-// Submit form data
-const submitAppointment = async () => {
-  if (!formData.doctorId || !formData.appointmentDate || !formData.appointmentTime) {
-    message.value = 'Please fill in all required fields.'
+  // Fetch the current user's appointments
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  if (userError) {
+    console.error('Error fetching user:', userError)
     return
   }
 
-  isLoading.value = true
+  if (user) {
+    const { data: appointmentData, error: appointmentError } = await supabase
+      .from('Appointments')
+      .select('*')
+      .eq('user_id', user.id)
 
-  try {
-    const userId = (await supabase.auth.getUser()).data?.id
-
-    if (!userId) {
-      message.value = 'User is not authenticated. Please log in.'
+    if (appointmentError) {
+      console.error(appointmentError.message)
       return
     }
-
-    const { data, error } = await supabase.from('appointments').insert({
-      user_id: userId,
-      doctor_id: formData.doctorId,
-      appointment_date: formData.appointmentDate,
-      appointment_time: formData.appointmentTime,
-      status: 'Pending',
-    })
-
-    if (error) throw error
-
-    await supabase.from('Symptoms').insert({
-      appointment_id: data[0].id,
-      symptoms_list: formData.symptoms,
-      others: formData.others,
-    })
-
-    message.value = 'Appointment created successfully!'
-  } catch (err) {
-    console.error('Error submitting appointment:', err.message)
-    message.value = 'Error creating appointment. Please try again.'
-  } finally {
-    isLoading.value = false
+    appointments.value = appointmentData
   }
-}
-
-// Fetch data on mount
-onMounted(() => {
-  fetchDoctors()
 })
 
-console.log('Available Time Slots:', availableTimeSlots.value)
+// Fetch schedules for the selected doctor
+const fetchSchedules = async () => {
+  if (!selectedDoctor.value) return
+  const { data: scheduleData, error: scheduleError } = await supabase
+    .from('schedule')
+    .select('*')
+    .eq('doctor_id', selectedDoctor.value)
+    .gt('available_slots', 0) // Ensure there are available slots
+
+  if (scheduleError) {
+    console.error(scheduleError.message)
+    return
+  }
+  schedules.value = scheduleData
+}
+
+// Book an appointment for the selected doctor, date, and time
+const bookAppointment = async () => {
+  if (!selectedDate.value || !selectedTime.value || !selectedDoctor.value) {
+    formStatus.value = 'error'
+    formMessage.value = 'Please fill in all fields.'
+    return
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  if (userError || !user) {
+    formStatus.value = 'error'
+    formMessage.value = 'Please log in to book an appointment.'
+    return
+  }
+
+  // Check if the user has an existing appointment at the selected time
+  const existingAppointment = appointments.value.find(
+    (appointment) =>
+      appointment.doctor_id === selectedDoctor.value &&
+      appointment.appointment_date === selectedDate.value &&
+      appointment.status === 'Confirmed',
+  )
+
+  if (existingAppointment) {
+    formStatus.value = 'error'
+    formMessage.value = 'You already have an appointment with this doctor at this time.'
+    return
+  }
+
+  // Insert a new appointment
+  const { error: appointmentError } = await supabase.from('Appointments').insert([
+    {
+      user_id: user.id,
+      doctor_id: selectedDoctor.value,
+      appointment_date: selectedDate.value,
+      status: 'Pending', // Default status
+    },
+  ])
+
+  if (appointmentError) {
+    formStatus.value = 'error'
+    formMessage.value = appointmentError.message
+    return
+  }
+
+  formStatus.value = 'success'
+  formMessage.value = 'Appointment booked successfully!'
+}
 </script>
 
 <template>
-  <div class="appointment-container">
-    <h1>Book an Appointment</h1>
+  <div class="appointment-container bg-green-darken-2">
+    <h2 class="text-black">Book an Appointment</h2>
 
-    <form @submit.prevent="submitAppointment" class="appointment-form">
-      <!-- Doctor Selection -->
-      <div class="form-group">
-        <label for="doctor">Select Doctor:</label>
-        <select v-model="formData.doctorId" @change="fetchAvailableSlots">
-          <option value="" disabled>Select a doctor</option>
-          <option v-for="doctor in doctors" :key="doctor.id" :value="doctor.id">
-            {{ doctor.name }} - {{ doctor.specialty }}
-          </option>
-        </select>
-      </div>
+    <div v-if="formStatus === 'error'" class="message error-message">
+      {{ formMessage }}
+    </div>
+    <div v-if="formStatus === 'success'" class="message success-message">
+      {{ formMessage }}
+    </div>
 
-      <!-- Date Selection -->
-      <div class="form-group">
-        <label for="date">Appointment Date:</label>
-        <input type="date" v-model="formData.appointmentDate" @change="fetchAvailableSlots" />
-      </div>
+    <div class="form-group">
+      <label for="doctor">Select Doctor:</label>
+      <select v-model="selectedDoctor" @change="fetchSchedules">
+        <option value="" disabled>Select a doctor</option>
+        <option v-for="doctor in doctors" :key="doctor.id" :value="doctor.id">
+          {{ doctor.name }} - {{ doctor.specialty }}
+        </option>
+      </select>
+    </div>
 
-      <!-- Time Slot Selection -->
-      <div class="form-group">
-        <label for="time">Available Time Slots:</label>
-        <select v-model="formData.appointmentTime" :disabled="!availableTimeSlots.length">
-          <option value="" disabled>Select a time slot</option>
-          <option v-for="time in availableTimeSlots" :key="time" :value="time">
-            {{ time }}
-          </option>
-        </select>
-      </div>
+    <div v-if="schedules.length > 0" class="form-group">
+      <label for="appointment-date">Select Appointment Date:</label>
+      <input type="date" v-model="selectedDate" />
+    </div>
 
-      <!-- Symptoms -->
-      <div class="form-group">
-        <label for="symptoms">Symptoms:</label>
-        <textarea
-          v-model="formData.symptoms"
-          placeholder="Describe your symptoms"
-          rows="4"
-        ></textarea>
-      </div>
+    <div v-if="schedules.length > 0 && selectedDate" class="form-group">
+      <label for="appointment-time">Select Time:</label>
+      <select v-model="selectedTime">
+        <option value="" disabled>Select a time slot</option>
+        <option v-for="schedule in schedules" :key="schedule.id" :value="schedule.start_time">
+          {{ schedule.start_time }} - {{ schedule.end_time }}
+        </option>
+      </select>
+    </div>
 
-      <!-- Other Notes -->
-      <div class="form-group">
-        <label for="others">Other Notes:</label>
-        <textarea
-          v-model="formData.others"
-          placeholder="Additional notes (optional)"
-          rows="3"
-        ></textarea>
-      </div>
+    <button
+      class="text-black bg-blue"
+      @click="bookAppointment"
+      :disabled="!selectedDate || !selectedTime || !selectedDoctor"
+    >
+      Book Appointment
+    </button>
 
-      <!-- Submit Button -->
-      <div class="form-group">
-        <button type="submit" :disabled="isLoading" class="btn-submit">
-          {{ isLoading ? 'Submitting...' : 'Book Appointment' }}
-        </button>
-      </div>
-    </form>
-
-    <!-- Feedback Message -->
-    <p v-if="message" class="feedback-message">{{ message }}</p>
+    <h3>Your Current Appointments</h3>
+    <ul class="appointments-list">
+      <li v-for="appointment in appointments" :key="appointment.id">
+        {{ appointment.appointment_date }} with Dr. {{ appointment.doctor_id }} (Status:
+        {{ appointment.status }})
+      </li>
+    </ul>
   </div>
 </template>
 
 <style scoped>
-.appointment-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  background: #2e2b2b;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* Base styles */
+* {
+  font-family: 'Roboto', sans-serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-h1 {
+body {
+  background-color: #f4511e;
+  color: #444;
+  font-size: 16px;
+}
+
+.appointment-container {
+  max-width: 750px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.appointment-container:hover {
+  transform: scale(1.02);
+}
+
+h2,
+h3 {
   text-align: center;
   color: #333;
-  margin-bottom: 20px;
 }
 
-.appointment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  margin-top: 2rem;
+  font-size: 1.5rem;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 1.5em;
 }
 
 label {
-  font-weight: bold;
-  margin-bottom: 5px;
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.5em;
+  color: #444;
 }
 
 select,
-input[type='date'],
-textarea {
-  padding: 8px;
+input {
+  width: 100%;
+  padding: 0.75em;
+  font-size: 1rem;
   border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 8px;
+  transition: border 0.3s;
+  color: black;
+  background-color: #2ecc71;
 }
 
-textarea {
-  resize: none;
+select:focus,
+input:focus {
+  border-color: #3498db;
+  outline: none;
 }
 
-select:disabled {
-  background: #f2f2f2;
-}
-
-.btn-submit {
-  background-color: #007bff;
+button {
+  width: 100%;
+  padding: 1em;
+  font-size: 1.2rem;
+  background-color: #2ecc71;
   color: white;
-  padding: 10px 15px;
   border: none;
-  border-radius: 4px;
-  font-size: 16px;
+  border-radius: 10px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.btn-submit:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+button:hover {
+  background-color: #27ae60;
 }
 
-.feedback-message {
-  margin-top: 15px;
+button:disabled {
+  background-color: #dfe6e9;
+}
+
+.message {
+  display: block;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
   text-align: center;
-  font-size: 14px;
-  color: green;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+.error-message {
+  color: #fff;
+  background-color: #e74c3c;
+}
+
+.success-message {
+  color: #fff;
+  background-color: #2ecc71;
+}
+
+.appointments-list {
+  list-style: none;
+  padding: 0;
+  color: #fff;
+  background-color: #2ecc71;
+}
+
+.appointments-list li {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  font-size: 1rem;
+  color: #333;
+}
+
+.appointments-list li:last-child {
+  border-bottom: none;
 }
 </style>
