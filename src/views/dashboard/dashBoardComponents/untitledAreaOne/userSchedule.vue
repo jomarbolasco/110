@@ -1,19 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router' // Import router for navigation
-import { supabase } from '@/components/util/supabase' // Correct named import
+import { useRouter } from 'vue-router'
+import { supabase } from '@/components/util/supabase'
 
-const appointments = ref<Array<{ date: string; time: string; doctor: string; status: string }>>([]) // Type declaration for appointments
+const appointments = ref<
+  Array<{
+    date: string
+    doctorName: string
+    status: string
+  }>
+>([]) // Define type explicitly
 const router = useRouter() // Router instance
 
 // Fetch appointments using Supabase
 const fetchAppointments = async () => {
   try {
     const { data, error } = await supabase.from('appointments').select(`
-        appointment_time,
         appointment_date,
         status,
-        doctor: doctors(name)
+        doctors (name)
       `)
 
     if (error) {
@@ -21,11 +26,12 @@ const fetchAppointments = async () => {
       return
     }
 
+    console.log('Fetched data:', data) // Debug log for data structure
+
     // Map the fetched data into the required format
     appointments.value = data.map((appointment: any) => ({
-      time: appointment.appointment_time,
       date: appointment.appointment_date,
-      doctor: appointment.doctor.name, // Fix for doctor name
+      doctorName: appointment.doctors?.name || 'Unknown', // Safely access doctor name
       status: appointment.status,
     }))
   } catch (error) {
@@ -35,12 +41,12 @@ const fetchAppointments = async () => {
 
 // Handler for "View All" button
 const handleViewAll = () => {
-  router.push('/dashboard/ui-components/Appointments') // Navigate to an appointments page
+  router.push('/dashboard/ui-components/Appointments')
 }
 
 // Handler for "Schedule New" button
 const handleScheduleNew = () => {
-  router.push('/schedule-appointment') // Navigate to a scheduling page
+  router.push('/schedule-appointment')
 }
 
 onMounted(fetchAppointments) // Run fetchAppointments when the component is mounted
@@ -62,11 +68,12 @@ onMounted(fetchAppointments) // Run fetchAppointments when the component is moun
 
           <!-- Appointment Date and Time -->
           <v-list-item-title class="text-subtitle-1 font-weight-medium">
-            {{ appointment.date }} at {{ appointment.time }}
+            {{ appointment.date }}
           </v-list-item-title>
+
           <!-- Doctor Name and Appointment Status -->
           <v-list-item-subtitle class="text-body-2">
-            <strong>Doctor:</strong> {{ appointment.doctor }}<br />
+            <strong>Doctor:</strong> {{ appointment.doctorName }}<br />
             <strong>Status:</strong>
             <span
               :class="{
