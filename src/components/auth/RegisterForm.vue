@@ -1,120 +1,76 @@
 <script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { supabase } from '@/components/util/supabase'
+import { useUserStore } from '@/stores/user'
 import {
   requiredValidator,
   emailValidator,
   passwordValidator,
   confirmedValidator,
 } from '@/components/util/validators'
-import { ref } from 'vue'
-import { supabase, formActionDefault } from '@/components/util/supabase.js'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 
-// Initialize the router and user store
+// Router and user store
 const router = useRouter()
 const userStore = useUserStore()
 
-const formDataDefault = {
-  firstname: '',
-  lastname: '',
+// Form state
+const formData = ref({
   email: '',
   password: '',
   password_confirmation: '',
-  role: 'Patient', // default role
-  check_up_type: '', // Patient-specific field
-}
-
-const formData = ref({
-  ...formDataDefault,
+  profile_picture: '',
 })
 
 const formAction = ref({
-  ...formActionDefault,
+  formProcess: false,
+  formErrorMessage: '',
 })
 
+// Form reference for validation
 const refVForm = ref()
-
 const visible = ref(false)
 
+// Hash password securely
+const hashPassword = async (password) => {
+  return btoa(password) // Replace with a secure hash function in production
+}
+
+// Handle form submission
 const onSubmit = async () => {
   formAction.value.formProcess = true
-
   try {
-    // Register the user in Supabase Auth
+    // Step 1: Register the user in Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email: formData.value.email,
       password: formData.value.password,
-      options: {
-        data: {
-          firstname: formData.value.firstname,
-          lastname: formData.value.lastname,
-          role: formData.value.role, // role can be Patient or Admin
-        },
-      },
     })
 
     if (error) throw error
 
-    // Insert user data into the "Users" table
+    // Step 2: Insert user data into the `users` table
     const { data: userData, error: insertError } = await supabase
       .from('users')
       .insert({
-        name: `${formData.value.firstname} ${formData.value.lastname}`,
         email: formData.value.email,
         password_hash: await hashPassword(formData.value.password),
-        role: formData.value.role, // Assign the role to the user
+        profile_picture: formData.value.profile_picture || null,
       })
       .single()
 
     if (insertError) throw insertError
 
-    // Insert patient data if the role is 'Patient'
-    if (formData.value.role === 'patient') {
-      const { error: patientError } = await supabase.from('patient').insert({
-        name: `${formData.value.firstname} ${formData.value.lastname}`,
-        check_up_type: formData.value.check_up_type,
-      })
-
-      if (patientError) throw patientError
-    }
-
-    // Insert admin data if the role is 'Admin'
-    if (formData.value.role === 'admin') {
-      const { error: adminError } = await supabase.from('admin').insert({
-        name: `${formData.value.firstname} ${formData.value.lastname}`,
-      })
-
-      if (adminError) throw adminError
-    }
-
-    // Automatically log the user in
+    // Step 3: Automatically log the user in
     const { data: session } = await supabase.auth.getSession()
     if (session?.session?.user) {
       userStore.setUser({
-        name: session.session.user.user_metadata?.name || '',
-        email: session.session.user.email || '',
-        role: formData.value.role,
+        id: session.session.user.id,
+        email: session.session.user.email,
       })
     }
 
-    // Fetch user profile from the "Users" table
-    const { data: profileData, error: profileError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', formData.value.email)
-      .single()
-
-    if (profileError) throw profileError
-
-    // Save user profile in the store
-    userStore.setUser(profileData)
-
-    // Redirect to dashboard or relevant page
-    if (formData.value.role === 'admin') {
-      router.push('/admin-dashboard')
-    } else {
-      router.push('/dashboard')
-    }
+    // Step 4: Redirect to the dashboard
+    router.push('/dashboard')
   } catch (error) {
     console.error('Error during registration:', error.message)
     formAction.value.formErrorMessage = error.message
@@ -123,11 +79,7 @@ const onSubmit = async () => {
   }
 }
 
-// Hash password using a function (use a library for hashing, e.g., bcrypt.js or a secure API call)
-const hashPassword = async (password) => {
-  return btoa(password) // Replace with a real hash function for production
-}
-
+// Validate and submit the form
 const onFormSubmit = () => {
   refVForm.value.validate().then(({ valid }) => {
     if (valid) onSubmit()
@@ -135,37 +87,9 @@ const onFormSubmit = () => {
 }
 </script>
 
-<script>
-export default {
-  data: () => ({
-    visible: false,
-  }),
-}
-</script>
-
 <template>
   <v-form ref="refVForm" @submit.prevent="onFormSubmit">
     <v-row>
-      <v-col cols="12" md="6">
-        <v-text-field
-          v-model="formData.firstname"
-          :rules="[requiredValidator]"
-          label="First name"
-          density="compact"
-          variant="outlined"
-        />
-      </v-col>
-
-      <v-col cols="12" md="6">
-        <v-text-field
-          v-model="formData.lastname"
-          :rules="[requiredValidator]"
-          label="Last name"
-          density="compact"
-          variant="outlined"
-        />
-      </v-col>
-
       <v-col cols="12">
         <v-text-field
           v-model="formData.email"
@@ -206,21 +130,9 @@ export default {
       </v-col>
 
       <v-col cols="12">
-        <v-select
-          v-model="formData.role"
-          :items="['Patient', 'Admin']"
-          label="Role"
-          density="compact"
-          variant="outlined"
-        />
-      </v-col>
-
-      <!-- Additional field for patient checkup type -->
-      <v-col cols="12" v-if="formData.role === 'Patient'">
         <v-text-field
-          v-model="formData.check_up_type"
-          :rules="[requiredValidator]"
-          label="Check-Up Type"
+          v-model="formData.profile_picture"
+          label="Profile Picture (Optional)"
           density="compact"
           variant="outlined"
         />
@@ -239,5 +151,14 @@ export default {
         Register
       </v-btn>
     </v-row>
+    <p v-if="formAction.formErrorMessage" class="error-message">
+      {{ formAction.formErrorMessage }}
+    </p>
   </v-form>
 </template>
+
+<style>
+.error-message {
+  color: red;
+}
+</style>

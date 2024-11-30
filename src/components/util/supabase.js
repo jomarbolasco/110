@@ -1,37 +1,42 @@
-import { createClient } from '@supabase/supabase-js' // Use this for Supabase SDK
+import { createClient } from '@supabase/supabase-js'
 
-// Create a single Supabase client for interacting with your database
+export const formActionDefault = {
+  formProcess: false,
+  formErrorMessage: '',
+}
+
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
 )
 
-// Form action utils
-export const formActionDefault = {
-  formProcess: false,
-  formStatus: 200,
-  formErrorMessage: '',
-  formSuccessMessage: '',
-}
-
-// Save a new symptom query and AI response
-export async function saveSymptomQuery(userId, query, response) {
-  const { data, error } = await supabase
-    .from('AI.symptom_queries')
+export const saveSymptomQuery = async (userId, query, response) => {
+  const { error } = await supabase
+    .from('symptom_queries')
     .insert([{ user_id: userId, query, response }])
 
-  if (error) throw new Error(`Error saving query: ${error.message}`)
+  if (error) throw new Error(error.message)
+}
+
+export const fetchDoctors = async () => {
+  const { data, error } = await supabase.from('doctors').select('*')
+  if (error) throw new Error(error.message)
   return data
 }
 
-// Fetch past symptom queries for a user
-export async function fetchSymptomQueries(userId) {
-  const { data, error } = await supabase
-    .from('AI.symptom_queries')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-
-  if (error) throw new Error(`Error fetching queries: ${error.message}`)
+export const fetchSchedules = async (doctorId) => {
+  const { data, error } = await supabase.from('schedule').select('*').eq('doctor_id', doctorId)
+  if (error) throw new Error(error.message)
   return data
+}
+
+export const bookAppointment = async (userId, doctorId, appointmentDate) => {
+  const { error } = await supabase.from('appointments').insert([
+    {
+      user_id: userId,
+      doctor_id: doctorId,
+      appointment_date: appointmentDate,
+    },
+  ])
+  if (error) throw new Error(error.message)
 }
