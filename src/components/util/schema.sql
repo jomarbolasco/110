@@ -1,85 +1,98 @@
+-- Enable the `pgcrypto` extension for UUID generation
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Table: Users
+CREATE TABLE Users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-Table "Users" {
-  "id" SERIAL [pk, increment]
-  "name" VARCHAR(100) [not null]
-  "email" VARCHAR(150) [unique, not null]
-  "password_hash" TEXT [not null]
-  "created_at" TIMESTAMP [default: `CURRENT_TIMESTAMP`]
-  "role" VARCHAR(50) [default: 'Patient']
-}
+-- Table: Patient
+CREATE TABLE Patient (
+    p_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    check_up_type TEXT NOT NULL
+);
 
-Table "Patient" {
-  "p_id" SERIAL [pk, increment]
-  "name" VARCHAR(100) [not null]
-  "check_up_type" TEXT [not null]
-}
+-- Table: Admin
+CREATE TABLE Admin (
+    a_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL
+);
 
-Table "Admin" {
-  "a_id" SERIAL [pk, increment]
-  "name" VARCHAR(100) [not null]
-}
+-- Table: Hospitals
+CREATE TABLE Hospitals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(150) NOT NULL,
+    address TEXT NOT NULL,
+    contact_number VARCHAR(15)
+);
 
-Table "Hospitals" {
-  "id" SERIAL [pk, increment]
-  "name" VARCHAR(150) [not null]
-  "address" TEXT [not null]
-  "contact_number" VARCHAR(15)
-}
+-- Table: Doctors
+CREATE TABLE Doctors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    specialty VARCHAR(100),
+    hospital_id UUID NOT NULL,
+    contact_number VARCHAR(15),
+    CONSTRAINT fk_hospital_doctor FOREIGN KEY (hospital_id)
+        REFERENCES Hospitals (id) ON DELETE CASCADE
+);
 
-Table "Doctors" {
-  "id" UUID [pk, default: `gen_random_uuid()`]
-  "name" VARCHAR(100) [not null]
-  "specialty" VARCHAR(100)
-  "hospital_id" INT [not null]
-  "contact_number" VARCHAR(15)
-}
+-- Table: Availability
+CREATE TABLE Availability (
+    d_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    status TEXT NOT NULL,
+    slots INT NOT NULL,
+    CONSTRAINT fk_doctor_availability FOREIGN KEY (d_id)
+        REFERENCES Doctors (id) ON DELETE CASCADE
+);
 
-Table "Availability" {
-  "id" SERIAL [pk, increment]
-  "status" TEXT [not null]
-  "slots" INT [not null]
-  "doctor_id" UUID [not null]
-}
+-- Table: Schedule
+CREATE TABLE Schedule (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    doctor_id UUID NOT NULL,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    available_slots INT NOT NULL,
+    CONSTRAINT fk_schedule_doctor FOREIGN KEY (doctor_id)
+        REFERENCES Doctors (id) ON DELETE CASCADE
+);
 
-Table "Schedule" {
-  "id" SERIAL [pk, increment]
-  "doctor_id" UUID [not null]
-  "date" DATE [not null]
-  "start_time" TIME [not null]
-  "end_time" TIME [not null]
-  "available_slots" INT [not null]
-}
+-- Table: Appointments
+CREATE TABLE Appointments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    doctor_id UUID NOT NULL,
+    appointment_date DATE NOT NULL,
+    status VARCHAR(50) DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_appointments FOREIGN KEY (user_id)
+        REFERENCES Patient (p_id) ON DELETE CASCADE,
+    CONSTRAINT fk_doctor_appointments FOREIGN KEY (doctor_id)
+        REFERENCES Doctors (id) ON DELETE CASCADE
+);
 
-Table "Appointments" {
-  "id" SERIAL [pk, increment]
-  "user_id" INT [not null]
-  "doctor_id" UUID [not null]
-  "appointment_date" DATE [not null]
-  "status" VARCHAR(50) [default: 'Pending']
-  "created_at" TIMESTAMP [default: `CURRENT_TIMESTAMP`]
-}
+-- Table: Symptoms
+CREATE TABLE Symptoms (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    appointment_id UUID NOT NULL,
+    symptoms_list TEXT NOT NULL,
+    others TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_appointment_symptoms FOREIGN KEY (appointment_id)
+        REFERENCES Appointments (id) ON DELETE CASCADE
+);
 
-Table "Symptoms" {
-  "id" SERIAL [pk, increment]
-  "appointment_id" INT [not null]
-  "symptoms_list" TEXT [not null]
-  "others" TEXT
-  "created_at" TIMESTAMP [default: `CURRENT_TIMESTAMP`]
-}
+-- Relationships
+ALTER TABLE Patient
+ADD CONSTRAINT fk_user FOREIGN KEY (p_id)
+REFERENCES Users (id) ON DELETE CASCADE;
 
-Ref:"Hospitals"."id" < "Doctors"."hospital_id" [delete: cascade]
-
-Ref:"Doctors"."id" < "Availability"."doctor_id" [delete: cascade]
-
-Ref:"Doctors"."id" < "Schedule"."doctor_id" [delete: cascade]
-
-Ref:"Patient"."p_id" < "Appointments"."user_id" [delete: cascade]
-
-Ref:"Doctors"."id" < "Appointments"."doctor_id" [delete: cascade]
-
-Ref:"Appointments"."id" < "Symptoms"."appointment_id" [delete: cascade]
-
-ALTER TABLE Appointments
-ADD COLUMN appointment_time TIME NOT NULL;
-
+ALTER TABLE Admin
+ADD CONSTRAINT fk_user FOREIGN KEY (a_id)
+REFERENCES Users (id) ON DELETE CASCADE;

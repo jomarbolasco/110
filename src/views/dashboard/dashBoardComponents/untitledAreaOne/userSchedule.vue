@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import VueFeather from 'vue-feather'
-import { supabase } from '@/components/util/supabase' // Correct named import
+import { useRouter } from 'vue-router'
+import { supabase } from '@/components/util/supabase'
 
-const items = ref([{ title: 'Manage Appointments' }, { title: 'Settings' }, { title: 'Help' }])
-
-const appointments = ref([])
+const appointments = ref<
+  Array<{
+    date: string
+    doctorName: string
+    status: string
+  }>
+>([]) // Define type explicitly
+const router = useRouter() // Router instance
 
 // Fetch appointments using Supabase
 const fetchAppointments = async () => {
   try {
-    const { data, error } = await supabase.from('Appointments').select(`
-        appointment_time,
+    const { data, error } = await supabase.from('appointments').select(`
         appointment_date,
         status,
-        doctor: Doctors(name)
+        doctors (name)
       `)
 
     if (error) {
@@ -22,11 +26,12 @@ const fetchAppointments = async () => {
       return
     }
 
+    console.log('Fetched data:', data) // Debug log for data structure
+
     // Map the fetched data into the required format
     appointments.value = data.map((appointment: any) => ({
-      time: appointment.appointment_time,
       date: appointment.appointment_date,
-      doctor: appointment.doctor.name,
+      doctorName: appointment.doctors?.name || 'Unknown', // Safely access doctor name
       status: appointment.status,
     }))
   } catch (error) {
@@ -34,13 +39,23 @@ const fetchAppointments = async () => {
   }
 }
 
-onMounted(fetchAppointments)
+// Handler for "View All" button
+const handleViewAll = () => {
+  router.push('/dashboard/ui-components/Appointments')
+}
+
+// Handler for "Schedule New" button
+const handleScheduleNew = () => {
+  router.push('/schedule-appointment')
+}
+
+onMounted(fetchAppointments) // Run fetchAppointments when the component is mounted
 </script>
 
 <template>
   <v-card class="w-100 h-100">
     <!-- Card Title -->
-    <v-card-title class="text-h6 font-weight-bold"> Your Appointments </v-card-title>
+    <v-card-title class="text-h6 font-weight-bold">Your Appointments</v-card-title>
 
     <!-- Appointments List -->
     <v-card-text>
@@ -51,35 +66,34 @@ onMounted(fetchAppointments)
             <v-icon color="primary" size="32">mdi-calendar</v-icon>
           </v-avatar>
 
-          <v-list-item>
-            <!-- Appointment Date and Time -->
-            <v-list-item-title class="text-subtitle-1 font-weight-medium">
-              {{ appointment.date }} at {{ appointment.time }}
-            </v-list-item-title>
-            <!-- Doctor Name and Appointment Status -->
-            <v-list-item-subtitle class="text-body-2">
-              <strong>Doctor:</strong> {{ appointment.doctor }}<br />
-              <strong>Status:</strong>
-              <span
-                :class="{
-                  'text-success': appointment.status === 'Confirmed',
-                  'text-warning': appointment.status === 'Pending',
-                  'text-error': appointment.status === 'Cancelled',
-                }"
-              >
-                {{ appointment.status }}
-              </span>
-            </v-list-item-subtitle>
-          </v-list-item>
+          <!-- Appointment Date and Time -->
+          <v-list-item-title class="text-subtitle-1 font-weight-medium">
+            {{ appointment.date }}
+          </v-list-item-title>
+
+          <!-- Doctor Name and Appointment Status -->
+          <v-list-item-subtitle class="text-body-2">
+            <strong>Doctor:</strong> {{ appointment.doctorName }}<br />
+            <strong>Status:</strong>
+            <span
+              :class="{
+                'text-success': appointment.status === 'Confirmed',
+                'text-warning': appointment.status === 'Pending',
+                'text-error': appointment.status === 'Cancelled',
+              }"
+            >
+              {{ appointment.status }}
+            </span>
+          </v-list-item-subtitle>
         </v-list-item>
       </v-list>
     </v-card-text>
 
-    <!-- Optional Action Buttons -->
+    <!-- Action Buttons -->
     <v-card-actions>
-      <v-btn variant="outlined" color="primary">View All</v-btn>
+      <v-btn variant="outlined" color="primary" @click="handleViewAll">View All</v-btn>
       <v-spacer></v-spacer>
-      <v-btn color="primary">Schedule New</v-btn>
+      <v-btn color="primary" @click="handleScheduleNew">Schedule New</v-btn>
     </v-card-actions>
   </v-card>
 </template>

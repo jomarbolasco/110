@@ -2,188 +2,135 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 
-// Reactive state
 const user = ref(null)
+
+// Reactive state for storing the appointments, doctor schedules, and form data
 const appointments = ref([])
-const hospitals = ref([])
 const doctors = ref([])
 const schedules = ref([])
-const selectedHospital = ref(null)
 const selectedDoctor = ref(null)
 const selectedDate = ref('')
 const selectedTime = ref('')
-const editAppointmentId = ref(null)
 const formStatus = ref('')
 const formMessage = ref('')
 
-// Fetch data on mount
+// Fetch the available doctors and their schedules when the component is mounted
 onMounted(async () => {
-  try {
-    // Fetch hospitals
-    const { data: hospitalData, error: hospitalError } = await supabase
-      .from('Hospitals')
+  const { data: doctorData, error: doctorError } = await supabase.from('Doctors').select('*')
+
+  if (doctorError) {
+    console.error(doctorError.message)
+    return
+  }
+  doctors.value = doctorData
+
+  // Fetch the current user's appointments
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  if (userError) {
+    console.error('Error fetching user:', userError)
+    return
+  }
+
+  if (user) {
+    const { data: appointmentData, error: appointmentError } = await supabase
+      .from('Appointments')
       .select('*')
-    if (hospitalError) throw hospitalError
-    hospitals.value = hospitalData
+      .eq('user_id', user.id)
 
-    // Fetch user and their appointments
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    user.value = userData?.user
-    if (user.value) {
-      await refreshAppointments()
+    if (appointmentError) {
+      console.error(appointmentError.message)
+      return
     }
-  } catch (error) {
-    console.error('Error initializing data:', error.message)
+    appointments.value = appointmentData
   }
 })
 
-// Fetch doctors for the selected hospital
-const fetchDoctors = async () => {
-  try {
-    if (!selectedHospital.value) return
-    const { data: doctorData, error: doctorError } = await supabase
-      .from('Doctors')
-      .select('*')
-      .eq('id', selectedHospital.value)
-
-    if (doctorError) throw doctorError
-    doctors.value = doctorData
-  } catch (error) {
-    console.error('Error fetching doctors:', error.message)
-  }
-}
-
 // Fetch schedules for the selected doctor
 const fetchSchedules = async () => {
-  try {
-    if (!selectedDoctor.value) return
-    const { data: scheduleData, error: scheduleError } = await supabase
-      .from('Schedule')
-      .select('*')
-      .eq('id', selectedDoctor.value)
-      .gt('available_slots', 0)
+  if (!selectedDoctor.value) return
+  const { data: scheduleData, error: scheduleError } = await supabase
+    .from('schedule')
+    .select('*')
+    .eq('doctor_id', selectedDoctor.value)
+    .gt('available_slots', 0) // Ensure there are available slots
 
-    if (scheduleError) throw scheduleError
-    schedules.value = scheduleData
-  } catch (error) {
-    console.error('Error fetching schedules:', error.message)
+  if (scheduleError) {
+    console.error(scheduleError.message)
+    return
   }
+  schedules.value = scheduleData
 }
 
-// Book or update an appointment
-const saveAppointment = async () => {
-  try {
-    if (
-      !selectedDate.value ||
-      !selectedTime.value ||
-      !selectedDoctor.value ||
-      !selectedHospital.value
-    ) {
-      formStatus.value = 'error'
-      formMessage.value = 'Please fill in all fields.'
-      return
-    }
+// Book an appointment for the selected doctor, date, and time
+const bookAppointment = async () => {
+  if (!selectedDate.value || !selectedTime.value || !selectedDoctor.value) {
+    formStatus.value = 'error'
+    formMessage.value = 'Please fill in all fields.'
+    return
+  }
 
-    const payload = {
-      user_id: user.value.id,
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  if (userError || !user) {
+    formStatus.value = 'error'
+    formMessage.value = 'Please log in to book an appointment.'
+    return
+  }
+
+  // Check if the user has an existing appointment at the selected time
+  const existingAppointment = appointments.value.find(
+    (appointment) =>
+      appointment.doctor_id === selectedDoctor.value &&
+      appointment.appointment_date === selectedDate.value &&
+      appointment.status === 'Confirmed',
+  )
+
+  if (existingAppointment) {
+    formStatus.value = 'error'
+    formMessage.value = 'You already have an appointment with this doctor at this time.'
+    return
+  }
+
+  // Insert a new appointment
+  const { error: appointmentError } = await supabase.from('Appointments').insert([
+    {
+      user_id: user.id,
       doctor_id: selectedDoctor.value,
       appointment_date: selectedDate.value,
-      appointment_time: selectedTime.value,
-      status: 'Pending',
-    }
+      status: 'Pending', // Default status
+    },
+  ])
 
-    let response
-    if (editAppointmentId.value) {
-      response = await supabase
-        .from('Appointments')
-        .update(payload)
-        .eq('id', editAppointmentId.value)
-    } else {
-      response = await supabase.from('Appointments').insert(payload)
-    }
-
-    if (response.error) throw response.error
-
-    formStatus.value = 'success'
-    formMessage.value = editAppointmentId.value
-      ? 'Appointment updated successfully!'
-      : 'Appointment booked successfully!'
-    editAppointmentId.value = null
-    await refreshAppointments()
-  } catch (error) {
+  if (appointmentError) {
     formStatus.value = 'error'
-    formMessage.value = error.message
-    console.error('Error saving appointment:', error.message)
+    formMessage.value = appointmentError.message
+    return
   }
-}
 
-// Delete an appointment
-const deleteAppointment = async (id) => {
-  try {
-    const { error } = await supabase.from('Appointments').delete().eq('id', id)
-    if (error) throw error
-    await refreshAppointments()
-  } catch (error) {
-    console.error('Error deleting appointment:', error.message)
-  }
-}
-
-// Refresh appointments list
-const refreshAppointments = async () => {
-  try {
-    const { data: appointmentData, error: appointmentError } = await supabase
-      .from('Appointments')
-      .select(
-        `id,
-        appointment_date,
-        appointment_time,
-        status,
-        Doctors (id, name, specialty),
-        Hospitals (id, name)`,
-      )
-      .eq('user_id', user.value.id)
-    console.log(appointmentData)
-
-    if (appointmentError) throw appointmentError
-    appointments.value = appointmentData
-  } catch (error) {
-    console.error('Error fetching appointments:', error.message)
-  }
-}
-
-// Populate form for editing
-const editAppointment = (appointment) => {
-  editAppointmentId.value = appointment.id
-  selectedHospital.value = appointment.Hospitals?.id || null
-  selectedDoctor.value = appointment.Doctors?.id || null
-  selectedDate.value = appointment.appointment_date
-  selectedTime.value = appointment.appointment_time
+  formStatus.value = 'success'
+  formMessage.value = 'Appointment booked successfully!'
 }
 </script>
 
 <template>
-  <div class="appointment-container">
-    <h2>Book or Edit Appointment</h2>
+  <div class="appointment-container bg-green-darken-2">
+    <h2 class="text-black">Book an Appointment</h2>
 
-    <!-- Form Messages -->
-    <div v-if="formStatus === 'error'" class="error-message">{{ formMessage }}</div>
-    <div v-if="formStatus === 'success'" class="success-message">{{ formMessage }}</div>
-
-    <!-- Appointment Form -->
-    <div class="form-group">
-      <label for="hospital">Select Hospital:</label>
-      <select v-model="selectedHospital" @change="fetchDoctors">
-        <option value="" disabled>Select a hospital</option>
-        <option v-for="hospital in hospitals" :key="hospital.id" :value="hospital.id">
-          {{ hospital.name }}
-        </option>
-      </select>
+    <div v-if="formStatus === 'error'" class="message error-message">
+      {{ formMessage }}
+    </div>
+    <div v-if="formStatus === 'success'" class="message success-message">
+      {{ formMessage }}
     </div>
 
     <div class="form-group">
       <label for="doctor">Select Doctor:</label>
-      <select v-model="selectedDoctor" @change="fetchSchedules" :disabled="!selectedHospital">
+      <select v-model="selectedDoctor" @change="fetchSchedules">
         <option value="" disabled>Select a doctor</option>
         <option v-for="doctor in doctors" :key="doctor.id" :value="doctor.id">
           {{ doctor.name }} - {{ doctor.specialty }}
@@ -191,14 +138,14 @@ const editAppointment = (appointment) => {
       </select>
     </div>
 
-    <div class="form-group">
-      <label for="appointment-date">Select Date:</label>
-      <input type="date" v-model="selectedDate" :disabled="!selectedDoctor" />
+    <div v-if="schedules.length > 0" class="form-group">
+      <label for="appointment-date">Select Appointment Date:</label>
+      <input type="date" v-model="selectedDate" />
     </div>
 
-    <div class="form-group">
+    <div v-if="schedules.length > 0 && selectedDate" class="form-group">
       <label for="appointment-time">Select Time:</label>
-      <select v-model="selectedTime" :disabled="!selectedDate">
+      <select v-model="selectedTime">
         <option value="" disabled>Select a time slot</option>
         <option v-for="schedule in schedules" :key="schedule.id" :value="schedule.start_time">
           {{ schedule.start_time }} - {{ schedule.end_time }}
@@ -207,25 +154,20 @@ const editAppointment = (appointment) => {
     </div>
 
     <button
-      @click="saveAppointment"
-      :disabled="!selectedDate || !selectedTime || !selectedDoctor || !selectedHospital"
+      class="text-black bg-blue"
+      @click="bookAppointment"
+      :disabled="!selectedDate || !selectedTime || !selectedDoctor"
     >
-      {{ editAppointmentId ? 'Update Appointment' : 'Book Appointment' }}
+      Book Appointment
     </button>
 
-    <!-- Appointments List -->
-    <h3>Your Appointments</h3>
-    <ul v-if="appointments.length > 0">
-      <li v-for="appointment in appointments" :key="appointments.id">
-        {{ appointment.appointment_date }} at {{ appointment.appointment_time }} with
-        {{ appointment.Doctors?.name || 'Unknown Doctor' }}
-        ({{ appointment.Doctors?.specialty || 'No Specialty' }}) in
-        {{ appointment.Hospitals?.name || 'Unknown Hospital' }} (Status: {{ appointment.status }})
-        <button @click="editAppointment(appointment)">Edit</button>
-        <button @click="deleteAppointment(appointment.id)">Delete</button>
+    <h3>Your Current Appointments</h3>
+    <ul class="appointments-list">
+      <li v-for="appointment in appointments" :key="appointment.id">
+        {{ appointment.appointment_date }} with Dr. {{ appointment.doctor_id }} (Status:
+        {{ appointment.status }})
       </li>
     </ul>
-    <p v-else>No appointments found</p>
   </div>
 </template>
 
