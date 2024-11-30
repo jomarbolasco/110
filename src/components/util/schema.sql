@@ -8,6 +8,7 @@ CREATE TABLE Users (
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    role VARCHAR(255);
 );
 
 -- Table: Patient
@@ -98,6 +99,22 @@ ADD CONSTRAINT fk_user FOREIGN KEY (a_id)
 REFERENCES Users (id) ON DELETE CASCADE;
 
 
-added
-ALTER TABLE "Users"
-ADD COLUMN role VARCHAR(255);
+
+CREATE OR REPLACE FUNCTION create_patient_entry()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO Patient (p_id, name, check_up_type)
+  VALUES (NEW.id, NEW.name, 'General')
+  ON CONFLICT DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER sync_patient_with_user
+AFTER INSERT ON Users
+FOR EACH ROW
+EXECUTE FUNCTION create_patient_entry();
+
+
+ALTER TABLE Patient ADD COLUMN user_id UUID;
+ALTER TABLE Patient ADD CONSTRAINT fk_patient_user FOREIGN KEY (user_id) REFERENCES Users (id) ON DELETE CASCADE;
