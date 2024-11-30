@@ -1,86 +1,83 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { supabase, formActionDefault } from '@/components/util/supabase'
+import { ref, onMounted, computed } from 'vue'
+import { supabase } from '@/components/util/supabase'
 import { useUserStore } from '@/stores/user'
 
+// State Management
 const userStore = useUserStore()
-
 const doctors = ref([])
 const schedules = ref([])
 const appointmentForm = ref({
   doctor_id: '',
   appointment_date: '',
 })
-const formAction = { ...formActionDefault }
+const formAction = ref({
+  formProcess: false,
+  formErrorMessage: '',
+  formSuccessMessage: '',
+})
 
-// Fetch doctors and their availability
+// Fetch all doctors
 const fetchDoctors = async () => {
-  const { data, error } = await supabase.from('doctors').select('*')
-  if (error) console.error('Error fetching doctors:', error.message)
-  doctors.value = data || []
-}
-
-// Fetch schedules for a selected doctor
-const fetchSchedules = async (doctorId) => {
-  const { data, error } = await supabase.from('schedule').select('*').eq('doctor_id', doctorId)
-  if (error) console.error('Error fetching schedules:', error.message)
-  schedules.value = data || []
-}
-
-// Handle appointment submission
-const bookAppointment = async () => {
-  formAction.formProcess = true
   try {
-    // Debug log to confirm the values being sent
-    console.log('Appointment Data:', {
-      user_id: userStore.user?.id,
-      doctor_id: appointmentForm.value.doctor_id,
-      appointment_date: appointmentForm.value.appointment_date,
-    })
-
-    // Fetch the corresponding p_id from the Patient table
-    const { data: patientData, error: patientError } = await supabase
-      .from('patient')
-      .select('p_id')
-      .eq('user_id', userStore.user?.id) // Ensure the patient has a user_id
-      .single()
-
-    if (patientError || !patientData) {
-      throw new Error('Patient entry not found for the user.')
-    }
-
-    // Insert appointment using p_id as user_id
-    const { error } = await supabase.from('appointments').insert([
-      {
-        user_id: patientData.p_id, // Insert the correct p_id
-        doctor_id: appointmentForm.value.doctor_id,
-        appointment_date: appointmentForm.value.appointment_date,
-      },
-    ])
-
+    const { data, error } = await supabase.from('doctors').select('id, name, specialty')
     if (error) throw error
-
-    formAction.formSuccessMessage = 'Appointment booked successfully!'
-    formAction.formStatus = 200
+    doctors.value = data || []
   } catch (error) {
-    console.error('Error booking appointment:', error.message)
-    formAction.formErrorMessage = error.message || 'Error booking appointment.'
-    formAction.formStatus = 400
-  } finally {
-    formAction.formProcess = false
+    console.error('Error fetching doctors:', error.message)
   }
 }
 
-// Lifecycle hook: Fetch data on component load
+// Fetch available schedules for a selected doctor
+const fetchSchedules = async (doctorId) => {
+  try {
+    const { data, error } = await supabase
+      .from('schedule')
+      .select('id, date')
+      .eq('doctor_id', doctorId)
+      .eq('available', true)
+    if (error) throw error
+    schedules.value = data || []
+  } catch (error) {
+    console.error('Error fetching schedules:', error.message)
+  }
+}
+
+// Book an appointment
+const bookAppointment = async () => {
+  formAction.value.formProcess = true
+  formAction.value.formErrorMessage = ''
+  formAction.value.formSuccessMessage = ''
+
+  try {
+    const userId = userStore.user?.id
+    if (!userId) throw new Error('User not logged in.')
+
+    const appointmentData = {
+      user_id: userId,
+      doctor_id: appointmentForm.value.doctor_id,
+      appointment_date: appointmentForm.value.appointment_date,
+    }
+
+    const { error } = await supabase.from('appointments').insert([appointmentData])
+    if (error) throw error
+
+    formAction.value.formSuccessMessage = 'Appointment booked successfully!'
+    // Clear the form
+    appointmentForm.value = { doctor_id: '', appointment_date: '' }
+    schedules.value = []
+  } catch (error) {
+    console.error('Error booking appointment:', error.message)
+    formAction.value.formErrorMessage = error.message || 'Failed to book the appointment.'
+  } finally {
+    formAction.value.formProcess = false
+  }
+}
+
+// Lifecycle hook: Load data on component mount
 onMounted(() => {
   fetchDoctors()
-  userStore.initializeUser() // Ensure user info is loaded
-})
-
-console.log('Appointment Data:', {
-  user_id: userStore.user?.id,
-  doctor_id: appointmentForm.value.doctor_id,
-  appointment_date: appointmentForm.value.appointment_date,
+  userStore.initializeUser() // Ensure user data is loaded
 })
 </script>
 
@@ -88,7 +85,6 @@ console.log('Appointment Data:', {
   <div class="appointment-section">
     <h2>Book an Appointment</h2>
 
-    <!-- Appointment Form -->
     <form @submit.prevent="bookAppointment">
       <!-- Doctor Selection -->
       <label for="doctor">Select a Doctor:</label>
@@ -105,7 +101,7 @@ console.log('Appointment Data:', {
       </select>
 
       <!-- Appointment Date -->
-      <label for="appointment_date">Select a Date:</label>
+      <label for="appointment_date">Select an Available Date:</label>
       <select id="appointment_date" v-model="appointmentForm.appointment_date" required>
         <option value="" disabled>Select a date</option>
         <option v-for="schedule in schedules" :key="schedule.id" :value="schedule.date">
