@@ -49,14 +49,17 @@ const fetchDoctors = async () => {
 }
 
 const fetchSchedules = async () => {
-  if (!selectedDoctor.value) return
+  if (!selectedDoctor.value) {
+    console.error('Selected Doctor is undefined or null')
+    return
+  }
 
   console.log('Selected Doctor:', selectedDoctor.value)
 
   const { data: scheduleData, error: scheduleError } = await supabase
     .from('schedule')
     .select('*')
-    .eq('doctor_id', selectedDoctor.value.id)
+    .eq('doctor_id', selectedDoctor.value)
 
   if (scheduleError) {
     console.error('Error fetching schedule:', scheduleError.message)
@@ -66,8 +69,8 @@ const fetchSchedules = async () => {
   console.log('Fetched Schedule:', scheduleData)
   schedule.value = scheduleData.map((item) => ({
     ...item,
-    formattedDate: new Date(item.date).toLocaleDateString(),
-    formattedTime: new Date(`1970-01-01T${item.start_time}Z`).toLocaleTimeString(),
+    formattedDate: new Date(item.date).toISOString().split('T')[0], // Format as YYYY-MM-DD
+    formattedTime: item.start_time, // Use start_time directly for now
   }))
 }
 
@@ -75,6 +78,11 @@ const fetchSchedules = async () => {
 watch(selectedHospital, (newVal) => {
   console.log('Selected Hospital Changed:', newVal)
   fetchDoctors()
+})
+
+watch(selectedDoctor, (newVal) => {
+  console.log('Selected Doctor Changed:', newVal)
+  fetchSchedules()
 })
 
 onMounted(fetchHospitals)
@@ -89,7 +97,7 @@ const bookAppointment = async () => {
 
   const { error } = await supabase.from('appointments').insert({
     user_id: 1, // Replace with the logged-in user's ID
-    doctor_id: selectedDoctor.value.id,
+    doctor_id: selectedDoctor.value,
     appointment_date: selectedDate.value,
     status: 'Pending',
   })
@@ -125,14 +133,17 @@ const bookAppointment = async () => {
           item-title="name"
           label="Select Doctor"
           v-model="selectedDoctor"
-          @change="fetchSchedules"
         ></v-select>
       </v-col>
 
       <v-col cols="12">
         <v-select
-          :items="schedule"
-          item-value="date"
+          :items="
+            schedule
+              .map((item) => item.formattedDate)
+              .filter((value, index, self) => self.indexOf(value) === index)
+          "
+          item-value="formattedDate"
           item-title="formattedDate"
           label="Select Date"
           v-model="selectedDate"
@@ -141,8 +152,12 @@ const bookAppointment = async () => {
 
       <v-col cols="12">
         <v-select
-          :items="schedule"
-          item-value="start_time"
+          :items="
+            schedule
+              .filter((item) => item.formattedDate === selectedDate)
+              .map((item) => item.formattedTime)
+          "
+          item-value="formattedTime"
           item-title="formattedTime"
           label="Select Time"
           v-model="selectedTime"
