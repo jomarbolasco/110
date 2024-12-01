@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { useUserStore } from '@/stores/user' // Import the user store
+import { useUserStore } from '@/stores/userStore'
 
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
