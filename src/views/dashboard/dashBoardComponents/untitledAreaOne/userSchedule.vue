@@ -1,15 +1,29 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase.js'
+import { useUserStore } from '@/stores/userStore'
 
-const user_id = 1 // Replace with the logged-in user's ID
+const userStore = useUserStore()
+const user_id = ref(null)
+
+// Ensure user_id is set from the userStore
+onMounted(() => {
+  userStore.initializeUser()
+  user_id.value = userStore.user ? userStore.user.id : null
+})
+
 const appointments = ref([])
 
 const fetchAppointments = async () => {
+  if (!user_id.value) {
+    console.error('User ID is not set')
+    return
+  }
+
   const { data, error } = await supabase
     .from('appointments')
     .select('appointment_date, status, doctor_id')
-    .eq('user_id', user_id)
+    .eq('user_id', user_id.value)
 
   if (error) {
     console.error('Error fetching appointments:', error)

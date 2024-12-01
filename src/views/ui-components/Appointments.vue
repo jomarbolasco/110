@@ -1,6 +1,16 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { supabase } from '@/components/util/supabase.js'
+import { useUserStore } from '@/stores/userStore'
+
+const userStore = useUserStore()
+const user_id = ref(null)
+
+// Ensure user_id is set from the userStore
+onMounted(() => {
+  userStore.initializeUser()
+  user_id.value = userStore.user ? userStore.user.id : null
+})
 
 const hospitals = ref([])
 const doctors = ref([])
@@ -96,7 +106,7 @@ const bookAppointment = async () => {
   formAction.value.formProcess = true
 
   const { error } = await supabase.from('appointments').insert({
-    user_id: 1, // Replace with the logged-in user's ID
+    user_id: user_id.value, // Use the logged-in user's ID
     doctor_id: selectedDoctor.value,
     appointment_date: selectedDate.value,
     status: 'Pending',

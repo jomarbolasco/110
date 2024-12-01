@@ -8,6 +8,7 @@ import {
 import { ref } from 'vue'
 import { supabase, formActionDefault } from '@/components/util/supabase.js'
 import { useRouter } from 'vue-router'
+import { v4 as uuidv4 } from 'uuid'
 
 const router = useRouter()
 
@@ -51,8 +52,13 @@ const onSubmit = async () => {
   }
 
   if (data) console.log('Auth data:', data)
+
+  // Generate a UUID for the new user
+  const userId = uuidv4()
+
   // Insert the user data into the Users table
   const { error: insertError } = await supabase.from('users').insert({
+    id: userId,
     name: `${formData.value.firstname} ${formData.value.lastname}`,
     email: formData.value.email,
     password_hash: await hashPassword(formData.value.password), // You can replace this with a hashing function
