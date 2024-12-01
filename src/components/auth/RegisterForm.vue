@@ -1,85 +1,80 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { supabase } from '@/components/util/supabase'
-import { useUserStore } from '@/stores/user'
 import {
   requiredValidator,
   emailValidator,
   passwordValidator,
   confirmedValidator,
 } from '@/components/util/validators'
+import { ref } from 'vue'
+import { supabase, formActionDefault } from '@/components/util/supabase.js'
+import { useRouter } from 'vue-router'
 
-// Router and user store
 const router = useRouter()
-const userStore = useUserStore()
 
-// Form state
-const formData = ref({
+const formDataDefault = {
+  firstname: '',
+  lastname: '',
   email: '',
   password: '',
   password_confirmation: '',
-  profile_picture: '',
+}
+
+const formData = ref({
+  ...formDataDefault,
 })
 
 const formAction = ref({
-  formProcess: false,
-  formErrorMessage: '',
+  ...formActionDefault,
 })
 
-// Form reference for validation
 const refVForm = ref()
-const visible = ref(false)
 
-// Hash password securely
-const hashPassword = async (password) => {
-  return btoa(password) // Replace with a secure hash function in production
-}
-
-// Handle form submission
 const onSubmit = async () => {
+  formAction.value = { ...formActionDefault }
   formAction.value.formProcess = true
-  try {
-    // Step 1: Register the user in Supabase Auth
-    const { data, error } = await supabase.auth.signUp({
-      email: formData.value.email,
-      password: formData.value.password,
-    })
 
-    if (error) throw error
+  const { data, error } = await supabase.auth.signUp({
+    email: formData.value.email,
+    password: formData.value.password,
+    options: {
+      data: {
+        firstname: formData.value.firstname,
+        lastname: formData.value.lastname,
+      },
+    },
+  })
 
-    // Step 2: Insert user data into the `users` table
-    const { data: userData, error: insertError } = await supabase
-      .from('users')
-      .insert({
-        email: formData.value.email,
-        password_hash: await hashPassword(formData.value.password),
-        profile_picture: formData.value.profile_picture || null,
-      })
-      .single()
-
-    if (insertError) throw insertError
-
-    // Step 3: Automatically log the user in
-    const { data: session } = await supabase.auth.getSession()
-    if (session?.session?.user) {
-      userStore.setUser({
-        id: session.session.user.id,
-        email: session.session.user.email,
-      })
-    }
-
-    // Step 4: Redirect to the dashboard
-    router.push('/dashboard')
-  } catch (error) {
-    console.error('Error during registration:', error.message)
-    formAction.value.formErrorMessage = error.message
-  } finally {
+  if (error) {
+    console.error('Error during sign-up:', error)
     formAction.value.formProcess = false
+    return
   }
+
+  if (data) console.log('Auth data:', data)
+  // Insert the user data into the Users table
+  const { error: insertError } = await supabase.from('users').insert({
+    name: `${formData.value.firstname} ${formData.value.lastname}`,
+    email: formData.value.email,
+    password_hash: await hashPassword(formData.value.password), // You can replace this with a hashing function
+  })
+
+  if (insertError) {
+    console.error('Error inserting into Users table:', insertError)
+  } else {
+    console.log('User successfully inserted into Users table')
+    // Redirect to dashboard after successful insertion
+    router.replace('/dashboard')
+  }
+
+  formAction.value.formProcess = false
 }
 
-// Validate and submit the form
+// Hash password using a function (use a library for hashing, e.g., bcrypt.js or a secure API call)
+const hashPassword = async (password) => {
+  // Replace this with a real hash function
+  return btoa(password) // Simple example, not for production
+}
+
 const onFormSubmit = () => {
   refVForm.value.validate().then(({ valid }) => {
     if (valid) onSubmit()
@@ -87,9 +82,37 @@ const onFormSubmit = () => {
 }
 </script>
 
+<script>
+export default {
+  data: () => ({
+    visible: false,
+  }),
+}
+</script>
+
 <template>
   <v-form ref="refVForm" @submit.prevent="onFormSubmit">
     <v-row>
+      <v-col cols="12" md="6">
+        <v-text-field
+          v-model="formData.firstname"
+          :rules="[requiredValidator]"
+          label="First name"
+          density="compact"
+          variant="outlined"
+        ></v-text-field>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <v-text-field
+          v-model="formData.lastname"
+          :rules="[requiredValidator]"
+          label="Last name"
+          density="compact"
+          variant="outlined"
+        ></v-text-field>
+      </v-col>
+
       <v-col cols="12">
         <v-text-field
           v-model="formData.email"
@@ -98,7 +121,7 @@ const onFormSubmit = () => {
           label="Email"
           density="compact"
           variant="outlined"
-        />
+        ></v-text-field>
       </v-col>
 
       <v-col cols="12">
@@ -112,13 +135,16 @@ const onFormSubmit = () => {
           density="compact"
           variant="outlined"
           @click:append-inner="visible = !visible"
-        />
+        ></v-text-field>
       </v-col>
 
       <v-col cols="12">
         <v-text-field
           v-model="formData.password_confirmation"
-          :rules="[confirmedValidator(formData.password_confirmation, formData.password)]"
+          :rules="[
+            requiredValidator,
+            confirmedValidator(formData.password_confirmation, formData.password),
+          ]"
           prepend-inner-icon="mdi-lock-outline"
           :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
           :type="visible ? 'text' : 'password'"
@@ -126,39 +152,21 @@ const onFormSubmit = () => {
           density="compact"
           variant="outlined"
           @click:append-inner="visible = !visible"
-        />
-      </v-col>
+        ></v-text-field>
 
-      <v-col cols="12">
-        <v-text-field
-          v-model="formData.profile_picture"
-          label="Profile Picture (Optional)"
-          density="compact"
-          variant="outlined"
-        />
+        <v-btn
+          class="mb-8"
+          color="blue"
+          size="large"
+          variant="tonal"
+          block
+          type="submit"
+          :disabled="formAction.formProcess"
+          :loading="formAction.formProcess"
+        >
+          Register
+        </v-btn>
       </v-col>
-
-      <v-btn
-        class="mb-8"
-        color="blue"
-        size="large"
-        variant="tonal"
-        block
-        type="submit"
-        :disabled="formAction.formProcess"
-        :loading="formAction.formProcess"
-      >
-        Register
-      </v-btn>
     </v-row>
-    <p v-if="formAction.formErrorMessage" class="error-message">
-      {{ formAction.formErrorMessage }}
-    </p>
   </v-form>
 </template>
-
-<style>
-.error-message {
-  color: red;
-}
-</style>

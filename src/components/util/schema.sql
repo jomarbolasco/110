@@ -1,46 +1,87 @@
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    profile_picture TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-CREATE TABLE hospitals (
+-- Table: Users
+CREATE TABLE Users (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    address TEXT NOT NULL
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE doctors (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    specialty VARCHAR(255) NOT NULL,
-    hospital_id INT REFERENCES hospitals(id) ON DELETE CASCADE
+
+-- Table: Patient
+CREATE TABLE Patient (
+    p_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    check_up_type TEXT NOT NULL
 );
-CREATE TABLE schedule (
+
+-- Table: Admin
+CREATE TABLE Admin (
+    a_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+-- Table: Hospitals
+CREATE TABLE Hospitals (
     id SERIAL PRIMARY KEY,
-    doctor_id INT REFERENCES doctors(id) ON DELETE CASCADE,
+    name VARCHAR(150) NOT NULL,
+    address TEXT NOT NULL,
+    contact_number VARCHAR(15)
+);
+
+-- Table: Doctors
+CREATE TABLE Doctors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    specialty VARCHAR(100),
+    hospital_id INT NOT NULL,
+    contact_number VARCHAR(15),
+    CONSTRAINT fk_hospital_doctor FOREIGN KEY (hospital_id) REFERENCES Hospitals(id) ON DELETE CASCADE
+);
+
+-- Table: Availability
+CREATE TABLE Availability (
+    d_id SERIAL PRIMARY KEY,
+    status TEXT NOT NULL,
+    slots INT NOT NULL,
+    CONSTRAINT fk_doctor_availability FOREIGN KEY (d_id) REFERENCES Doctors(id) ON DELETE CASCADE
+);
+
+-- Table: Schedule
+CREATE TABLE Schedule (
+    id SERIAL PRIMARY KEY,
+    doctor_id INT NOT NULL,
     date DATE NOT NULL,
-    available BOOLEAN DEFAULT TRUE
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    available_slots INT NOT NULL,
+    CONSTRAINT fk_schedule_doctor FOREIGN KEY (doctor_id) REFERENCES Doctors(id) ON DELETE CASCADE
 );
-CREATE TABLE appointments (
+
+-- Table: Appointments
+CREATE TABLE Appointments (
     id SERIAL PRIMARY KEY,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    doctor_id INT REFERENCES doctors(id) ON DELETE CASCADE,
+    user_id INT NOT NULL,
+    doctor_id INT NOT NULL,
     appointment_date DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    status VARCHAR(50) DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_appointments FOREIGN KEY (user_id) REFERENCES Patient(p_id) ON DELETE CASCADE,
+    CONSTRAINT fk_doctor_appointments FOREIGN KEY (doctor_id) REFERENCES Doctors(id) ON DELETE CASCADE
 );
-CREATE TABLE symptom_queries (
+
+-- Table: Symptoms
+CREATE TABLE Symptoms (
     id SERIAL PRIMARY KEY,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    query TEXT NOT NULL,
-    response TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    appointment_id INT NOT NULL,
+    symptoms_list TEXT NOT NULL,
+    others TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_appointment_symptoms FOREIGN KEY (appointment_id) REFERENCES Appointments(id) ON DELETE CASCADE
 );
 
-ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
--- OR, include a default value:
-ALTER TABLE users ALTER COLUMN password_hash SET DEFAULT 'default_hash';
+-- Foreign Key Constraints
+ALTER TABLE Patient
+ADD CONSTRAINT fk_user FOREIGN KEY (p_id) REFERENCES Users(id) ON DELETE CASCADE;
 
-
-
-ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+ALTER TABLE Admin
+ADD CONSTRAINT fk_user FOREIGN KEY (a_id) REFERENCES Users(id) ON DELETE CASCADE;
