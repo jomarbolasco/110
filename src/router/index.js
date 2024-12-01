@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+// import { useUserStore } from '@/stores/userStore'
 
 import homeView from '@/homeView.vue'
 import loginView from '@/views/auth/loginView.vue'
@@ -38,6 +38,11 @@ const router = createRouter({
           path: 'ui-components/Appointments',
           component: () => import('@/views/ui-components/Appointments.vue'),
         },
+        // {
+        //   name: '/askmedoc',
+        //   path: 'ui-components/Ai-section/askmedoc',
+        //   component: () => import('@/views/ui-components/Ai-section/askmedoc.vue'),
+        // },
         {
           name: 'Buttons',
           path: 'ui-components/buttons',
@@ -67,23 +72,23 @@ const router = createRouter({
   ],
 })
 
-// Add a global `beforeEach` navigation guard
-router.beforeEach(async (to, from, next) => {
-  const userStore = useUserStore()
+// // Add a global `beforeEach` navigation guard
+// router.beforeEach(async (to, from, next) => {
+//   const userStore = useUserStore()
 
-  // Initialize user if not already done
-  if (!userStore.user && userStore.initializeUser) {
-    await userStore.initializeUser()
-  }
+//   // Initialize user if not already done
+//   if (!userStore.user && userStore.initializeUser) {
+//     await userStore.initializeUser()
+//   }
 
-  // Handle authentication checks
-  if (to.meta.requiresAuth && !userStore.user) {
-    next('/login') // Redirect unauthenticated users to login
-  } else if ((to.path === '/login' || to.path === '/register') && userStore.user) {
-    next('/dashboard') // Redirect authenticated users to the dashboard
-  } else {
-    next() // Allow the navigation
-  }
-})
+//   // Handle authentication checks
+//   if (to.meta.requiresAuth && !userStore.user) {
+//     next('/login') // Redirect unauthenticated users to login
+//   } else if ((to.path === '/login' || to.path === '/register') && userStore.user) {
+//     next('/dashboard') // Redirect authenticated users to the dashboard
+//   } else {
+//     next() // Allow the navigation
+//   }
+// })
 
 export default router

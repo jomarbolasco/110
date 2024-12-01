@@ -8,11 +8,8 @@ import {
 import { ref } from 'vue'
 import { supabase, formActionDefault } from '@/components/util/supabase.js'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 
-// Initialize the router and user store
 const router = useRouter()
-const userStore = useUserStore()
 
 const formDataDefault = {
   firstname: '',
@@ -20,8 +17,6 @@ const formDataDefault = {
   email: '',
   password: '',
   password_confirmation: '',
-  role: 'Patient', // default role
-  check_up_type: '', // Patient-specific field
 }
 
 const formData = ref({
@@ -34,86 +29,50 @@ const formAction = ref({
 
 const refVForm = ref()
 
-const visible = ref(false)
-
 const onSubmit = async () => {
+  formAction.value = { ...formActionDefault }
   formAction.value.formProcess = true
 
-  try {
-    // Register the user in Supabase Auth
-    const { data, error } = await supabase.auth.signUp({
-      email: formData.value.email,
-      password: formData.value.password,
-      options: {
-        data: {
-          firstname: formData.value.firstname,
-          lastname: formData.value.lastname,
-          role: formData.value.role, // role can be Patient or Admin
-        },
+  const { data, error } = await supabase.auth.signUp({
+    email: formData.value.email,
+    password: formData.value.password,
+    options: {
+      data: {
+        firstname: formData.value.firstname,
+        lastname: formData.value.lastname,
       },
-    })
+    },
+  })
 
-    if (error) throw error
-
-    // Insert user data into the "Users" table
-    const { error: insertError } = await supabase.from('users').insert({
-      name: `${formData.value.firstname} ${formData.value.lastname}`,
-      email: formData.value.email,
-      password_hash: await hashPassword(formData.value.password),
-      role: formData.value.role, // Assign the role to the user
-    })
-
-    if (insertError) throw insertError
-
-    // Insert patient data if the role is 'Patient'
-    if (formData.value.role === 'Patient') {
-      const { error: patientError } = await supabase.from('Patient').insert({
-        name: `${formData.value.firstname} ${formData.value.lastname}`,
-        check_up_type: formData.value.check_up_type,
-      })
-
-      if (patientError) throw patientError
-    }
-
-    // Automatically log the user in
-    const { data: session } = await supabase.auth.getSession()
-    if (session?.session?.user) {
-      userStore.setUser({
-        name: session.session.user.user_metadata?.name || '',
-        email: session.session.user.email || '',
-        role: formData.value.role,
-      })
-    }
-
-    // Fetch user profile from the "Users" table
-    const { data: profileData, error: profileError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', formData.value.email)
-      .single()
-
-    if (profileError) throw profileError
-
-    // Save user profile in the store
-    userStore.setUser(profileData)
-
-    // Redirect to dashboard or relevant page
-    if (formData.value.role === 'Admin') {
-      router.push('/admin-dashboard')
-    } else {
-      router.push('/dashboard')
-    }
-  } catch (error) {
-    console.error('Error during registration:', error.message)
-    formAction.value.formErrorMessage = error.message
-  } finally {
+  if (error) {
+    console.error('Error during sign-up:', error)
     formAction.value.formProcess = false
+    return
   }
+
+  if (data) console.log('Auth data:', data)
+  // Insert the user data into the Users table
+  const { error: insertError } = await supabase.from('users').insert({
+    name: `${formData.value.firstname} ${formData.value.lastname}`,
+    email: formData.value.email,
+    password_hash: await hashPassword(formData.value.password), // You can replace this with a hashing function
+  })
+
+  if (insertError) {
+    console.error('Error inserting into Users table:', insertError)
+  } else {
+    console.log('User successfully inserted into Users table')
+    // Redirect to dashboard after successful insertion
+    router.replace('/dashboard')
+  }
+
+  formAction.value.formProcess = false
 }
 
 // Hash password using a function (use a library for hashing, e.g., bcrypt.js or a secure API call)
 const hashPassword = async (password) => {
-  return btoa(password) // Replace with a real hash function for production
+  // Replace this with a real hash function
+  return btoa(password) // Simple example, not for production
 }
 
 const onFormSubmit = () => {
@@ -141,7 +100,7 @@ export default {
           label="First name"
           density="compact"
           variant="outlined"
-        />
+        ></v-text-field>
       </v-col>
 
       <v-col cols="12" md="6">
@@ -151,7 +110,7 @@ export default {
           label="Last name"
           density="compact"
           variant="outlined"
-        />
+        ></v-text-field>
       </v-col>
 
       <v-col cols="12">
@@ -162,7 +121,7 @@ export default {
           label="Email"
           density="compact"
           variant="outlined"
-        />
+        ></v-text-field>
       </v-col>
 
       <v-col cols="12">
@@ -176,13 +135,16 @@ export default {
           density="compact"
           variant="outlined"
           @click:append-inner="visible = !visible"
-        />
+        ></v-text-field>
       </v-col>
 
       <v-col cols="12">
         <v-text-field
           v-model="formData.password_confirmation"
-          :rules="[confirmedValidator(formData.password_confirmation, formData.password)]"
+          :rules="[
+            requiredValidator,
+            confirmedValidator(formData.password_confirmation, formData.password),
+          ]"
           prepend-inner-icon="mdi-lock-outline"
           :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
           :type="visible ? 'text' : 'password'"
@@ -190,42 +152,21 @@ export default {
           density="compact"
           variant="outlined"
           @click:append-inner="visible = !visible"
-        />
-      </v-col>
+        ></v-text-field>
 
-      <v-col cols="12">
-        <v-select
-          v-model="formData.role"
-          :items="['Patient', 'Admin']"
-          label="Role"
-          density="compact"
-          variant="outlined"
-        />
+        <v-btn
+          class="mb-8"
+          color="blue"
+          size="large"
+          variant="tonal"
+          block
+          type="submit"
+          :disabled="formAction.formProcess"
+          :loading="formAction.formProcess"
+        >
+          Register
+        </v-btn>
       </v-col>
-
-      <!-- Additional field for patient checkup type -->
-      <v-col cols="12" v-if="formData.role === 'Patient'">
-        <v-text-field
-          v-model="formData.check_up_type"
-          :rules="[requiredValidator]"
-          label="Check-Up Type"
-          density="compact"
-          variant="outlined"
-        />
-      </v-col>
-
-      <v-btn
-        class="mb-8"
-        color="blue"
-        size="large"
-        variant="tonal"
-        block
-        type="submit"
-        :disabled="formAction.formProcess"
-        :loading="formAction.formProcess"
-      >
-        Register
-      </v-btn>
     </v-row>
   </v-form>
 </template>

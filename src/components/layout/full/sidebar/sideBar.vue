@@ -13,6 +13,12 @@ const sidebarMenu = ref([
     to: '/dashboard/ui-components/Appointments',
   },
   {
+    title: 'Ask me Doc!',
+    icon: 'mdi-check-underline-circle-outline',
+    to: '/dashboard/ui-components/Ai-section/askmedoc',
+  },
+
+  {
     title: 'ignore this area',
     icon: 'mdi-radiobox-blank',
     to: '/dashboard/ui-components/buttons',
