@@ -85,3 +85,10 @@ ADD CONSTRAINT fk_user FOREIGN KEY (p_id) REFERENCES Users(id) ON DELETE CASCADE
 
 ALTER TABLE Admin
 ADD CONSTRAINT fk_user FOREIGN KEY (a_id) REFERENCES Users(id) ON DELETE CASCADE;
+
+ALTER TABLE Appointments ADD COLUMN user_uuid UUID;
+ALTER TABLE Appointments DROP COLUMN user_id;
+ALTER TABLE Appointments RENAME COLUMN user_uuid TO user_id;
+ALTER TABLE Appointments ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES Users(id);
+SELECT * FROM Appointments WHERE user_id IS NOT NULL;
+
