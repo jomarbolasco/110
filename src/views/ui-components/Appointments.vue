@@ -1,10 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { supabase } from '@/components/util/supabase.js'
 
+const hospitals = ref([])
 const doctors = ref([])
-const selectedDoctor = ref(null)
 const schedule = ref([])
+const selectedHospital = ref(null)
+const selectedDoctor = ref(null)
 const selectedDate = ref(null)
 const selectedTime = ref(null)
 const formAction = ref({
@@ -14,23 +16,68 @@ const formAction = ref({
   formSuccessMessage: '',
 })
 
-const fetchDoctors = async () => {
-  const { data, error } = await supabase.from('doctors').select('*')
+const fetchHospitals = async () => {
+  const { data, error } = await supabase.from('hospitals').select('*')
   if (error) {
-    console.error('Error fetching doctors:', error)
+    console.error('Error fetching hospitals:', error)
   } else {
-    doctors.value = data
+    console.log('Fetched Hospitals:', data)
+    hospitals.value = data
   }
 }
 
-const fetchSchedule = async (doctorId) => {
-  const { data, error } = await supabase.from('schedule').select('*').eq('id', doctorId)
-  if (error) {
-    console.error('Error fetching schedule:', error)
-  } else {
-    schedule.value = data
+const fetchDoctors = async () => {
+  if (!selectedHospital.value) {
+    console.error('Selected Hospital is undefined or null')
+    return
   }
+
+  console.log('Selected Hospital:', selectedHospital.value)
+
+  const { data, error } = await supabase
+    .from('doctors')
+    .select('*')
+    .eq('hospital_id', selectedHospital.value)
+
+  if (error) {
+    console.error('Error fetching doctors:', error)
+    return
+  }
+
+  console.log('Fetched Doctors:', data)
+  doctors.value = data
 }
+
+const fetchSchedules = async () => {
+  if (!selectedDoctor.value) return
+
+  console.log('Selected Doctor:', selectedDoctor.value)
+
+  const { data: scheduleData, error: scheduleError } = await supabase
+    .from('schedule')
+    .select('*')
+    .eq('doctor_id', selectedDoctor.value.id)
+
+  if (scheduleError) {
+    console.error('Error fetching schedule:', scheduleError.message)
+    return
+  }
+
+  console.log('Fetched Schedule:', scheduleData)
+  schedule.value = scheduleData.map((item) => ({
+    ...item,
+    formattedDate: new Date(item.date).toLocaleDateString(),
+    formattedTime: new Date(`1970-01-01T${item.start_time}Z`).toLocaleTimeString(),
+  }))
+}
+
+// Watch for changes in selectedHospital to fetch doctors
+watch(selectedHospital, (newVal) => {
+  console.log('Selected Hospital Changed:', newVal)
+  fetchDoctors()
+})
+
+onMounted(fetchHospitals)
 
 const bookAppointment = async () => {
   if (!selectedDoctor.value || !selectedDate.value || !selectedTime.value) {
@@ -56,8 +103,6 @@ const bookAppointment = async () => {
 
   formAction.value.formProcess = false
 }
-
-onMounted(fetchDoctors)
 </script>
 
 <template>
@@ -65,12 +110,22 @@ onMounted(fetchDoctors)
     <v-row>
       <v-col cols="12">
         <v-select
+          :items="hospitals"
+          item-value="id"
+          item-title="name"
+          label="Select Hospital"
+          v-model="selectedHospital"
+        />
+      </v-col>
+
+      <v-col cols="12">
+        <v-select
           :items="doctors"
           item-value="id"
           item-title="name"
           label="Select Doctor"
           v-model="selectedDoctor"
-          @change="fetchSchedule"
+          @change="fetchSchedules"
         ></v-select>
       </v-col>
 
@@ -78,7 +133,7 @@ onMounted(fetchDoctors)
         <v-select
           :items="schedule"
           item-value="date"
-          item-title="date"
+          item-title="formattedDate"
           label="Select Date"
           v-model="selectedDate"
         ></v-select>
@@ -88,7 +143,7 @@ onMounted(fetchDoctors)
         <v-select
           :items="schedule"
           item-value="start_time"
-          item-title="start_time"
+          item-title="formattedTime"
           label="Select Time"
           v-model="selectedTime"
         ></v-select>
