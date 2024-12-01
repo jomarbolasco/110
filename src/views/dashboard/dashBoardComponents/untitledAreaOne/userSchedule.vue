@@ -5,13 +5,6 @@ import { useUserStore } from '@/stores/userStore'
 
 const userStore = useUserStore()
 const user_id = ref(null)
-
-// Ensure user_id is set from the userStore
-onMounted(() => {
-  userStore.initializeUser()
-  user_id.value = userStore.user ? userStore.user.id : null
-})
-
 const appointments = ref([])
 
 const fetchAppointments = async () => {
@@ -50,7 +43,11 @@ const fetchAppointments = async () => {
   }
 }
 
-onMounted(fetchAppointments)
+onMounted(async () => {
+  await userStore.initializeUser()
+  user_id.value = userStore.user ? userStore.user.id : null
+  fetchAppointments()
+})
 </script>
 
 <template>
