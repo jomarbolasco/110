@@ -14,17 +14,29 @@ export const useUserStore = defineStore('user', {
       this.user = null
     },
     async initializeUser() {
-      const { data: session, error } = await supabase.auth.getSession()
-      if (error || !session?.session?.user) {
-        console.warn('No active session found:', error?.message || 'User is not logged in.')
-        this.user = null
-      } else {
-        // Assign user details, including id
-        this.user = {
-          id: session.session.user.id, // Add user id
-          name: session.session.user.user_metadata?.name || '',
-          email: session.session.user.email,
+      try {
+        const { data: session, error } = await supabase.auth.getSession()
+        if (error || !session?.session?.user) {
+          console.warn('No active session found:', error?.message || 'User is not logged in.')
+          this.user = null
+        } else {
+          // Fetch detailed user data
+          const { data: userDetails, error: userError } = await supabase.auth.getUser()
+          if (userError) {
+            console.error('Error fetching user details:', userError.message)
+          }
+
+          // Assign user details, including id and metadata
+          this.user = {
+            id: session.session.user.id, // User ID
+            name: session.session.user.user_metadata?.name || '',
+            email: session.session.user.email,
+            additionalDetails: userDetails?.user || {}, // Store extra user details
+          }
         }
+      } catch (err) {
+        console.error('Unexpected error initializing user:', err.message)
+        this.user = null
       }
     },
   },

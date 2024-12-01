@@ -36,3 +36,11 @@ CREATE TABLE symptom_queries (
     response TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+-- OR, include a default value:
+ALTER TABLE users ALTER COLUMN password_hash SET DEFAULT 'default_hash';
+
+
+
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
