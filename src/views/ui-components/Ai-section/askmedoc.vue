@@ -1,4 +1,4 @@
-<script>
+<!-- <script>
 import { useUserStore } from '@/stores/user'
 import { saveSymptomQuery } from '@/components/util/supabase'
 import { getAIResponse } from '@/components/util/openai'
@@ -64,4 +64,4 @@ export default {
       {{ errorMessage }}
     </v-alert>
   </v-container>
-</template>
+</template> -->

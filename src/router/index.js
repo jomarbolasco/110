@@ -38,11 +38,11 @@ const router = createRouter({
           path: 'ui-components/Appointments',
           component: () => import('@/views/ui-components/Appointments.vue'),
         },
-        {
-          name: '/askmedoc',
-          path: 'ui-components/Ai-section/askmedoc',
-          component: () => import('@/views/ui-components/Ai-section/askmedoc.vue'),
-        },
+        // {
+        //   name: '/askmedoc',
+        //   path: 'ui-components/Ai-section/askmedoc',
+        //   component: () => import('@/views/ui-components/Ai-section/askmedoc.vue'),
+        // },
         {
           name: 'Buttons',
           path: 'ui-components/buttons',
