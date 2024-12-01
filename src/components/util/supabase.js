@@ -18,25 +18,25 @@ export const saveSymptomQuery = async (userId, query, response) => {
   if (error) throw new Error(error.message)
 }
 
-export const fetchDoctors = async () => {
-  const { data, error } = await supabase.from('doctors').select('*')
-  if (error) throw new Error(error.message)
-  return data
-}
+// export const fetchDoctors = async () => {
+//   const { data, error } = await supabase.from('doctors').select('*')
+//   if (error) throw new Error(error.message)
+//   return data
+// }
 
-export const fetchSchedules = async (doctorId) => {
-  const { data, error } = await supabase.from('schedule').select('*').eq('doctor_id', doctorId)
-  if (error) throw new Error(error.message)
-  return data
-}
+// export const fetchSchedules = async (doctorId) => {
+//   const { data, error } = await supabase.from('schedule').select('*').eq('doctor_id', doctorId)
+//   if (error) throw new Error(error.message)
+//   return data
+// }
 
-export const bookAppointment = async (userId, doctorId, appointmentDate) => {
-  const { error } = await supabase.from('appointments').insert([
-    {
-      user_id: userId,
-      doctor_id: doctorId,
-      appointment_date: appointmentDate,
-    },
-  ])
-  if (error) throw new Error(error.message)
-}
+// export const bookAppointment = async (userId, doctorId, appointmentDate) => {
+//   const { error } = await supabase.from('appointments').insert([
+//     {
+//       user_id: userId,
+//       doctor_id: doctorId,
+//       appointment_date: appointmentDate,
+//     },
+//   ])
+//   if (error) throw new Error(error.message)
+// }
