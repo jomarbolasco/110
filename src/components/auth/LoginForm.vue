@@ -33,10 +33,18 @@ const onSubmit = async () => {
     if (error) {
       errorMessage.value = error.message
     } else {
-      // Redirect to a protected route or dashboard
+      // Fetch the user details
+      const user = data.user
+
+      // Check the user's role and redirect accordingly
+      if (user.user_metadata.role === 'admin') {
+        router.replace('/admin-dashboard')
+      } else {
+        router.replace('/dashboard')
+      }
+
       alert('Login successful!')
       console.log(data)
-      router.replace('/dashboard')
     }
   } catch (error) {
     errorMessage.value = 'An unexpected error occurred. Please try again.'
