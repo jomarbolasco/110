@@ -44,7 +44,7 @@ const onSubmit = async () => {
     options: {
       data: {
         name: formData.value.name,
-        userType: formData.value.userType, // Include userType in the metadata
+        userType: formData.value.userType, // Ensure userType is included in metadata
       },
     },
   })
