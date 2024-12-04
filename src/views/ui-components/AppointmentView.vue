@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 import { requiredValidator } from '@/components/util/validators'
 
-// Reactive state for managing available schedules and appointment booking
+// Reactive state for managing schedules
 const schedules = ref([])
 const formData = ref({
   schedule_id: '',
@@ -28,10 +28,7 @@ const fetchSchedules = async () => {
     console.error('Error fetching schedules:', error)
     errorMessage.value = 'An error occurred while fetching schedules.'
   } else {
-    schedules.value = data.map((schedule) => ({
-      text: `${schedule.date} - ${schedule.start_time} to ${schedule.end_time} with ${schedule.medicalstaff.name}`,
-      value: schedule.schedule_id,
-    }))
+    schedules.value = data
   }
 }
 
@@ -69,15 +66,18 @@ const bookAppointment = async () => {
   <div>
     <h1>Book an Appointment</h1>
 
-    <v-form @submit.prevent="bookAppointment">
-      <v-select
-        v-model="formData.schedule_id"
-        :items="schedules"
-        item-title="text"
-        item-value="value"
-        label="Select Schedule"
-        :rules="[requiredValidator]"
-      ></v-select>
+    <div v-if="schedules.length > 0">
+      <h2>Available Schedules</h2>
+      <ul>
+        <li v-for="schedule in schedules" :key="schedule.schedule_id">
+          {{ schedule.date }}: {{ schedule.start_time }} to {{ schedule.end_time }} with
+          {{ schedule.medicalstaff.name }}
+          <v-btn @click="() => (formData.schedule_id = schedule.schedule_id)">Select</v-btn>
+        </li>
+      </ul>
+    </div>
+
+    <v-form v-if="formData.schedule_id" @submit.prevent="bookAppointment">
       <v-text-field
         v-model="formData.appointment_date"
         label="Appointment Date"
