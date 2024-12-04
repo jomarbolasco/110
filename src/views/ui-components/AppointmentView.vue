@@ -44,7 +44,9 @@ const fetchBookedSchedules = async () => {
 
   const { data, error } = await supabase
     .from('appointments')
-    .select('appointment_date, appointment_time, status, staff_id, medicalstaff (name)')
+    .select(
+      'appointment_id, appointment_date, appointment_time, status, staff_id, medicalstaff (name)',
+    )
     .eq('user_id', user.value.id)
 
   if (error) {
@@ -68,6 +70,14 @@ const bookAppointment = async () => {
   successMessage.value = ''
 
   if (user.value) {
+    // Check if the user already has a booked appointment
+    if (bookedSchedules.value.length > 0) {
+      errorMessage.value =
+        'You can only book one appointment at a time. Please cancel your existing appointment first.'
+      loading.value = false
+      return
+    }
+
     const appointmentData = {
       user_id: user.value.id,
       staff_id: selectedSchedule.value.schedule_id,
@@ -87,6 +97,26 @@ const bookAppointment = async () => {
     }
   } else {
     errorMessage.value = 'User not authenticated.'
+  }
+
+  loading.value = false
+}
+
+const cancelAppointment = async (appointment_id) => {
+  loading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  const { error } = await supabase
+    .from('appointments')
+    .delete()
+    .eq('appointment_id', appointment_id)
+  if (error) {
+    errorMessage.value = 'An error occurred while canceling the appointment.'
+    console.error(error)
+  } else {
+    successMessage.value = 'Appointment canceled successfully!'
+    await fetchBookedSchedules() // Refresh booked schedules after canceling
   }
 
   loading.value = false
@@ -124,9 +154,10 @@ const bookAppointment = async () => {
     <div v-if="bookedSchedules.length > 0">
       <h2>Your Booked Schedules</h2>
       <ul>
-        <li v-for="booked in bookedSchedules" :key="booked.staff_id">
+        <li v-for="booked in bookedSchedules" :key="booked.appointment_id">
           {{ booked.appointment_date }}: {{ booked.appointment_time }} with
           {{ booked.medicalstaff }} - {{ booked.status }}
+          <v-btn @click="() => cancelAppointment(booked.appointment_id)">Cancel</v-btn>
         </li>
       </ul>
     </div>
