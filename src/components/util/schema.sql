@@ -1,16 +1,32 @@
-DROP TABLE IF EXISTS Patient CASCADE;
-DROP TABLE IF EXISTS Admin CASCADE;
-DROP TABLE IF EXISTS Hospitals CASCADE;
-DROP TABLE IF EXISTS Doctors CASCADE;
-DROP TABLE IF EXISTS Availability CASCADE;
-DROP TABLE IF EXISTS Schedule CASCADE;
-DROP TABLE IF EXISTS Appointments CASCADE;
-DROP TABLE IF EXISTS Symptoms CASCADE;
+-- No need for a separate Users table
+-- Medical Staff table for doctors and nurses
+CREATE TABLE MedicalStaff (
+    staff_id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    role staff_role,
+    specialization VARCHAR(100),
+    available_slots INT
+);
 
+-- Appointments table for managing appointments
+CREATE TABLE Appointments (
+    appointment_id SERIAL PRIMARY KEY,
+    user_id UUID,  -- Using UUID for user_id to match with Supabase Auth user IDs
+    staff_id INT,
+    appointment_date DATE,
+    appointment_time TIME,
+    status appointment_status,
+    FOREIGN KEY (user_id) REFERENCES auth.users(id),  -- Directly referencing auth.users
+    FOREIGN KEY (staff_id) REFERENCES MedicalStaff(staff_id)
+);
 
-
-
-CREATE TABLE Patient ( p_id UUID PRIMARY KEY, name VARCHAR(100) NOT NULL, check_up_type TEXT NOT NULL, CONSTRAINT fk_user FOREIGN KEY (p_id) REFERENCES auth.users(id) ON DELETE CASCADE );
-CREATE TABLE Doctors ( id SERIAL PRIMARY KEY, name VARCHAR(100) NOT NULL, specialty VARCHAR(100), contact_number VARCHAR(15) );
-CREATE TABLE Availability ( id SERIAL PRIMARY KEY, doctor_id INT NOT NULL, date DATE NOT NULL, start_time TIME NOT NULL, end_time TIME NOT NULL, available_slots INT NOT NULL, CONSTRAINT fk_doctor_availability FOREIGN KEY (doctor_id) REFERENCES Doctors(id) ON DELETE CASCADE );
-CREATE TABLE Appointments ( id SERIAL PRIMARY KEY, user_id UUID NOT NULL, doctor_id INT NOT NULL, appointment_date DATE NOT NULL, status VARCHAR(50) DEFAULT 'Pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, CONSTRAINT fk_user_appointments FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE, CONSTRAINT fk_doctor_appointments FOREIGN KEY (doctor_id) REFERENCES Doctors(id) ON DELETE CASCADE );
+-- Schedules table for managing schedules
+CREATE TABLE Schedules (
+    schedule_id SERIAL PRIMARY KEY,
+    staff_id INT,
+    date DATE,
+    start_time TIME,
+    end_time TIME,
+    slots INT,
+    FOREIGN KEY (staff_id) REFERENCES MedicalStaff(staff_id)
+);
