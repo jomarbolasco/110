@@ -22,27 +22,27 @@ const fetchAppointments = async () => {
   if (userType.value === 'patient') {
     const { data, error } = await supabase
       .from('appointments')
-      .select('appointment_date, status, doctor_id')
+      .select('appointment_date, appointment_time, status, staff_id')
       .eq('user_id', user_id.value)
 
     if (error) {
       console.error('Error fetching appointments:', error)
     } else {
-      const doctorIds = data.map((appointment) => appointment.doctor_id)
-      const { data: doctors, error: doctorsError } = await supabase
-        .from('doctors')
-        .select('id, name, specialty')
-        .in('id', doctorIds)
+      const staffIds = data.map((appointment) => appointment.staff_id)
+      const { data: medicalStaff, error: staffError } = await supabase
+        .from('medicalstaff')
+        .select('staff_id, name, specialization')
+        .in('staff_id', staffIds)
 
-      if (doctorsError) {
-        console.error('Error fetching doctors:', doctorsError)
+      if (staffError) {
+        console.error('Error fetching medical staff:', staffError)
       } else {
         appointments.value = data.map((appointment) => {
-          const doctor = doctors.find((doc) => doc.id === appointment.doctor_id)
+          const staff = medicalStaff.find((s) => s.staff_id === appointment.staff_id)
           return {
             ...appointment,
-            doctorName: doctor ? doctor.name : 'Unknown',
-            specialty: doctor ? doctor.specialty : 'Unknown',
+            staffName: staff ? staff.name : 'Unknown',
+            specialization: staff ? staff.specialization : 'Unknown',
             formattedDate: new Date(appointment.appointment_date).toLocaleDateString(),
           }
         })
@@ -51,8 +51,8 @@ const fetchAppointments = async () => {
   } else if (userType.value === 'doctor') {
     const { data, error } = await supabase
       .from('appointments')
-      .select('appointment_date, status, user_id')
-      .eq('doctor_id', user_id.value)
+      .select('appointment_date, appointment_time, status, user_id')
+      .eq('staff_id', user_id.value)
 
     if (error) {
       console.error('Error fetching appointments:', error)
@@ -103,10 +103,11 @@ onMounted(async () => {
               v-if="appointments.length > 0"
               :headers="[
                 { text: 'Date', value: 'formattedDate' },
+                { text: 'Time', value: 'appointment_time' },
                 userType.value === 'patient'
-                  ? { text: 'Doctor', value: 'doctorName' }
+                  ? { text: 'Doctor', value: 'staffName' }
                   : { text: 'Patient', value: 'patientName' },
-                { text: 'Specialty', value: 'specialty' },
+                { text: 'Specialty', value: 'specialization' },
                 { text: 'Status', value: 'status' },
               ]"
               :items="appointments"

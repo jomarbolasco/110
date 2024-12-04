@@ -1,24 +1,31 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
-import { requiredValidator } from '@/components/util/validators'
 
-// Reactive state for managing schedules
+// Reactive state for managing schedules and user information
 const schedules = ref([])
-const formData = ref({
-  schedule_id: '',
-  appointment_date: '',
-  appointment_time: '',
-})
-
+const bookedSchedules = ref([])
+const selectedSchedule = ref(null)
+const user = ref(null)
 const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-// Fetch available schedules on component mount
+// Fetch user and schedules on component mount
 onMounted(async () => {
+  await fetchUser()
   await fetchSchedules()
+  await fetchBookedSchedules()
 })
+
+const fetchUser = async () => {
+  const { data, error } = await supabase.auth.getUser()
+  if (error) {
+    console.error('Error fetching user:', error)
+  } else {
+    user.value = data.user
+  }
+}
 
 const fetchSchedules = async () => {
   const { data, error } = await supabase
@@ -32,32 +39,86 @@ const fetchSchedules = async () => {
   }
 }
 
+const fetchBookedSchedules = async () => {
+  if (!user.value) return
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(
+      'appointment_id, appointment_date, appointment_time, status, staff_id, medicalstaff (name)',
+    )
+    .eq('user_id', user.value.id)
+
+  if (error) {
+    console.error('Error fetching booked schedules:', error)
+    errorMessage.value = 'An error occurred while fetching booked schedules.'
+  } else {
+    bookedSchedules.value = data.map((appointment) => ({
+      ...appointment,
+      medicalstaff: appointment.medicalstaff.name,
+    }))
+  }
+}
+
+const selectSchedule = (schedule) => {
+  selectedSchedule.value = schedule
+}
+
 const bookAppointment = async () => {
   loading.value = true
   errorMessage.value = ''
   successMessage.value = ''
 
-  const user = supabase.auth.user()
-  const appointmentData = {
-    user_id: user.id,
-    staff_id: formData.value.schedule_id,
-    appointment_date: formData.value.appointment_date,
-    appointment_time: formData.value.appointment_time,
-    status: 'reserved',
+  if (user.value) {
+    // Check if the user already has a booked appointment
+    if (bookedSchedules.value.length > 0) {
+      errorMessage.value =
+        'You can only book one appointment at a time. Please cancel your existing appointment first.'
+      loading.value = false
+      return
+    }
+
+    const appointmentData = {
+      user_id: user.value.id,
+      staff_id: selectedSchedule.value.schedule_id,
+      appointment_date: selectedSchedule.value.date,
+      appointment_time: selectedSchedule.value.start_time,
+      status: 'reserved',
+    }
+
+    const { error } = await supabase.from('appointments').insert([appointmentData])
+    if (error) {
+      errorMessage.value = 'An error occurred while booking the appointment.'
+      console.error(error)
+    } else {
+      successMessage.value = 'Appointment booked successfully!'
+      selectedSchedule.value = null
+      await fetchBookedSchedules() // Refresh booked schedules after booking
+    }
+  } else {
+    errorMessage.value = 'User not authenticated.'
   }
 
-  const { error } = await supabase.from('appointments').insert([appointmentData])
+  loading.value = false
+}
+
+const cancelAppointment = async (appointment_id) => {
+  loading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  const { error } = await supabase
+    .from('appointments')
+    .delete()
+    .eq('appointment_id', appointment_id)
   if (error) {
-    errorMessage.value = 'An error occurred while booking the appointment.'
+    errorMessage.value = 'An error occurred while canceling the appointment.'
     console.error(error)
   } else {
-    successMessage.value = 'Appointment booked successfully!'
-    formData.value = {
-      schedule_id: '',
-      appointment_date: '',
-      appointment_time: '',
-    }
+    successMessage.value = 'Appointment canceled successfully!'
+    await fetchBookedSchedules() // Refresh booked schedules after canceling
   }
+
   loading.value = false
 }
 </script>
@@ -71,27 +132,35 @@ const bookAppointment = async () => {
       <ul>
         <li v-for="schedule in schedules" :key="schedule.schedule_id">
           {{ schedule.date }}: {{ schedule.start_time }} to {{ schedule.end_time }} with
-          {{ schedule.medicalstaff.name }}
-          <v-btn @click="() => (formData.schedule_id = schedule.schedule_id)">Select</v-btn>
+          {{ schedule.medicalstaff }}
+          <v-btn
+            @click="() => selectSchedule(schedule)"
+            :disabled="bookedSchedules.some((booked) => booked.staff_id === schedule.schedule_id)"
+          >
+            Select
+          </v-btn>
         </li>
       </ul>
     </div>
 
-    <v-form v-if="formData.schedule_id" @submit.prevent="bookAppointment">
-      <v-text-field
-        v-model="formData.appointment_date"
-        label="Appointment Date"
-        type="date"
-        :rules="[requiredValidator]"
-      ></v-text-field>
-      <v-text-field
-        v-model="formData.appointment_time"
-        label="Appointment Time"
-        type="time"
-        :rules="[requiredValidator]"
-      ></v-text-field>
-      <v-btn type="submit" :loading="loading">Book Appointment</v-btn>
+    <v-form v-if="selectedSchedule" @submit.prevent="bookAppointment">
+      <p>Selected Schedule:</p>
+      <p>Date: {{ selectedSchedule.date }}</p>
+      <p>Time: {{ selectedSchedule.start_time }} to {{ selectedSchedule.end_time }}</p>
+      <p>With: {{ selectedSchedule.medicalstaff }}</p>
+      <v-btn type="submit" :loading="loading">Confirm Appointment</v-btn>
     </v-form>
+
+    <div v-if="bookedSchedules.length > 0">
+      <h2>Your Booked Schedules</h2>
+      <ul>
+        <li v-for="booked in bookedSchedules" :key="booked.appointment_id">
+          {{ booked.appointment_date }}: {{ booked.appointment_time }} with
+          {{ booked.medicalstaff }} - {{ booked.status }}
+          <v-btn @click="() => cancelAppointment(booked.appointment_id)">Cancel</v-btn>
+        </li>
+      </ul>
+    </div>
 
     <p v-if="errorMessage" class="text-red">{{ errorMessage }}</p>
     <p v-if="successMessage" class="text-green">{{ successMessage }}</p>
