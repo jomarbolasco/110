@@ -1,6 +1,11 @@
 npm install uuid
 npm install openai
 npm install axios
+npm install vue-calendar-3
+
+
+
+
 
 
 Conceptual Overview of Appointment Scheduling System
