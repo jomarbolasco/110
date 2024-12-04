@@ -1,23 +1,26 @@
--- Table: Users
-CREATE TABLE Users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+DROP TABLE IF EXISTS Patient CASCADE;
+DROP TABLE IF EXISTS Admin CASCADE;
+DROP TABLE IF EXISTS Hospitals CASCADE;
+DROP TABLE IF EXISTS Doctors CASCADE;
+DROP TABLE IF EXISTS Availability CASCADE;
+DROP TABLE IF EXISTS Schedule CASCADE;
+DROP TABLE IF EXISTS Appointments CASCADE;
+DROP TABLE IF EXISTS Symptoms CASCADE;
+
 
 -- Table: Patient
 CREATE TABLE Patient (
-    p_id SERIAL PRIMARY KEY,
+    p_id UUID PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    check_up_type TEXT NOT NULL
+    check_up_type TEXT NOT NULL,
+    CONSTRAINT fk_user FOREIGN KEY (p_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
 -- Table: Admin
 CREATE TABLE Admin (
-    a_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    a_id UUID PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_user FOREIGN KEY (a_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
 -- Table: Hospitals
@@ -60,12 +63,12 @@ CREATE TABLE Schedule (
 -- Table: Appointments
 CREATE TABLE Appointments (
     id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id UUID NOT NULL,
     doctor_id INT NOT NULL,
     appointment_date DATE NOT NULL,
     status VARCHAR(50) DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user_appointments FOREIGN KEY (user_id) REFERENCES Patient(p_id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_appointments FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
     CONSTRAINT fk_doctor_appointments FOREIGN KEY (doctor_id) REFERENCES Doctors(id) ON DELETE CASCADE
 );
 
@@ -79,16 +82,5 @@ CREATE TABLE Symptoms (
     CONSTRAINT fk_appointment_symptoms FOREIGN KEY (appointment_id) REFERENCES Appointments(id) ON DELETE CASCADE
 );
 
--- Foreign Key Constraints
-ALTER TABLE Patient
-ADD CONSTRAINT fk_user FOREIGN KEY (p_id) REFERENCES Users(id) ON DELETE CASCADE;
-
-ALTER TABLE Admin
-ADD CONSTRAINT fk_user FOREIGN KEY (a_id) REFERENCES Users(id) ON DELETE CASCADE;
-
-ALTER TABLE Appointments ADD COLUMN user_uuid UUID;
-ALTER TABLE Appointments DROP COLUMN user_id;
-ALTER TABLE Appointments RENAME COLUMN user_uuid TO user_id;
-ALTER TABLE Appointments ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES Users(id);
+-- Additional Query
 SELECT * FROM Appointments WHERE user_id IS NOT NULL;
-
