@@ -12,11 +12,15 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const formDataDefault = {
-  firstname: '',
-  lastname: '',
+  name: '',
   email: '',
   password: '',
   password_confirmation: '',
+  userType: 'patient', // Default value for user type
+  specialty: '',
+  hospital_id: '',
+  contact_number: '',
+  check_up_type: '',
 }
 
 const formData = ref({
@@ -29,6 +33,8 @@ const formAction = ref({
 
 const refVForm = ref()
 
+const userTypes = ['patient', 'doctor'] // Options for the dropdown
+
 const onSubmit = async () => {
   formAction.value = { ...formActionDefault }
   formAction.value.formProcess = true
@@ -38,8 +44,8 @@ const onSubmit = async () => {
     password: formData.value.password,
     options: {
       data: {
-        firstname: formData.value.firstname,
-        lastname: formData.value.lastname,
+        name: formData.value.name,
+        userType: formData.value.userType, // Include userType in the metadata
       },
     },
   })
@@ -52,8 +58,41 @@ const onSubmit = async () => {
 
   if (data) {
     console.log('Auth data:', data)
-    // Redirect to dashboard after successful sign-up
-    router.replace('/dashboard')
+
+    // Insert the user into the appropriate table based on userType
+    let insertData = {}
+    let table = ''
+    if (formData.value.userType === 'patient') {
+      insertData = {
+        p_id: data.user.id, // Use the UUID from Supabase auth for patient
+        name: formData.value.name,
+        check_up_type: formData.value.check_up_type,
+      }
+      table = 'patient' // Ensure table name is lowercase
+    } else if (formData.value.userType === 'doctor') {
+      insertData = {
+        name: formData.value.name,
+        specialty: formData.value.specialty,
+        hospital_id: parseInt(formData.value.hospital_id), // Ensure this is an integer
+        contact_number: formData.value.contact_number,
+      }
+      table = 'doctors' // Ensure table name is lowercase
+    }
+
+    console.log(`Inserting into ${table}:`, insertData)
+
+    const { error: insertError, data: insertDataResponse } = await supabase
+      .from(table)
+      .upsert(insertData)
+      .select()
+
+    if (insertError) {
+      console.error(`Error inserting into ${table} table:`, insertError)
+    } else {
+      console.log(`User successfully inserted into ${table} table`, insertDataResponse)
+      // Redirect to dashboard after successful sign-up
+      router.replace('/dashboard')
+    }
   }
 
   formAction.value.formProcess = false
@@ -77,21 +116,11 @@ export default {
 <template>
   <v-form ref="refVForm" @submit.prevent="onFormSubmit">
     <v-row>
-      <v-col cols="12" md="6">
+      <v-col cols="12">
         <v-text-field
-          v-model="formData.firstname"
+          v-model="formData.name"
           :rules="[requiredValidator]"
-          label="First name"
-          density="compact"
-          variant="outlined"
-        ></v-text-field>
-      </v-col>
-
-      <v-col cols="12" md="6">
-        <v-text-field
-          v-model="formData.lastname"
-          :rules="[requiredValidator]"
-          label="Last name"
+          label="Name"
           density="compact"
           variant="outlined"
         ></v-text-field>
@@ -137,7 +166,59 @@ export default {
           variant="outlined"
           @click:append-inner="visible = !visible"
         ></v-text-field>
+      </v-col>
 
+      <v-col cols="12">
+        <v-select
+          v-model="formData.userType"
+          :items="userTypes"
+          label="User Type"
+          density="compact"
+          variant="outlined"
+        ></v-select>
+      </v-col>
+
+      <v-col cols="12" v-if="formData.userType === 'patient'">
+        <v-text-field
+          v-model="formData.check_up_type"
+          :rules="[requiredValidator]"
+          label="Check-up Type"
+          density="compact"
+          variant="outlined"
+        ></v-text-field>
+      </v-col>
+
+      <v-col cols="12" v-if="formData.userType === 'doctor'">
+        <v-text-field
+          v-model="formData.specialty"
+          :rules="[requiredValidator]"
+          label="Specialty"
+          density="compact"
+          variant="outlined"
+        ></v-text-field>
+      </v-col>
+
+      <v-col cols="12" v-if="formData.userType === 'doctor'">
+        <v-text-field
+          v-model="formData.hospital_id"
+          :rules="[requiredValidator]"
+          label="Hospital ID"
+          density="compact"
+          variant="outlined"
+        ></v-text-field>
+      </v-col>
+
+      <v-col cols="12" v-if="formData.userType === 'doctor'">
+        <v-text-field
+          v-model="formData.contact_number"
+          :rules="[requiredValidator]"
+          label="Contact Number"
+          density="compact"
+          variant="outlined"
+        ></v-text-field>
+      </v-col>
+
+      <v-col cols="12">
         <v-btn
           class="mb-8"
           color="blue"
