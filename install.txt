@@ -3,6 +3,7 @@ npm install uuid
 npm install openai
 npm install axios
 npm install vue-calendar-3
+npm install dotenv
 
 
 
