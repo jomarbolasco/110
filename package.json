@@ -13,7 +13,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.46.2",
     "axios": "^1.7.9",
-    "openai": "^4.73.1",
+    "dotenv": "^16.4.7",
+    "openai": "^4.75.0",
     "pinia": "^2.2.6",
     "uuid": "^11.0.3",
     "vue": "^3.5.12",
