@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import HeroSectionView from './dashBoardComponents/heroSection/heroSectionView.vue'
-import userSchedule from './dashBoardComponents/untitledAreaOne/userSchedule.vue'
+import ScheduleView from './dashBoardComponents/untitledAreaOne/ScheduleView.vue'
 import UntitledAreaTwo from './dashBoardComponents/untitledAreaTwo/untitledAreaTwo.vue'
 import UntitledAreaThree from './dashBoardComponents/untitledAreaThree/untitledAreaThree.vue'
 </script>
@@ -12,7 +12,7 @@ import UntitledAreaThree from './dashBoardComponents/untitledAreaThree/untitledA
       <HeroSectionView />
     </v-col>
     <v-col cols="12" lg="4" class="d-flex align-items-stretch">
-      <userSchedule />
+      <ScheduleView />
     </v-col>
     <v-col cols="12" lg="8" class="d-flex align-items-stretch">
       <UntitledAreaTwo />
