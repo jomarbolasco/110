@@ -38,7 +38,7 @@ const onSubmit = async () => {
 
       // Check the user's role and redirect accordingly
       if (user.user_metadata.role === 'admin') {
-        router.replace('/admin-dashboard')
+        router.replace('/admin')
       } else {
         router.replace('/dashboard')
       }

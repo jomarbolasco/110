@@ -1,17 +1,22 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import { useUserStore } from '@/stores/userStore'
 
 import homeView from '@/homeView.vue'
 import loginView from '@/views/auth/loginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
+import AdminView from '@/views/admin_dashboard/AdminView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
+      name: 'admin_dashboard/AdminView',
       component: homeView,
+    },
+    {
+      path: '/Admin',
+      name: 'admin',
+      component: AdminView,
     },
     {
       path: '/login',
@@ -39,6 +44,11 @@ const router = createRouter({
           component: () => import('@/views/ui-components/Appointments.vue'),
         },
         // {
+        //   name: '/AdminView',
+        //   path: 'admin_dashboard/AdminView',
+        //   component: () => import('@/views/admin_dashboard/AdminView.vue'),
+        // },
+        // {
         //   name: '/askmedoc',
         //   path: 'ui-components/Ai-section/askmedoc',
         //   component: () => import('@/views/ui-components/Ai-section/askmedoc.vue'),
@@ -63,6 +73,7 @@ const router = createRouter({
           path: 'ui-components/tables',
           component: () => import('@/views/ui-components/Tables.vue'),
         },
+
         // {
         //   path: '/:pathMatch(.*)*',
         //   redirect: '/',
