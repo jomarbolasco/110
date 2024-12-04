@@ -12,11 +12,11 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const formDataDefault = {
-  firstname: '',
-  lastname: '',
+  name: '',
   email: '',
   password: '',
   password_confirmation: '',
+  role: 'user', // Default value for role
 }
 
 const formData = ref({
@@ -29,6 +29,8 @@ const formAction = ref({
 
 const refVForm = ref()
 
+const roles = ['user', 'admin'] // Options for the dropdown
+
 const onSubmit = async () => {
   formAction.value = { ...formActionDefault }
   formAction.value.formProcess = true
@@ -38,8 +40,8 @@ const onSubmit = async () => {
     password: formData.value.password,
     options: {
       data: {
-        firstname: formData.value.firstname,
-        lastname: formData.value.lastname,
+        name: formData.value.name,
+        role: formData.value.role, // Ensure role is included in metadata
       },
     },
   })
@@ -77,21 +79,11 @@ export default {
 <template>
   <v-form ref="refVForm" @submit.prevent="onFormSubmit">
     <v-row>
-      <v-col cols="12" md="6">
+      <v-col cols="12">
         <v-text-field
-          v-model="formData.firstname"
+          v-model="formData.name"
           :rules="[requiredValidator]"
-          label="First name"
-          density="compact"
-          variant="outlined"
-        ></v-text-field>
-      </v-col>
-
-      <v-col cols="12" md="6">
-        <v-text-field
-          v-model="formData.lastname"
-          :rules="[requiredValidator]"
-          label="Last name"
+          label="Name"
           density="compact"
           variant="outlined"
         ></v-text-field>
@@ -137,7 +129,19 @@ export default {
           variant="outlined"
           @click:append-inner="visible = !visible"
         ></v-text-field>
+      </v-col>
 
+      <v-col cols="12">
+        <v-select
+          v-model="formData.role"
+          :items="roles"
+          label="Role"
+          density="compact"
+          variant="outlined"
+        ></v-select>
+      </v-col>
+
+      <v-col cols="12">
         <v-btn
           class="mb-8"
           color="blue"

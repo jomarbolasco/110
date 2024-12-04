@@ -1,3 +1,108 @@
 npm install uuid
 npm install openai
 npm install axios
+
+
+Conceptual Overview of Appointment Scheduling System
+1. User Registration and Login
+Users can register and log in using Supabase Auth.
+
+During registration, users are assigned roles (user or admin).
+
+After logging in, the user is redirected based on their role:
+
+Admins are redirected to the admin dashboard.
+
+Users are redirected to the user dashboard.
+
+2. Admin Dashboard
+Admins can manage the schedules of medical staff.
+
+Add/Modify/Delete Schedules: Admins can create, edit, or remove schedules for doctors and nurses, specifying the date, start time, end time, and available slots.
+
+Assign Staff: Admins can assign specific doctors or nurses to schedules.
+
+Manage Medical Staff: Admins can add new doctors and nurses, specifying their role, specialization, and available slots.
+
+3. User Dashboard
+Users can view available appointments and book an appointment with a doctor or nurse.
+
+View Schedules: Users can view available schedules for medical staff, filtered by date and specialization.
+
+Book Appointment: Users can book an appointment by selecting a schedule slot, which updates the available slots in real time.
+
+View/Cancel Appointments: Users can view their upcoming and past appointments and cancel appointments if needed.
+
+Detailed Flow
+1. User Registration and Login
+Registration:
+
+Users provide their email, password, name, and role during registration.
+
+Data is stored in Supabase Auth, with additional metadata for the role.
+
+Login:
+
+Users log in with their email and password.
+
+After authentication, users are redirected based on their role.
+
+2. Admin Dashboard
+Manage Schedules:
+
+Admins can create a new schedule by selecting a staff member, date, start time, end time, and available slots.
+
+Admins can edit existing schedules to change the staff member, timings, or available slots.
+
+Admins can delete schedules if needed.
+
+Manage Medical Staff:
+
+Admins can add new medical staff members by providing their name, role (doctor or nurse), specialization, and available slots.
+
+Admins can edit the details of existing staff members.
+
+Admins can remove staff members if necessary.
+
+3. User Dashboard
+View Schedules:
+
+Users can browse available schedules for different doctors and nurses, filtering by date and specialization.
+
+Book Appointment:
+
+Users select an available schedule slot to book an appointment.
+
+The system updates the available slots for that schedule.
+
+View/Cancel Appointments:
+
+Users can see a list of their upcoming and past appointments.
+
+Users can cancel an upcoming appointment, which updates the available slots accordingly.
+
+Database Schema Relationships
+Users (managed by Supabase Auth) are linked to Appointments through the user_id.
+
+MedicalStaff table holds both doctors and nurses, linked to Schedules and Appointments through the staff_id.
+
+Schedules define available time slots for each staff member and are linked to Appointments to track booked slots.
+
+Example Usage Scenarios
+User Books an Appointment:
+
+A user logs in and navigates to the user dashboard.
+
+The user views available schedules for doctors.
+
+The user selects a convenient time slot and books an appointment.
+
+The system updates the available slots for that schedule.
+
+Admin Manages Schedules:
+
+An admin logs in and navigates to the admin dashboard.
+
+The admin adds a new schedule for a doctor, specifying the date, start time, end time, and available slots.
+
+The admin can also edit or delete existing schedules as needed.
