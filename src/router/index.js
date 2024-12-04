@@ -41,7 +41,7 @@ const router = createRouter({
         {
           name: '/Appointments',
           path: 'ui-components/Appointments',
-          component: () => import('@/views/ui-components/Appointments.vue'),
+          component: () => import('@/views/ui-components/AppointmentView.vue'),
         },
         // {
         //   name: '/AdminView',
