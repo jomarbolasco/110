@@ -1,0 +1,8 @@
+git pull origin development
+git commit -m "Your message"
+git push origin development
+
+
+git fetch origin
+git checkout design
+git merge origin/development

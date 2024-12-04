@@ -4,6 +4,7 @@ import homeView from '@/homeView.vue'
 import loginView from '@/views/auth/loginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import AdminView from '@/views/admin_dashboard/AdminView.vue'
+import AskMe from '@/views/ui-components/Ai-section/AskMe.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,11 @@ const router = createRouter({
       name: 'register',
       component: RegisterView,
     },
+    // {
+    // //   name: 'askme',
+    // //   path: '/askme',
+    // //   component: AskMe,
+    // // },
     {
       path: '/dashboard',
       component: () => import('@/components/layout/full/fullLayout.vue'),
@@ -43,16 +49,12 @@ const router = createRouter({
           path: 'ui-components/Appointments',
           component: () => import('@/views/ui-components/AppointmentView.vue'),
         },
-        // {
-        //   name: '/AdminView',
-        //   path: 'admin_dashboard/AdminView',
-        //   component: () => import('@/views/admin_dashboard/AdminView.vue'),
-        // },
-        // {
-        //   name: '/askmedoc',
-        //   path: 'ui-components/Ai-section/askmedoc',
-        //   component: () => import('@/views/ui-components/Ai-section/askmedoc.vue'),
-        // },
+        {
+          name: 'AskMe',
+          path: 'ui-components/Ai-section/AskMe',
+          component: () => import('@/views/ui-components/Ai-section/AskMe.vue'),
+        },
+
         {
           name: 'Buttons',
           path: 'ui-components/buttons',
