@@ -23,6 +23,12 @@ const scheduleData = ref({
 const loading = ref(false)
 const errorMessage = ref('')
 
+// Fetch existing medical staff and schedules on component mount
+onMounted(async () => {
+  await fetchMedicalStaff()
+  await fetchSchedules()
+})
+
 const fetchMedicalStaff = async () => {
   const { data, error } = await supabase.from('medicalstaff').select('*')
   if (error) {
@@ -40,12 +46,6 @@ const fetchSchedules = async () => {
     schedules.value = data
   }
 }
-
-// Fetch existing medical staff and schedules on component mount
-onMounted(async () => {
-  await fetchMedicalStaff()
-  await fetchSchedules()
-})
 
 const addMedicalStaff = async () => {
   loading.value = true
@@ -134,7 +134,9 @@ const deleteSchedule = async (schedule_id) => {
     <v-form @submit.prevent="addSchedule">
       <v-select
         v-model="scheduleData.staff_id"
-        :items="medicalStaff.map((staff) => ({ text: staff.name, value: staff.staff_id }))"
+        :items="medicalStaff.map((staff) => staff.staff_id)"
+        :item-title="(staff) => staff.name"
+        :item-value="(staff) => staff.staff_id"
         label="Select Staff"
       ></v-select>
       <v-text-field v-model="scheduleData.date" label="Date" type="date"></v-text-field>
