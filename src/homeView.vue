@@ -81,6 +81,11 @@ export default {
             </v-carousel-item>
           </v-carousel>
           <h1>testing for github</h1>
+          <p>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, atque? Nesciunt
+            laudantium obcaecati architecto ex nisi, error soluta neque. Sit, repudiandae. Aperiam
+            temporibus, quia veniam tenetur totam sed necessitatibus quod?
+          </p>
         </v-container>
       </v-main>
     </v-app>
