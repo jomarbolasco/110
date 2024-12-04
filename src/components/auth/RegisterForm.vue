@@ -18,7 +18,6 @@ const formDataDefault = {
   password_confirmation: '',
   userType: 'patient', // Default value for user type
   specialty: '',
-  hospital_id: '',
   contact_number: '',
   check_up_type: '',
 }
@@ -73,7 +72,6 @@ const onSubmit = async () => {
       insertData = {
         name: formData.value.name,
         specialty: formData.value.specialty,
-        hospital_id: parseInt(formData.value.hospital_id), // Ensure this is an integer
         contact_number: formData.value.contact_number,
       }
       table = 'doctors' // Ensure table name is lowercase
@@ -193,16 +191,6 @@ export default {
           v-model="formData.specialty"
           :rules="[requiredValidator]"
           label="Specialty"
-          density="compact"
-          variant="outlined"
-        ></v-text-field>
-      </v-col>
-
-      <v-col cols="12" v-if="formData.userType === 'doctor'">
-        <v-text-field
-          v-model="formData.hospital_id"
-          :rules="[requiredValidator]"
-          label="Hospital ID"
           density="compact"
           variant="outlined"
         ></v-text-field>
