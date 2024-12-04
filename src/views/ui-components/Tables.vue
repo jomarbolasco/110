@@ -1,30 +1,38 @@
-<script setup lang="ts">
-import { ref } from "vue";
-import BaseCard from "@/components/BaseCard.vue";
+<script setup>
+import { ref } from 'vue'
+import axios from 'axios'
 
-import TableDencity from "./table-data/TableDencity.vue";
-import TableFixHeight from "./table-data/TableFixHeight.vue";
-import TableFixHeader from "./table-data/TableFixHeader.vue";
+const prompt = ref('')
+const response = ref('')
+
+async function generateText() {
+  try {
+    const res = await axios.post(
+      'https://api.openai.com/v1/engines/davinci-codex/completions',
+      {
+        prompt: prompt.value,
+        max_tokens: 50,
+        n: 1,
+        stop: '\n',
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        },
+      },
+    )
+    response.value = res.data.choices[0].text.trim()
+  } catch (error) {
+    console.error('Error generating text:', error)
+  }
+}
 </script>
 
+<!-- OpenAIComponent.vue -->
 <template>
-  <v-container fluid class="down-top-padding">
-    <v-row>
-      <v-col cols="12" sm="12">
-        <BaseCard heading="Fixed Header">
-          <TableFixHeader />
-        </BaseCard>
-      </v-col>
-      <v-col cols="12" sm="12">
-        <BaseCard heading="Dencity">
-          <TableDencity />
-        </BaseCard>
-      </v-col>
-      <v-col cols="12" sm="12">
-        <BaseCard heading="Height">
-          <TableFixHeight />
-        </BaseCard>
-      </v-col>
-    </v-row>
-  </v-container>
+  <div>
+    <input v-model="prompt" placeholder="Enter your prompt here" />
+    <button @click="generateText">Generate Text</button>
+    <p v-if="response">Generated Text: {{ response }}</p>
+  </div>
 </template>
