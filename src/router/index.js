@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
+import { useUserStore } from '@/stores/userStore'
 import homeView from '@/homeView.vue'
 import loginView from '@/views/auth/loginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import AdminView from '@/views/admin_dashboard/AdminView.vue'
-import AskMe from '@/views/ui-components/Ai-section/AskMe.vue'
+// import AskMe from '@/views/ui-components/Ai-section/AskMe.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,11 +23,13 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: loginView,
+      meta: { requiresGuest: true },
     },
     {
       path: '/register',
       name: 'register',
       component: RegisterView,
+      meta: { requiresGuest: true },
     },
     // {
     // //   name: 'askme',
@@ -85,23 +87,21 @@ const router = createRouter({
   ],
 })
 
-// // Add a global `beforeEach` navigation guard
-// router.beforeEach(async (to, from, next) => {
-//   const userStore = useUserStore()
-
-//   // Initialize user if not already done
-//   if (!userStore.user && userStore.initializeUser) {
-//     await userStore.initializeUser()
-//   }
-
-//   // Handle authentication checks
-//   if (to.meta.requiresAuth && !userStore.user) {
-//     next('/login') // Redirect unauthenticated users to login
-//   } else if ((to.path === '/login' || to.path === '/register') && userStore.user) {
-//     next('/dashboard') // Redirect authenticated users to the dashboard
-//   } else {
-//     next() // Allow the navigation
-//   }
-// })
+// Add a global `beforeEach` navigation guard
+router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore()
+  // Initialize user if not already done
+  if (!userStore.user && userStore.initializeUser) {
+    await userStore.initializeUser()
+  }
+  // Handle authentication checks
+  if (to.meta.requiresAuth && !userStore.user) {
+    next('/login') // Redirect unauthenticated users to login
+  } else if ((to.path === '/login' || to.path === '/register') && userStore.user) {
+    next('/dashboard') // Redirect authenticated users to the dashboard
+  } else {
+    next() // Allow the navigation
+  }
+})
 
 export default router
