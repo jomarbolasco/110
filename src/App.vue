@@ -1,4 +1,8 @@
 <script setup>
+import '@fortawesome/fontawesome-free/css/all.css'
+import '@fortawesome/fontawesome-free/js/all.js'
+import '@fortawesome/fontawesome-free/css/all.css'
+
 import { RouterView } from 'vue-router'
 // import { useUserStore } from '@/stores/user'
 // import { useRouter } from 'vue-router'

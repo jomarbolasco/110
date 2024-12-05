@@ -4,6 +4,8 @@ npm install openai
 npm install axios
 npm install vue-calendar-3
 npm install dotenv
+npm install @fortawesome/fontawesome-free
+
 
 
 
