@@ -9,6 +9,7 @@ import { ref } from 'vue'
 import { supabase } from '@/components/util/supabase'
 import { useRouter } from 'vue-router'
 
+const theme = ref('dark')
 const loginForm = ref()
 const registerForm = ref()
 const router = useRouter()
@@ -97,7 +98,7 @@ const onRegisterFormSubmit = async () => {
 
 <template>
   <v-responsive>
-    <v-app>
+    <v-app :theme="theme">
       <v-container>
         <v-row align="center" justify="center">
           <v-col cols="12" sm="10">
@@ -195,7 +196,7 @@ const onRegisterFormSubmit = async () => {
                         </div>
                       </v-card-text>
                     </v-col>
-                    <v-col cols="12" md="6" class="bg-purple-darken-1 rounded-bl-xl">
+                    <v-col cols="12" md="6" class="bg-grey-lighten-1 rounded-bl-xl">
                       <div style="text-align: center; padding: 180px 0">
                         <v-img
                           class="mx-auto my-auto"
@@ -219,7 +220,7 @@ const onRegisterFormSubmit = async () => {
                 <!-- Register Form -->
                 <v-window-item :value="2">
                   <v-row>
-                    <v-col cols="12" md="6" class="bg-purple-darken-1 rounded-br-xl">
+                    <v-col cols="12" md="6" class="bg-grey-lighten-1 rounded-br-xl">
                       <div style="text-align: center; padding: 180px 0">
                         <v-img
                           class="mx-auto my-auto"
@@ -357,7 +358,7 @@ const onRegisterFormSubmit = async () => {
 .v-application .rounded-br-xl {
   border-bottom-right-radius: 300px !important;
 }
-.v-application {
+/* .v-application {
   background-color: #d81b60;
-}
+} */
 </style>
