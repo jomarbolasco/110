@@ -177,7 +177,7 @@ const onRegisterFormSubmit = async () => {
                       </v-col>
                     </v-row>
                     <h5 class="text-center grey--text mt-4 mb-3">Or Log in using</h5>
-                    <div class="d-flex justify-space-between align-center mx-10 mb-16">
+                    <div class="d-flex justify-space-between align-center mx-4 mb-16">
                       <v-btn depressed outlined color="grey"
                         ><v-icon color="red">fab fa-google</v-icon></v-btn
                       >
