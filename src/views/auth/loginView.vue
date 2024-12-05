@@ -97,7 +97,7 @@ const onRegisterFormSubmit = async () => {
 
 // Function to handle "Forgot Password" click
 const forgotPassword = () => {
-  router.push('/reset-password')
+  router.push('/forgot-password')
 }
 </script>
 
