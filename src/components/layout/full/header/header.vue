@@ -8,6 +8,10 @@ import { supabase } from '@/components/util/supabase'
 const userStore = useUserStore()
 const router = useRouter()
 
+// Alert state
+const alertMessage = ref<string>('')
+const alertType = ref<'error' | 'success' | 'info' | 'warning'>('info') // Initialize with a valid type
+
 // Logout function
 const logout = async () => {
   try {
@@ -16,10 +20,18 @@ const logout = async () => {
     userStore.logout()
     console.log('User state after logout:', userStore.user) // Log for debugging
 
-    await router.push('/')
-    console.log('Redirected to home') // Log for debugging
+    alertMessage.value = 'Logout successful!'
+    alertType.value = 'success'
+
+    // Show alert message for a short duration before redirecting
+    setTimeout(async () => {
+      await router.push('/')
+      console.log('Redirected to home') // Log for debugging
+    }, 2000) // 2 seconds delay
   } catch (error) {
     console.error('Error during logout:', error)
+    alertMessage.value = 'Error during logout. Please try again.'
+    alertType.value = 'error'
   }
 }
 
@@ -72,5 +84,10 @@ const profile = ref([
         </v-btn>
       </v-list>
     </v-menu>
+
+    <!-- Display logout alert message -->
+    <v-alert :type="alertType" v-if="alertMessage">
+      {{ alertMessage }}
+    </v-alert>
   </div>
 </template>
