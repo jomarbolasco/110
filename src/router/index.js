@@ -5,6 +5,8 @@ import homeView from '@/homeView.vue'
 import loginView from '@/views/auth/loginView.vue'
 import RegisterView from '@/views/auth/RegisterView.vue'
 import AdminView from '@/views/admin_dashboard/AdminView.vue'
+import ForgotPassword from '@/views/auth/ForgotPassword.vue'
+import ResetPassword from '@/views/auth/ResetPassword.vue'
 
 const routes = [
   {
@@ -28,6 +30,16 @@ const routes = [
     name: 'register',
     component: RegisterView,
     meta: { requiresGuest: true }, // Restrict to guests
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: ForgotPassword,
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: ResetPassword,
   },
   {
     path: '/dashboard',
