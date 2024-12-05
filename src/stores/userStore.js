@@ -12,7 +12,8 @@ export const useUserStore = defineStore('user', {
     },
     async logout() {
       await supabase.auth.signOut() // Clear Supabase session
-      this.user = null
+      this.user = null // Clear user state
+      console.log('User state cleared:', this.user) // Log for debugging
     },
     async initializeUser() {
       try {
