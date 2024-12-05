@@ -25,6 +25,8 @@ const formData = ref({
 
 const formAction = ref({
   ...formActionDefault,
+  message: '', // Add message field
+  messageType: 'error', // Add message type field
 })
 
 const refVForm = ref()
@@ -34,6 +36,8 @@ const roles = ['user', 'admin'] // Options for the dropdown
 const onSubmit = async () => {
   formAction.value = { ...formActionDefault }
   formAction.value.formProcess = true
+  formAction.value.message = ''
+  formAction.value.messageType = 'error'
 
   const { data, error } = await supabase.auth.signUp({
     email: formData.value.email,
@@ -49,12 +53,15 @@ const onSubmit = async () => {
   if (error) {
     console.error('Error during sign-up:', error)
     formAction.value.formProcess = false
+    formAction.value.message = error.message // Display error message to user
     return
   }
 
   if (data) {
     console.log('Auth data:', data)
     // Redirect to dashboard after successful sign-up
+    formAction.value.messageType = 'success'
+    formAction.value.message = 'Registration successful!'
     router.replace('/dashboard')
   }
 
@@ -139,6 +146,13 @@ export default {
           density="compact"
           variant="outlined"
         ></v-select>
+      </v-col>
+
+      <v-col cols="12">
+        <!-- Display message to user -->
+        <v-alert :type="formAction.messageType" v-if="formAction.message">
+          {{ formAction.message }}
+        </v-alert>
       </v-col>
 
       <v-col cols="12">

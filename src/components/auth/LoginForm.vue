@@ -18,11 +18,13 @@ const formData = ref({
 })
 
 const loading = ref(false)
-const errorMessage = ref('')
+const message = ref('')
+const messageType = ref('error') // Type for v-alert
 
 const onSubmit = async () => {
   loading.value = true
-  errorMessage.value = ''
+  message.value = ''
+  messageType.value = 'error'
 
   try {
     const { error, data } = await supabase.auth.signInWithPassword({
@@ -31,7 +33,7 @@ const onSubmit = async () => {
     })
 
     if (error) {
-      errorMessage.value = error.message
+      message.value = error.message
     } else {
       // Fetch the user details
       const user = data.user
@@ -43,11 +45,13 @@ const onSubmit = async () => {
         router.replace('/dashboard')
       }
 
-      alert('Login successful!')
+      messageType.value = 'success'
+      message.value = 'Login successful!'
       console.log(data)
     }
   } catch (error) {
-    errorMessage.value = 'An unexpected error occurred. Please try again.'
+    message.value = 'An unexpected error occurred. Please try again.'
+    messageType.value = 'error'
     console.error(error)
   } finally {
     loading.value = false
@@ -111,7 +115,10 @@ export default {
       <span v-else>Log In</span>
     </v-btn>
 
-    <p v-if="errorMessage" class="text-red text-caption">{{ errorMessage }}</p>
+    <!-- Display message with dynamic color -->
+    <v-alert :type="messageType" v-if="message" class="text-caption">
+      {{ message }}
+    </v-alert>
 
     <v-card-text class="text-center">
       <p>
