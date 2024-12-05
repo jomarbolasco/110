@@ -10,9 +10,17 @@ const router = useRouter()
 
 // Logout function
 const logout = async () => {
-  await supabase.auth.signOut()
-  userStore.logout()
-  router.push('/login')
+  try {
+    await supabase.auth.signOut()
+    console.log('Supabase sign-out successful') // Log for debugging
+    userStore.logout()
+    console.log('User state after logout:', userStore.user) // Log for debugging
+
+    await router.push('/')
+    console.log('Redirected to home') // Log for debugging
+  } catch (error) {
+    console.error('Error during logout:', error)
+  }
 }
 
 // Profile menu items
