@@ -94,6 +94,11 @@ const onRegisterFormSubmit = async () => {
     loading.value = false
   }
 }
+
+// Function to handle "Forgot Password" click
+const forgotPassword = () => {
+  router.push('/reset-password')
+}
 </script>
 
 <template>
@@ -155,7 +160,9 @@ const onRegisterFormSubmit = async () => {
                                   ></v-checkbox>
                                 </v-col>
                                 <v-col cols="12" sm="5">
-                                  <span class="caption blue--text">Forgot password</span>
+                                  <span class="caption blue--text" @click="forgotPassword"
+                                    >Forgot password</span
+                                  >
                                 </v-col>
                               </v-row>
 
