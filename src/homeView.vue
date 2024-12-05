@@ -1,93 +1,79 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 const theme = ref('dark')
-</script>
+const loadingText = ref('Loading...')
+const router = useRouter()
+const progress = ref(0)
 
-<script>
-export default {
-  data() {
-    return {
-      slides: [
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital1.png',
-        },
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital2.jpg',
-        },
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital3.jpg',
-        },
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital4.jpg',
-        },
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital5.jpg',
-        },
-      ],
+onMounted(() => {
+  const interval = setInterval(() => {
+    progress.value += 1
+    if (progress.value >= 100) {
+      clearInterval(interval)
+      router.push('/login')
     }
-  },
-}
+  }, 50) // Adjust the speed of the loading bar
+})
 </script>
 
 <template>
   <v-responsive>
     <v-app :theme="theme">
-      <v-app-bar class="px-3">
-        <v-spacer></v-spacer>
-
-        <v-btn append-icon="mdi-account-circle" prepend-icon="mdi-check-circle">
-          <template v-slot:prepend>
-            <!-- <v-icon color="success"></v-icon> -->
-          </template>
-          <RouterLink style="text-decoration: none" to="/login">Login</RouterLink>
-          <template v-slot:append>
-            <v-icon color="warning"></v-icon>
-          </template>
-        </v-btn>
-
-        <v-btn append-icon="mdi-account-plus" prepend-icon="mdi-check-circle">
-          <template v-slot:prepend>
-            <!-- <v-icon color="success"></v-icon> -->
-          </template>
-          <RouterLink style="text-decoration: none" to="/register">Sign-up</RouterLink>
-          <template v-slot:append>
-            <v-icon color="warning"></v-icon>
-          </template>
-        </v-btn>
-      </v-app-bar>
-
       <v-main>
         <v-container>
-          <v-carousel height="400" :show-arrows="false" cycle hide-delimiter-background>
-            <v-carousel-item v-for="(slide, i) in slides" :key="i">
-              <!-- Add the image here -->
-              <v-img
-                :src="slide.image"
-                height="100%"
-                class="d-flex justify-center align-center"
-                cover
-              >
-                <!-- Overlay text -->
-                <div class="text-h2 white--text">
-                  {{ slide.text }}
-                </div>
-              </v-img>
-            </v-carousel-item>
-          </v-carousel>
-          <h1>testing for github</h1>
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, atque? Nesciunt
-            laudantium obcaecati architecto ex nisi, error soluta neque. Sit, repudiandae. Aperiam
-            temporibus, quia veniam tenetur totam sed necessitatibus quod?
-          </p>
+          <!-- Animated Background -->
+          <div class="animated-bg">
+            <v-row align="center" justify="center" class="fill-height">
+              <v-col class="d-flex flex-column align-center">
+                <!-- Loading Spinner -->
+                <v-progress-circular
+                  :size="70"
+                  :width="7"
+                  color="primary"
+                  indeterminate
+                ></v-progress-circular>
+                <!-- Loading Text -->
+                <h2 class="my-4">{{ loadingText }}</h2>
+                <!-- Loading Bar -->
+                <v-progress-linear
+                  :value="progress"
+                  height="10"
+                  color="primary"
+                  class="my-4"
+                ></v-progress-linear>
+              </v-col>
+            </v-row>
+          </div>
         </v-container>
       </v-main>
     </v-app>
   </v-responsive>
 </template>
+
+<style scoped>
+.animated-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+</style>
