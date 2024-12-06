@@ -56,7 +56,7 @@ const onLoginFormSubmit = async () => {
     } else {
       const user = data.user
       if (user.user_metadata.role === 'admin') {
-        router.replace('/admin')
+        router.replace('/dashboard')
       } else {
         router.replace('/dashboard')
       }
