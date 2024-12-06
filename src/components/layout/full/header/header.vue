@@ -55,8 +55,8 @@ const profile = ref([
           plain
           :ripple="false"
         >
-          <v-avatar size="50">
-            <img src="./images/me (2 x 2 in).png" alt="profile-pic" width="60" height="60" />
+          <v-avatar size="45" class="mx-3">
+            <img src="./images/me (2 x 2 in).png" alt="profile-pic" width="50" height="50" />
           </v-avatar>
         </v-btn>
       </template>
@@ -64,7 +64,7 @@ const profile = ref([
       <v-list class="pa-6" elevation="10" rounded="lg">
         <v-list-item class="pa-3 mb-4">
           <div>
-            <h3>Welcome, {{ userStore.user?.name }}</h3>
+            <!-- <h3>Welcome, {{ userStore.user?.name }}</h3> -->
             <p>Email: {{ userStore.user?.email }}</p>
           </div>
         </v-list-item>
