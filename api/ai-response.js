@@ -1,12 +1,14 @@
 // api/ai-response.js (Node.js/Express example)
 import express from 'express'
-import { Configuration, OpenAIApi } from 'openai'
 
 const app = express()
 const configuration = new Configuration({
   apiKey: process.env.VITE_OPENAI_KEY,
 })
-const openai = new OpenAIApi(configuration)
+import OpenAI from 'openai'
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 app.use(express.json())
 

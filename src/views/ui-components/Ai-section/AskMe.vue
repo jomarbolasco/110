@@ -50,14 +50,15 @@ const submitQuery = async () => {
     if (queryError) throw queryError
 
     // Call the AI API to get the response (replace with your actual AI API call)
-    const aiResponse = await fetch('/api/ai-response', {
+    const aiResponse = await fetch('http://localhost:3000/api/ai-response', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: query.value }),
     })
 
     if (!aiResponse.ok) {
-      throw new Error('Failed to fetch AI response')
+      const errorDetail = await aiResponse.text()
+      throw new Error(`Failed to fetch AI response: ${errorDetail}`)
     }
 
     const aiResponseData = await aiResponse.json()
