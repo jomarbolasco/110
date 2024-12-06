@@ -135,107 +135,118 @@ const goToDashboard = () => {
 
               <v-alert v-if="errorMessage" type="error" class="mb-4">{{ errorMessage }}</v-alert>
 
-              <v-card class="mb-4">
-                <v-card-title class="text-h6">Manage Medical Staff</v-card-title>
-                <v-card-text>
-                  <v-form @submit.prevent="addMedicalStaff">
-                    <v-text-field
-                      v-model="formData.name"
-                      label="Name"
-                      :rules="[requiredValidator]"
-                    ></v-text-field>
-                    <v-select
-                      v-model="formData.role"
-                      :items="['doctor', 'nurse']"
-                      label="Role"
-                    ></v-select>
-                    <v-text-field
-                      v-model="formData.specialization"
-                      label="Specialization"
-                      :rules="[requiredValidator]"
-                    ></v-text-field>
-                    <v-text-field
-                      v-model="formData.available_slots"
-                      label="Available Slots"
-                      type="number"
-                    ></v-text-field>
-                    <v-btn type="submit" :loading="loading">Add Staff</v-btn>
-                  </v-form>
-                </v-card-text>
-              </v-card>
+              <v-expansion-panels>
+                <v-expansion-panel>
+                  <v-expansion-panel-title>Manage Medical Staff</v-expansion-panel-title>
+                  <v-expansion-panel-text>
+                    <v-card class="mb-4">
+                      <v-card-text>
+                        <v-form @submit.prevent="addMedicalStaff">
+                          <v-text-field
+                            v-model="formData.name"
+                            label="Name"
+                            :rules="[requiredValidator]"
+                          ></v-text-field>
+                          <v-select
+                            v-model="formData.role"
+                            :items="['doctor', 'nurse']"
+                            label="Role"
+                          ></v-select>
+                          <v-text-field
+                            v-model="formData.specialization"
+                            label="Specialization"
+                            :rules="[requiredValidator]"
+                          ></v-text-field>
+                          <v-text-field
+                            v-model="formData.available_slots"
+                            label="Available Slots"
+                            type="number"
+                          ></v-text-field>
+                          <v-btn type="submit" :loading="loading">Add Staff</v-btn>
+                        </v-form>
+                      </v-card-text>
+                    </v-card>
 
-              <v-card class="mb-4">
-                <v-card-title class="text-h6">Medical Staff List</v-card-title>
-                <v-card-text>
-                  <v-list>
-                    <v-list-item v-for="staff in medicalStaff" :key="staff.staff_id">
-                      <v-list-item-title>{{ staff.name }}</v-list-item-title>
-                      <v-list-item-subtitle>{{ staff.role }}</v-list-item-subtitle>
-                      <v-list-item-action>
-                        <v-btn @click="deleteMedicalStaff(staff.staff_id)" color="red"
-                          >Remove</v-btn
-                        >
-                      </v-list-item-action>
-                    </v-list-item>
-                  </v-list>
-                </v-card-text>
-              </v-card>
+                    <v-card class="mb-4">
+                      <v-card-title class="text-h6">Medical Staff List</v-card-title>
+                      <v-card-text>
+                        <v-list>
+                          <v-list-item v-for="staff in medicalStaff" :key="staff.staff_id">
+                            <v-list-item-title>{{ staff.name }}</v-list-item-title>
+                            <v-list-item-subtitle>{{ staff.role }}</v-list-item-subtitle>
+                            <v-list-item-action>
+                              <v-btn @click="deleteMedicalStaff(staff.staff_id)" color="red"
+                                >Remove</v-btn
+                              >
+                            </v-list-item-action>
+                          </v-list-item>
+                        </v-list>
+                      </v-card-text>
+                    </v-card>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
 
-              <v-card class="mb-4">
-                <v-card-title class="text-h6">Manage Schedules</v-card-title>
-                <v-card-text>
-                  <v-form @submit.prevent="addSchedule">
-                    <v-select
-                      v-model="scheduleData.staff_id"
-                      :items="medicalStaff.map((staff) => staff.staff_id)"
-                      :item-title="(staff) => staff.name"
-                      :item-value="(staff) => staff.staff_id"
-                      label="Select Staff"
-                    ></v-select>
-                    <v-text-field
-                      v-model="scheduleData.date"
-                      label="Date"
-                      type="date"
-                    ></v-text-field>
-                    <v-text-field
-                      v-model="scheduleData.start_time"
-                      label="Start Time"
-                      type="time"
-                    ></v-text-field>
-                    <v-text-field
-                      v-model="scheduleData.end_time"
-                      label="End Time"
-                      type="time"
-                    ></v-text-field>
-                    <v-text-field
-                      v-model="scheduleData.slots"
-                      label="Slots"
-                      type="number"
-                    ></v-text-field>
-                    <v-btn type="submit" :loading="loading">Add Schedule</v-btn>
-                  </v-form>
-                </v-card-text>
-              </v-card>
+                <v-expansion-panel>
+                  <v-expansion-panel-title>Manage Schedules</v-expansion-panel-title>
+                  <v-expansion-panel-text>
+                    <v-card class="mb-4">
+                      <v-card-text>
+                        <v-form @submit.prevent="addSchedule">
+                          <v-select
+                            v-model="scheduleData.staff_id"
+                            :items="medicalStaff.map((staff) => staff.staff_id)"
+                            :item-title="(staff) => staff.name"
+                            :item-value="(staff) => staff.staff_id"
+                            label="Select Staff"
+                          ></v-select>
+                          <v-text-field
+                            v-model="scheduleData.date"
+                            label="Date"
+                            type="date"
+                          ></v-text-field>
+                          <v-text-field
+                            v-model="scheduleData.start_time"
+                            label="Start Time"
+                            type="time"
+                          ></v-text-field>
+                          <v-text-field
+                            v-model="scheduleData.end_time"
+                            label="End Time"
+                            type="time"
+                          ></v-text-field>
+                          <v-text-field
+                            v-model="scheduleData.slots"
+                            label="Slots"
+                            type="number"
+                          ></v-text-field>
+                          <v-btn type="submit" :loading="loading">Add Schedule</v-btn>
+                        </v-form>
+                      </v-card-text>
+                    </v-card>
 
-              <v-card class="mb-4">
-                <v-card-title class="text-h6">Schedules List</v-card-title>
-                <v-card-text>
-                  <v-list>
-                    <v-list-item v-for="schedule in schedules" :key="schedule.schedule_id">
-                      <v-list-item-title>{{ schedule.date }}</v-list-item-title>
-                      <v-list-item-subtitle
-                        >{{ schedule.start_time }} to {{ schedule.end_time }}</v-list-item-subtitle
-                      >
+                    <v-card class="mb-4">
+                      <v-card-title class="text-h6">Schedules List</v-card-title>
+                      <v-card-text>
+                        <v-list>
+                          <v-list-item v-for="schedule in schedules" :key="schedule.schedule_id">
+                            <v-list-item-title>{{ schedule.date }}</v-list-item-title>
+                            <v-list-item-subtitle
+                              >{{ schedule.start_time }} to
+                              {{ schedule.end_time }}</v-list-item-subtitle
+                            >
 
-                      <v-list-item-action>
-                        <v-btn @click="deleteSchedule(schedule.schedule_id)" color="red"
-                          >Delete</v-btn
-                        >
-                      </v-list-item-action>
-                    </v-list-item>
-                  </v-list>
-                </v-card-text>
-              </v-card>
+                            <v-list-item-action>
+                              <v-btn @click="deleteSchedule(schedule.schedule_id)" color="red"
+                                >Delete</v-btn
+                              >
+                            </v-list-item-action>
+                          </v-list-item>
+                        </v-list>
+                      </v-card-text>
+                    </v-card>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </v-card>
           </v-col>
         </v-row>
