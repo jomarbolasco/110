@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 import { requiredValidator } from '@/components/util/validators'
 
-// Reactive state for managing medical staff and schedules
 const medicalStaff = ref([])
 const schedules = ref([])
 const formData = ref({
@@ -23,7 +22,6 @@ const scheduleData = ref({
 const loading = ref(false)
 const errorMessage = ref('')
 
-// Fetch existing medical staff and schedules on component mount
 onMounted(async () => {
   await fetchMedicalStaff()
   await fetchSchedules()
@@ -96,6 +94,15 @@ const deleteSchedule = async (schedule_id) => {
     await fetchSchedules()
   }
 }
+
+const deleteMedicalStaff = async (staff_id) => {
+  const { error } = await supabase.from('medicalstaff').delete().eq('staff_id', staff_id)
+  if (error) {
+    console.error('Error deleting medical staff:', error)
+  } else {
+    await fetchMedicalStaff()
+  }
+}
 </script>
 
 <template>
@@ -146,6 +153,9 @@ const deleteSchedule = async (schedule_id) => {
                 <v-list-item v-for="staff in medicalStaff" :key="staff.staff_id">
                   <v-list-item-title>{{ staff.name }}</v-list-item-title>
                   <v-list-item-subtitle>{{ staff.role }}</v-list-item-subtitle>
+                  <v-list-item-action>
+                    <v-btn @click="deleteMedicalStaff(staff.staff_id)" color="red">Remove</v-btn>
+                  </v-list-item-action>
                 </v-list-item>
               </v-list>
             </v-card-text>
