@@ -32,6 +32,14 @@ const step = ref(1)
 const visible = ref(false)
 const roles = ['user', 'admin'] // Options for the dropdown
 
+const alertMessage = ref('')
+const showAlert = (message) => {
+  alertMessage.value = message
+  setTimeout(() => {
+    alertMessage.value = ''
+  }, 3000) // Hide the alert after 3 seconds
+}
+
 const onLoginFormSubmit = async () => {
   loading.value = true
   loginMessage.value = ''
@@ -48,7 +56,7 @@ const onLoginFormSubmit = async () => {
     } else {
       const user = data.user
       if (user.user_metadata.role === 'admin') {
-        router.replace('/admin')
+        router.replace('/dashboard')
       } else {
         router.replace('/dashboard')
       }
@@ -159,11 +167,11 @@ const forgotPassword = () => {
                                     color="blue"
                                   ></v-checkbox>
                                 </v-col>
-                                <v-col cols="12" sm="5">
+                                <!-- <v-col cols="12" sm="5">
                                   <span class="caption blue--text" @click="forgotPassword"
                                     >Forgot password</span
                                   >
-                                </v-col>
+                                </v-col> -->
                               </v-row>
 
                               <v-btn
@@ -179,27 +187,36 @@ const forgotPassword = () => {
                                 <span v-if="loading">Logging in...</span>
                                 <span v-else>Log In</span>
                               </v-btn>
-
-                              <v-alert
-                                :type="messageType"
-                                v-if="loginMessage"
-                                class="text-caption"
-                                >{{ loginMessage }}</v-alert
-                              >
                             </v-form>
                           </v-col>
                         </v-row>
+
                         <h5 class="text-center grey--text mt-4 mb-3">Or Log in using</h5>
                         <div class="d-flex justify-space-between align-center mx-16 mb-10">
-                          <v-btn depressed outlined color="grey-lighten-1"
-                            ><v-icon color="red">fab fa-google</v-icon></v-btn
+                          <v-btn
+                            depressed
+                            outlined
+                            color="grey-lighten-1"
+                            @click="showAlert('Google login is under maintenance')"
                           >
-                          <v-btn depressed outlined color="grey-lighten-1"
-                            ><v-icon color="blue">fab fa-facebook-f</v-icon></v-btn
+                            <v-icon color="red">fab fa-google</v-icon>
+                          </v-btn>
+                          <v-btn
+                            depressed
+                            outlined
+                            color="grey-lighten-1"
+                            @click="showAlert('Facebook login is under maintenance')"
                           >
-                          <v-btn depressed outlined color="grey-lighten-1"
-                            ><v-icon color="light-blue lighten-3">fab fa-twitter</v-icon></v-btn
+                            <v-icon color="blue">fab fa-facebook-f</v-icon>
+                          </v-btn>
+                          <v-btn
+                            depressed
+                            outlined
+                            color="grey-lighten-1"
+                            @click="showAlert('Twitter login is under maintenance')"
                           >
+                            <v-icon color="light-blue lighten-3">fab fa-twitter</v-icon>
+                          </v-btn>
                         </div>
                       </v-card-text>
                     </v-col>
@@ -338,10 +355,6 @@ const forgotPassword = () => {
                                 :loading="loading"
                                 >Register</v-btn
                               >
-
-                              <v-alert :type="messageType" v-if="registerMessage">{{
-                                registerMessage
-                              }}</v-alert>
                             </v-form>
                           </v-col>
                         </v-row>
@@ -350,6 +363,13 @@ const forgotPassword = () => {
                   </v-row>
                 </v-window-item>
               </v-window>
+              <v-alert v-if="alertMessage" type="info" dismissible>
+                {{ alertMessage }}
+              </v-alert>
+              <v-alert :type="messageType" v-if="loginMessage" class="text-caption">{{
+                loginMessage
+              }}</v-alert>
+              <v-alert :type="messageType" v-if="registerMessage">{{ registerMessage }}</v-alert>
             </v-card>
           </v-col>
         </v-row>

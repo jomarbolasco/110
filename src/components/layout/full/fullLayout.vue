@@ -2,8 +2,10 @@
 import { RouterView } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import SideBar from './sidebar/sideBar.vue'
+import { useUserStore } from '@/stores/userStore'
 
 import HeaderVue from './header/header.vue'
+const userStore = useUserStore()
 
 const theme = ref(localStorage.getItem('theme') ?? 'dark')
 
@@ -34,11 +36,15 @@ onMounted(() => {
       <SideBar />
       <!-- Use PascalCase -->
     </v-navigation-drawer>
+
     <!-- ---------------------------------------------- -->
     <!---Header -->
     <!-- ---------------------------------------------- -->
     <v-app-bar elevation="0" class="v-topbar">
       <v-app-bar-nav-icon class="hidden-md-and-up" @click="drawer = !drawer" />
+      <div>
+        <h2 class="mx-5">Welcome, {{ userStore.user?.name }}</h2>
+      </div>
       <v-spacer />
       <!-- ---------------------------------------------- -->
       <!-- User Profile -->
