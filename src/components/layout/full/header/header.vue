@@ -84,10 +84,5 @@ const profile = ref([
         </v-btn>
       </v-list>
     </v-menu>
-
-    <!-- Display logout alert message -->
-    <v-alert :type="alertType" v-if="alertMessage">
-      {{ alertMessage }}
-    </v-alert>
   </div>
 </template>
