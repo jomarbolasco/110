@@ -28,9 +28,16 @@ const fetchUser = async () => {
 }
 
 const fetchSchedules = async () => {
-  const { data, error } = await supabase
-    .from('schedules')
-    .select('schedule_id, date, start_time, end_time, medicalstaff (name)')
+  const { data, error } = await supabase.from('schedules').select(`
+      schedule_id,
+      date,
+      start_time,
+      end_time,
+      medicalstaff (
+        staff_id,
+        name
+      )
+    `)
   if (error) {
     console.error('Error fetching schedules:', error)
     errorMessage.value = 'An error occurred while fetching schedules.'
@@ -78,9 +85,10 @@ const bookAppointment = async () => {
       return
     }
 
+    // Ensure the correct staff_id is being used from the selected schedule
     const appointmentData = {
       user_id: user.value.id,
-      staff_id: selectedSchedule.value.schedule_id,
+      staff_id: selectedSchedule.value.medicalstaff.staff_id, // Correct staff_id usage
       appointment_date: selectedSchedule.value.date,
       appointment_time: selectedSchedule.value.start_time,
       status: 'reserved',
@@ -141,17 +149,20 @@ const cancelAppointment = async (appointment_id) => {
             <v-card-text>
               <v-list v-if="schedules.length > 0">
                 <v-list-item v-for="schedule in schedules" :key="schedule.schedule_id">
-                  <v-list-item-title
-                    >{{ schedule.date }}: {{ schedule.start_time }} to
-                    {{ schedule.end_time }}</v-list-item-title
-                  >
-                  <v-list-item-subtitle>with {{ schedule.medicalstaff.name }}</v-list-item-subtitle>
+                  <v-list-item-title>
+                    {{ schedule.date }}: {{ schedule.start_time }} to {{ schedule.end_time }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    with {{ schedule.medicalstaff.name }}
+                  </v-list-item-subtitle>
 
                   <v-list-item-action>
                     <v-btn
                       @click="() => selectSchedule(schedule)"
                       :disabled="
-                        bookedSchedules.some((booked) => booked.staff_id === schedule.schedule_id)
+                        bookedSchedules.some(
+                          (booked) => booked.staff_id === schedule.medicalstaff.staff_id,
+                        )
                       "
                     >
                       Select
@@ -182,17 +193,17 @@ const cancelAppointment = async (appointment_id) => {
             <v-card-text>
               <v-list>
                 <v-list-item v-for="booked in bookedSchedules" :key="booked.appointment_id">
-                  <v-list-item-title
-                    >{{ booked.appointment_date }}: {{ booked.appointment_time }}</v-list-item-title
-                  >
-                  <v-list-item-subtitle
-                    >with {{ booked.medicalstaff }} - {{ booked.status }}</v-list-item-subtitle
-                  >
+                  <v-list-item-title>
+                    {{ booked.appointment_date }}: {{ booked.appointment_time }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    with {{ booked.medicalstaff }} - {{ booked.status }}
+                  </v-list-item-subtitle>
 
                   <v-list-item-action>
-                    <v-btn @click="() => cancelAppointment(booked.appointment_id)" color="red"
-                      >Cancel</v-btn
-                    >
+                    <v-btn @click="() => cancelAppointment(booked.appointment_id)" color="red">
+                      Cancel
+                    </v-btn>
                   </v-list-item-action>
                 </v-list-item>
               </v-list>

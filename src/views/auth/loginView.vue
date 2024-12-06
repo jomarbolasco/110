@@ -113,11 +113,19 @@ const forgotPassword = () => {
   <v-responsive>
     <v-app :theme="theme">
       <v-container>
+        <v-alert v-if="alertMessage" type="info" dismissible>
+          {{ alertMessage }}
+        </v-alert>
+        <v-alert :type="messageType" v-if="loginMessage" class="text-caption">{{
+          loginMessage
+        }}</v-alert>
+        <v-alert :type="messageType" v-if="registerMessage">{{ registerMessage }}</v-alert>
         <v-row align="center" justify="center">
           <v-col cols="12" sm="10">
             <v-card class="elevation-6 mt-10">
               <v-window v-model="step">
                 <!-- Login Form -->
+
                 <v-window-item :value="1">
                   <v-row>
                     <v-col cols="12" md="6">
@@ -363,13 +371,6 @@ const forgotPassword = () => {
                   </v-row>
                 </v-window-item>
               </v-window>
-              <v-alert v-if="alertMessage" type="info" dismissible>
-                {{ alertMessage }}
-              </v-alert>
-              <v-alert :type="messageType" v-if="loginMessage" class="text-caption">{{
-                loginMessage
-              }}</v-alert>
-              <v-alert :type="messageType" v-if="registerMessage">{{ registerMessage }}</v-alert>
             </v-card>
           </v-col>
         </v-row>

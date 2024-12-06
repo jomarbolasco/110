@@ -43,3 +43,23 @@ CREATE TABLE IF NOT EXISTS appointments (
     FOREIGN KEY (user_id) REFERENCES auth.users(id),  -- Directly referencing auth.users
     FOREIGN KEY (staff_id) REFERENCES medicalstaff(staff_id)
 );
+
+-- Second phase (adding AI chat bot)
+
+-- Create user_queries table
+CREATE TABLE IF NOT EXISTS user_queries (
+    query_id SERIAL PRIMARY KEY,
+    user_id UUID,  -- Using UUID for user_id to match with Supabase Auth user IDs
+    query_text TEXT NOT NULL,
+    query_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+
+-- Create ai_responses table
+CREATE TABLE IF NOT EXISTS ai_responses (
+    response_id SERIAL PRIMARY KEY,
+    query_id INT,
+    response_text TEXT NOT NULL,
+    response_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (query_id) REFERENCES user_queries(query_id)
+);
