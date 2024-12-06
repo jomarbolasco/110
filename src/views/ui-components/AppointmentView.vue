@@ -30,7 +30,7 @@ const fetchUser = async () => {
 const fetchSchedules = async () => {
   const { data, error } = await supabase
     .from('schedules')
-    .select('schedule_id, date, start_time, end_time, medicalstaff (name)')
+    .select('schedule_id, date, start_time, end_time, medicalstaff (staff_id, name)')
   if (error) {
     console.error('Error fetching schedules:', error)
     errorMessage.value = 'An error occurred while fetching schedules.'
@@ -78,9 +78,10 @@ const bookAppointment = async () => {
       return
     }
 
+    // Ensure the correct staff_id is being used from the selected schedule
     const appointmentData = {
       user_id: user.value.id,
-      staff_id: selectedSchedule.value.schedule_id,
+      staff_id: selectedSchedule.value.medicalstaff.staff_id, // Correct staff_id usage
       appointment_date: selectedSchedule.value.date,
       appointment_time: selectedSchedule.value.start_time,
       status: 'reserved',
