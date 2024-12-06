@@ -14,7 +14,7 @@ onMounted(() => {
       clearInterval(interval)
       router.push('/login')
     }
-  }, 50) // Adjust the speed of the loading bar
+  }, 30) // Adjust the speed of the loading bar
 })
 </script>
 
