@@ -11,10 +11,10 @@ import UntitledAreaThree from './dashBoardComponents/untitledAreaThree/untitledA
     <v-col cols="12" sm="12">
       <HeroSectionView />
     </v-col>
-    <v-col cols="12" lg="4" class="d-flex align-items-stretch">
+    <v-col cols="12" lg="8" class="d-flex align-items-stretch">
       <ScheduleView />
     </v-col>
-    <v-col cols="12" lg="8" class="d-flex align-items-stretch">
+    <v-col cols="12" lg="4" class="d-flex align-items-stretch">
       <UntitledAreaTwo />
     </v-col>
     <v-col cols="12" sm="12">

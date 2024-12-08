@@ -1,131 +1,98 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { supabase } from '@/components/util/supabase.js'
-import { useUserStore } from '@/stores/userStore'
+import { supabase } from '@/components/util/supabase'
 
-const userStore = useUserStore()
-const user_id = ref(null)
-const userType = ref(null)
-const appointments = ref([])
-
-const fetchAppointments = async () => {
-  if (!user_id.value) {
-    console.error('User ID is not set')
-    return
-  }
-
-  if (!userType.value) {
-    console.error('User type is not set')
-    return
-  }
-
-  if (userType.value === 'patient') {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('appointment_date, appointment_time, status, staff_id')
-      .eq('user_id', user_id.value)
-
-    if (error) {
-      console.error('Error fetching appointments:', error)
-    } else {
-      const staffIds = data.map((appointment) => appointment.staff_id)
-      const { data: medicalStaff, error: staffError } = await supabase
-        .from('medicalstaff')
-        .select('staff_id, name, specialization')
-        .in('staff_id', staffIds)
-
-      if (staffError) {
-        console.error('Error fetching medical staff:', staffError)
-      } else {
-        appointments.value = data.map((appointment) => {
-          const staff = medicalStaff.find((s) => s.staff_id === appointment.staff_id)
-          return {
-            ...appointment,
-            staffName: staff ? staff.name : 'Unknown',
-            specialization: staff ? staff.specialization : 'Unknown',
-            formattedDate: new Date(appointment.appointment_date).toLocaleDateString(),
-          }
-        })
-      }
-    }
-  } else if (userType.value === 'doctor') {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('appointment_date, appointment_time, status, user_id')
-      .eq('staff_id', user_id.value)
-
-    if (error) {
-      console.error('Error fetching appointments:', error)
-    } else {
-      const userIds = data.map((appointment) => appointment.user_id)
-      const { data: patients, error: patientsError } = await supabase
-        .from('patient')
-        .select('p_id, name')
-        .in('p_id', userIds)
-
-      if (patientsError) {
-        console.error('Error fetching patients:', patientsError)
-      } else {
-        appointments.value = data.map((appointment) => {
-          const patient = patients.find((pat) => pat.p_id === appointment.user_id)
-          return {
-            ...appointment,
-            patientName: patient ? patient.name : 'Unknown',
-            formattedDate: new Date(appointment.appointment_date).toLocaleDateString(),
-          }
-        })
-      }
-    }
-  }
+// Helper functions for formatting
+const formatDate = (date) => {
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+  return new Date(date).toLocaleDateString(undefined, options)
 }
 
+const formatTime = (time) => {
+  const [hours, minutes] = time.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const formattedHours = hours % 12 || 12 // Convert to 12-hour format
+  return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
+const schedules = ref([])
+const loading = ref(false)
+const errorMessage = ref('')
+const page = ref(0)
+const pageSize = 5 // For pagination
+
 onMounted(async () => {
-  await userStore.initializeUser()
-  if (userStore.user) {
-    user_id.value = userStore.user.id
-    userType.value = userStore.user.user_metadata?.userType || 'patient'
-    await fetchAppointments()
-  } else {
-    console.error('User not initialized')
-  }
+  await fetchSchedules()
 })
+
+const fetchSchedules = async () => {
+  loading.value = true
+  const { data, error } = await supabase
+    .from('schedules')
+    .select(
+      `
+      schedule_id,
+      date,
+      start_time,
+      end_time,
+      available_slots,
+      medicalstaff (
+        staff_id,
+        name
+      )
+    `,
+    )
+    .gt('available_slots', 0) // Only fetch schedules with available slots
+    .order('date', { ascending: true })
+    .order('start_time', { ascending: true })
+    .range(page.value * pageSize, (page.value + 1) * pageSize - 1)
+
+  if (error) {
+    console.error('Error fetching schedules:', error)
+    errorMessage.value = 'An error occurred while fetching schedules.'
+  } else {
+    schedules.value = data.map((schedule) => ({
+      ...schedule,
+      formattedDate: formatDate(schedule.date),
+      formattedStartTime: formatTime(schedule.start_time),
+      formattedEndTime: formatTime(schedule.end_time),
+    }))
+  }
+  loading.value = false
+}
 </script>
 
 <template>
-  <v-container>
-    <v-row>
-      <v-col cols="12">
-        <v-card class="w-100 h-100">
-          <!-- Card Title -->
-          <v-card-title class="text-h6 font-weight-bold">Your Appointments</v-card-title>
+  <v-row>
+    <v-col cols="12" md="8" offset-md="2">
+      <v-card class="pa-5">
+        <v-card-title class="text-h5">Available Schedules</v-card-title>
+        <v-card-subtitle>View all available schedules</v-card-subtitle>
+
+        <v-divider class="my-4"></v-divider>
+
+        <v-alert v-if="errorMessage" type="error" class="mb-4">{{ errorMessage }}</v-alert>
+
+        <v-card class="mb-4">
           <v-card-text>
-            <v-data-table
-              v-if="appointments.length > 0"
-              :headers="[
-                { text: 'Date', value: 'formattedDate' },
-                { text: 'Time', value: 'appointment_time' },
-                userType.value === 'patient'
-                  ? { text: 'Doctor', value: 'staffName' }
-                  : { text: 'Patient', value: 'patientName' },
-                { text: 'Specialty', value: 'specialization' },
-                { text: 'Status', value: 'status' },
-              ]"
-              :items="appointments"
-              class="elevation-1"
-            ></v-data-table>
-            <p v-else>No appointments found.</p>
+            <v-list v-if="schedules.length > 0">
+              <v-list-item v-for="schedule in schedules" :key="schedule.schedule_id">
+                <v-list-item-title>
+                  {{ schedule.formattedDate }}: {{ schedule.formattedStartTime }} to
+                  {{ schedule.formattedEndTime }}
+                </v-list-item-title>
+                <v-list-item-subtitle> with {{ schedule.medicalstaff.name }} </v-list-item-subtitle>
+                <v-list-item-subtitle>
+                  Slots left: {{ schedule.available_slots }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+            <v-alert v-else type="info">No schedules available at the moment.</v-alert>
           </v-card-text>
         </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
-</template>
 
-<style>
-.error-message {
-  color: red;
-}
-.success-message {
-  color: green;
-}
-</style>
+        <v-btn @click="() => page.value++" :disabled="schedules.length < pageSize">Load More</v-btn>
+      </v-card>
+    </v-col>
+  </v-row>
+</template>
