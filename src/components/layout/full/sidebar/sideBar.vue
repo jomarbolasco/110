@@ -50,11 +50,13 @@ const sidebarMenu = ref([
     <div class="scrollnavbar">
       <v-list class="pa-4" color="transparent">
         <template v-for="(item, i) in sidebarMenu" :key="i">
-          <v-list-item :to="item.to" rounded="lg" class="mb-1">
-            <v-avatar class="me-3">
-              <v-icon class="feather-sm v-icon v-icon--size-default">{{ item.icon }}</v-icon>
-            </v-avatar>
-            <v-list-item-title v-text="item.title"></v-list-item-title>
+          <v-list-item :to="item.to" rounded="lg" class="mb-1 align-item hover-blue">
+            <div class="align-content">
+              <v-avatar class="me-3">
+                <v-icon class="feather-sm v-icon v-icon--size-default">{{ item.icon }}</v-icon>
+              </v-avatar>
+              <v-list-item-title v-text="item.title"></v-list-item-title>
+            </div>
           </v-list-item>
         </template>
       </v-list>
@@ -67,3 +69,20 @@ const sidebarMenu = ref([
     </div>
   </div>
 </template>
+
+<style scoped>
+.align-item {
+  display: flex;
+  align-items: center;
+}
+
+.align-content {
+  display: flex;
+  align-items: center;
+}
+
+.hover-blue:hover {
+  background: linear-gradient(90deg, rgba(236, 62, 62, 0.678), purple);
+  color: white;
+}
+</style>
