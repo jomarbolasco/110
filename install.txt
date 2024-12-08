@@ -10,7 +10,7 @@ npm install cors
 npm install express body-parser cors dotenv openai
 npm install openai@latest
 npm install express body-parser cors dotenv express-rate-limit node-cache openai@latest
-
+npm install @supabase/supabase-js
 
 
 
