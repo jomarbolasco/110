@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 
-// Reactive state for managing schedules and user information
 const schedules = ref([])
 const bookedSchedules = ref([])
 const selectedSchedule = ref(null)
@@ -10,8 +9,10 @@ const user = ref(null)
 const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const page = ref(0)
+const pageSize = 5 // For pagination
 
-// Fetch user and schedules on component mount
+// Fetch data on component mount
 onMounted(async () => {
   await fetchUser()
   await fetchSchedules()
@@ -28,16 +29,26 @@ const fetchUser = async () => {
 }
 
 const fetchSchedules = async () => {
-  const { data, error } = await supabase.from('schedules').select(`
+  const { data, error } = await supabase
+    .from('schedules')
+    .select(
+      `
       schedule_id,
       date,
       start_time,
       end_time,
+      available_slots,
       medicalstaff (
         staff_id,
         name
       )
-    `)
+    `,
+    )
+    .gt('available_slots', 0) // Only fetch schedules with available slots
+    .order('date', { ascending: true })
+    .order('start_time', { ascending: true })
+    .range(page.value * pageSize, (page.value + 1) * pageSize - 1)
+
   if (error) {
     console.error('Error fetching schedules:', error)
     errorMessage.value = 'An error occurred while fetching schedules.'
@@ -52,7 +63,14 @@ const fetchBookedSchedules = async () => {
   const { data, error } = await supabase
     .from('appointments')
     .select(
-      'appointment_id, appointment_date, appointment_time, status, staff_id, medicalstaff (name)',
+      `
+      appointment_id,
+      appointment_date,
+      appointment_time,
+      status,
+      staff_id,
+      medicalstaff (name)
+    `,
     )
     .eq('user_id', user.value.id)
 
@@ -76,8 +94,7 @@ const bookAppointment = async () => {
   errorMessage.value = ''
   successMessage.value = ''
 
-  if (user.value) {
-    // Check if the user already has a booked appointment
+  if (user.value && selectedSchedule.value) {
     if (bookedSchedules.value.length > 0) {
       errorMessage.value =
         'You can only book one appointment at a time. Please cancel your existing appointment first.'
@@ -85,26 +102,36 @@ const bookAppointment = async () => {
       return
     }
 
-    // Ensure the correct staff_id is being used from the selected schedule
     const appointmentData = {
       user_id: user.value.id,
-      staff_id: selectedSchedule.value.medicalstaff.staff_id, // Correct staff_id usage
+      staff_id: selectedSchedule.value.medicalstaff.staff_id,
       appointment_date: selectedSchedule.value.date,
       appointment_time: selectedSchedule.value.start_time,
       status: 'reserved',
     }
 
-    const { error } = await supabase.from('appointments').insert([appointmentData])
-    if (error) {
+    const { error: insertError } = await supabase.from('appointments').insert([appointmentData])
+    if (insertError) {
       errorMessage.value = 'An error occurred while booking the appointment.'
-      console.error(error)
+      console.error(insertError)
     } else {
-      successMessage.value = 'Appointment booked successfully!'
-      selectedSchedule.value = null
-      await fetchBookedSchedules() // Refresh booked schedules after booking
+      const { error: updateError } = await supabase
+        .from('schedules')
+        .update({ available_slots: selectedSchedule.value.available_slots - 1 })
+        .eq('schedule_id', selectedSchedule.value.schedule_id)
+
+      if (updateError) {
+        errorMessage.value = 'Failed to update schedule slots.'
+        console.error(updateError)
+      } else {
+        successMessage.value = 'Appointment booked successfully!'
+        selectedSchedule.value = null
+        await fetchBookedSchedules()
+        await fetchSchedules() // Refresh schedules
+      }
     }
   } else {
-    errorMessage.value = 'User not authenticated.'
+    errorMessage.value = 'Invalid user or schedule selection.'
   }
 
   loading.value = false
@@ -124,7 +151,8 @@ const cancelAppointment = async (appointment_id) => {
     console.error(error)
   } else {
     successMessage.value = 'Appointment canceled successfully!'
-    await fetchBookedSchedules() // Refresh booked schedules after canceling
+    await fetchBookedSchedules()
+    await fetchSchedules() // Refresh schedules
   }
 
   loading.value = false
@@ -159,11 +187,7 @@ const cancelAppointment = async (appointment_id) => {
                   <v-list-item-action>
                     <v-btn
                       @click="() => selectSchedule(schedule)"
-                      :disabled="
-                        bookedSchedules.some(
-                          (booked) => booked.staff_id === schedule.medicalstaff.staff_id,
-                        )
-                      "
+                      :disabled="schedule.available_slots === 0"
                     >
                       Select
                     </v-btn>

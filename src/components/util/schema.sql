@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     FOREIGN KEY (staff_id) REFERENCES medicalstaff(staff_id)
 );
 
--- Second phase (adding AI chat bot)
+-- Second phase (adding AI chat bot) to be removing concept!
 
 -- Create user_queries table
 CREATE TABLE IF NOT EXISTS user_queries (
@@ -63,3 +63,17 @@ CREATE TABLE IF NOT EXISTS ai_responses (
     response_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (query_id) REFERENCES user_queries(query_id)
 );
+
+
+--  Revised Schema Queries
+
+-- Add available_slots to schedules
+ALTER TABLE schedules ADD COLUMN available_slots INT DEFAULT 10;
+
+-- Prevent overbooking
+ALTER TABLE appointments
+ADD CONSTRAINT unique_user_slot UNIQUE (user_id, appointment_date, appointment_time);
+
+-- Ensure appointment slots are valid
+ALTER TABLE schedules
+ADD CONSTRAINT slots_positive CHECK (available_slots >= 0);
