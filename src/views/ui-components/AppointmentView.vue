@@ -2,6 +2,19 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 
+// Helper functions for formatting
+const formatDate = (date) => {
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+  return new Date(date).toLocaleDateString(undefined, options)
+}
+
+const formatTime = (time) => {
+  const [hours, minutes] = time.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const formattedHours = hours % 12 || 12 // Convert to 12-hour format
+  return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
 const schedules = ref([])
 const bookedSchedules = ref([])
 const selectedSchedule = ref(null)
@@ -53,7 +66,12 @@ const fetchSchedules = async () => {
     console.error('Error fetching schedules:', error)
     errorMessage.value = 'An error occurred while fetching schedules.'
   } else {
-    schedules.value = data
+    schedules.value = data.map((schedule) => ({
+      ...schedule,
+      formattedDate: formatDate(schedule.date),
+      formattedStartTime: formatTime(schedule.start_time),
+      formattedEndTime: formatTime(schedule.end_time),
+    }))
   }
 }
 
@@ -81,6 +99,8 @@ const fetchBookedSchedules = async () => {
     bookedSchedules.value = data.map((appointment) => ({
       ...appointment,
       medicalstaff: appointment.medicalstaff.name,
+      formattedDate: formatDate(appointment.appointment_date),
+      formattedTime: formatTime(appointment.appointment_time),
     }))
   }
 }
@@ -178,7 +198,8 @@ const cancelAppointment = async (appointment_id) => {
               <v-list v-if="schedules.length > 0">
                 <v-list-item v-for="schedule in schedules" :key="schedule.schedule_id">
                   <v-list-item-title>
-                    {{ schedule.date }}: {{ schedule.start_time }} to {{ schedule.end_time }}
+                    {{ schedule.formattedDate }}: {{ schedule.formattedStartTime }} to
+                    {{ schedule.formattedEndTime }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
                     with {{ schedule.medicalstaff.name }}
@@ -202,8 +223,11 @@ const cancelAppointment = async (appointment_id) => {
             <v-card class="mb-4">
               <v-card-title class="text-h6">Selected Schedule</v-card-title>
               <v-card-text>
-                <p>Date: {{ selectedSchedule.date }}</p>
-                <p>Time: {{ selectedSchedule.start_time }} to {{ selectedSchedule.end_time }}</p>
+                <p>Date: {{ selectedSchedule.formattedDate }}</p>
+                <p>
+                  Time: {{ selectedSchedule.formattedStartTime }} to
+                  {{ selectedSchedule.formattedEndTime }}
+                </p>
                 <p>With: {{ selectedSchedule.medicalstaff.name }}</p>
               </v-card-text>
               <v-card-actions>
@@ -218,7 +242,7 @@ const cancelAppointment = async (appointment_id) => {
               <v-list>
                 <v-list-item v-for="booked in bookedSchedules" :key="booked.appointment_id">
                   <v-list-item-title>
-                    {{ booked.appointment_date }}: {{ booked.appointment_time }}
+                    {{ booked.formattedDate }}: {{ booked.formattedTime }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
                     with {{ booked.medicalstaff }} - {{ booked.status }}
