@@ -64,7 +64,7 @@ const fetchSchedules = async () => {
 
 <template>
   <v-row>
-    <v-col cols="12" md="8" offset-md="2">
+    <v-col cols="12" md="12" offset-md="12">
       <v-card class="pa-5">
         <v-card-title class="text-h5">Available Schedules</v-card-title>
         <v-card-subtitle>View all available schedules</v-card-subtitle>

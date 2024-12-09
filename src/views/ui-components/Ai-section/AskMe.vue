@@ -1,4 +1,7 @@
 <template>
+  <v-alert type="info" class="mb-4" color="yellow">
+    This section is under maintenance. Please check back later.
+  </v-alert>
   <v-container class="my-5">
     <h1>Ask about your health</h1>
     <v-form @submit.prevent="submitQuery">
