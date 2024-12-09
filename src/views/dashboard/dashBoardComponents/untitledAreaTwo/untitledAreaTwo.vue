@@ -53,7 +53,7 @@ const monthtable = ref([
     <v-card-text>
       <div class="d-sm-flex align-center">
         <div>
-          <h2 class="title text-h6 font-weight-medium">Product Performance</h2>
+          <h2 class="title text-h6 font-weight-medium">Sample Area</h2>
         </div>
         <v-spacer></v-spacer>
         <div class="ml-auto">

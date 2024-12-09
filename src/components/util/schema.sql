@@ -77,3 +77,70 @@ ADD CONSTRAINT unique_user_slot UNIQUE (user_id, appointment_date, appointment_t
 -- Ensure appointment slots are valid
 ALTER TABLE schedules
 ADD CONSTRAINT slots_positive CHECK (available_slots >= 0);
+
+
+
+
+-- 
+
+
+
+ALTER TABLE appointments
+ADD CONSTRAINT fk_user
+FOREIGN KEY (user_id)
+REFERENCES auth.users (id);
+
+SET search_path TO public, auth;
+
+
+
+
+CREATE OR REPLACE FUNCTION get_appointments_with_user_details()
+RETURNS TABLE (
+    appointment_id INT,
+    user_id UUID,
+    staff_id INT,
+    appointment_date DATE,
+    appointment_time TIME,
+    status appointment_status,
+    user_email VARCHAR
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        a.appointment_id,
+        a.user_id,
+        a.staff_id,
+        a.appointment_date,
+        a.appointment_time,
+        a.status,
+        u.email AS user_email
+    FROM 
+        appointments a
+    JOIN 
+        auth.users u ON a.user_id = u.id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+GRANT SELECT ON auth.users TO service_role;
+
+
+
+CREATE OR REPLACE VIEW appointments_with_user_details AS
+SELECT 
+    a.appointment_id,
+    a.user_id,
+    a.staff_id,
+    a.appointment_date,
+    a.appointment_time,
+    a.status,
+    u.email AS user_email
+FROM 
+    appointments a
+JOIN 
+    auth.users u ON a.user_id = u.id;
+
+
+GRANT SELECT ON appointments_with_user_details TO service_role;

@@ -6,6 +6,7 @@ const theme = ref('dark')
 
 const medicalStaff = ref([])
 const schedules = ref([])
+const bookings = ref([])
 const formData = ref({
   name: '',
   role: 'doctor',
@@ -26,6 +27,7 @@ const errorMessage = ref('')
 onMounted(async () => {
   await fetchMedicalStaff()
   await fetchSchedules()
+  await fetchBookings()
 })
 
 const fetchMedicalStaff = async () => {
@@ -48,6 +50,15 @@ const fetchSchedules = async () => {
     console.error('Error fetching schedules:', error)
   } else {
     schedules.value = data
+  }
+}
+
+const fetchBookings = async () => {
+  const { data, error } = await supabase.from('appointments_with_user_details').select('*')
+  if (error) {
+    console.error('Error fetching bookings:', error)
+  } else {
+    bookings.value = data
   }
 }
 
@@ -194,6 +205,22 @@ const goToDashboard = () => {
                 </v-card-text>
               </v-card>
 
+              <v-card class="mb-4">
+                <v-card-title class="text-h6">Bookings List</v-card-title>
+                <v-card-text>
+                  <v-list>
+                    <v-list-item v-for="booking in bookings" :key="booking.appointment_id">
+                      <v-list-item-title>{{ booking.user_name || 'N/A' }}</v-list-item-title>
+                      <v-list-item-subtitle>{{ booking.user_email }}</v-list-item-subtitle>
+                      <v-list-item-subtitle
+                        >{{ booking.appointment_date }}
+                        {{ booking.appointment_time }}</v-list-item-subtitle
+                      >
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+
               <v-alert v-if="errorMessage" type="error" class="mb-4">{{ errorMessage }}</v-alert>
 
               <v-expansion-panels>
@@ -238,9 +265,12 @@ const goToDashboard = () => {
                         <v-form @submit.prevent="addSchedule">
                           <v-select
                             v-model="scheduleData.staff_id"
-                            :items="medicalStaff.map((staff) => staff.staff_id)"
-                            :item-title="(staff) => staff.name"
-                            :item-value="(staff) => staff.staff_id"
+                            :items="
+                              medicalStaff.map((staff) => ({
+                                text: staff.name,
+                                value: staff.staff_id,
+                              }))
+                            "
                             label="Select Staff"
                           ></v-select>
                           <v-text-field
