@@ -7,8 +7,7 @@ CREATE TABLE medicalstaff (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100),
     specialty_id UUID REFERENCES specialties(id),
-    contact_information VARCHAR(100),
-    ...
+    contact_information VARCHAR(100)
 );
 CREATE TABLE patients (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -17,6 +16,14 @@ CREATE TABLE patients (
     age INT,
     gender VARCHAR(10),
     contact_information VARCHAR(100)
+);
+CREATE TABLE patient_conditions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID REFERENCES patients(id),
+    condition_name VARCHAR(100),
+    symptoms TEXT,
+    diagnosis TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE appointments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -37,14 +44,6 @@ CREATE TABLE available_slots (
     start_time TIME,
     end_time TIME,
     is_available BOOLEAN
-);
-CREATE TABLE patient_conditions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    patient_id UUID REFERENCES patients(id),
-    condition_name VARCHAR(100),
-    symptoms TEXT,
-    diagnosis TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE appointment_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
