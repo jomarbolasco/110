@@ -7,6 +7,8 @@ import RegisterView from '@/views/auth/RegisterView.vue'
 import AdminView from '@/views/admin_dashboard/AdminView.vue'
 import ForgotPassword from '@/views/auth/ForgotPassword.vue'
 import ResetPassword from '@/views/auth/ResetPassword.vue'
+// import fullLayout from '@/components/layout/full/fullLayout.vue'
+import AppointmentView from '@/views/ui-components/AppointmentView.vue'
 
 const routes = [
   {
@@ -42,19 +44,20 @@ const routes = [
     component: ResetPassword,
   },
   {
-    path: '/dashboard',
+    path: '/',
     component: () => import('@/components/layout/full/fullLayout.vue'),
     meta: { requiresAuth: true }, // Restrict to authenticated users
     children: [
       {
-        name: 'dashboard',
-        path: '/dashboard',
+        name: 'Dashboard',
+        path: 'dashboard',
         component: () => import('@/views/dashboard/DashBoard.vue'),
       },
       {
         name: 'Appointments',
         path: 'ui-components/Appointments',
-        component: () => import('@/views/ui-components/AppointmentView.vue'),
+        // component: () => import('@/views/ui-components/AppointmentView.vue'),
+        component: AppointmentView,
       },
       {
         name: 'AskMe',

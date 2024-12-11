@@ -3,32 +3,40 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const sidebarMenu = ref([
-  { title: 'Dashboard', icon: 'mdi-view-dashboard-outline', to: '/dashboard' },
-  { title: 'Appointments', icon: 'mdi-form-dropdown', to: '/dashboard/ui-components/Appointments' },
+  {
+    title: 'Dashboard',
+    icon: 'mdi-view-dashboard-outline',
+    to: '/dashboard',
+  },
+  {
+    title: 'Appointments',
+    icon: 'mdi-form-dropdown',
+    to: '/ui-components/Appointments',
+  },
   {
     title: 'Ask me Doc!',
     icon: 'mdi-exclamation-thick',
-    to: '/dashboard/ui-components/Ai-section/AskMe',
+    to: '/ui-components/Ai-section/AskMe',
   },
   {
     title: 'ignore this area',
     icon: 'mdi-exclamation-thick',
-    to: '/dashboard/ui-components/buttons',
+    to: '/ui-components/buttons',
   },
   {
     title: 'ignore this area',
     icon: 'mdi-exclamation-thick',
-    to: '/dashboard/ui-components/cards',
+    to: '/ui-components/cards',
   },
   {
     title: 'ignore this area',
     icon: 'mdi-exclamation-thick',
-    to: '/dashboard/ui-components/menus',
+    to: '/ui-components/menus',
   },
   {
     title: 'ignore this area',
     icon: 'mdi-exclamation-thick',
-    to: '/dashboard/ui-components/tables',
+    to: '//ui-components/tables',
   },
 ])
 
