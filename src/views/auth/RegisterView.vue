@@ -24,7 +24,9 @@
         <label for="dateOfBirth">Date of Birth</label>
         <input type="date" v-model="formData.dateOfBirth" id="dateOfBirth" />
       </div>
-      <div class="form-group">
+
+      <!-- Gender Field (only for normal users) -->
+      <div v-if="userType === 'normal'" class="form-group">
         <label for="gender">Gender</label>
         <select v-model="formData.gender" id="gender">
           <option value="male">Male</option>
@@ -32,13 +34,14 @@
           <option value="other">Other</option>
         </select>
       </div>
+
       <div class="form-group">
         <label for="phoneNumber">Phone Number</label>
         <input type="text" v-model="formData.phoneNumber" id="phoneNumber" />
       </div>
 
-      <!-- Address Field -->
-      <div class="form-group">
+      <!-- Address Field (for normal users only) -->
+      <div v-if="userType === 'normal'" class="form-group">
         <label for="address">Address</label>
         <textarea v-model="formData.address" id="address"></textarea>
       </div>
@@ -93,15 +96,15 @@ import { ref } from 'vue'
 import { supabase, formActionDefault } from '@/components/util/supabase'
 
 // Reactive form data and status
-const userType = ref('normal') // 'normal' or 'medicalSta/ff'
+const userType = ref('normal') // 'normal' or 'medicalStaff'
 const formData = ref({
   name: '',
   dateOfBirth: '',
-  gender: '',
+  gender: '', // Removed gender for medical staff
   phoneNumber: '',
-  address: '',
-  role: '',
-  specialization: '',
+  address: '', // For normal users only
+  role: '', // For medical staff only
+  specialization: '', // For medical staff only
   availableHours:
     '{"Monday": "08:00-17:00", "Tuesday": "08:00-17:00", "Wednesday": "08:00-17:00", "Thursday": "08:00-17:00", "Friday": "08:00-17:00"}',
 })
@@ -137,11 +140,8 @@ const handleSubmit = async () => {
     else if (userType.value === 'medicalStaff') {
       const { data, error } = await supabase.from('medical_staff').insert([
         {
-          name: formData.value.name,
-          date_of_birth: formData.value.dateOfBirth,
-          gender: formData.value.gender,
+          name: formData.value.name, // Included name for medical staff
           phone_number: formData.value.phoneNumber,
-          address: formData.value.address,
           role: formData.value.role,
           specialization: formData.value.specialization,
           available_hours: formData.value.availableHours,
