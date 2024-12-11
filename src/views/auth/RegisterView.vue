@@ -53,10 +53,26 @@
           <label for="specialization">Specialization</label>
           <input type="text" v-model="formData.specialization" id="specialization" />
         </div>
+
+        <!-- Available Hours Field with Default and Modify Option -->
         <div class="form-group">
-          <label for="availableHours">Available Hours (JSON Format)</label>
-          <input type="text" v-model="formData.availableHours" id="availableHours" />
-          <p class="hint">Example: {"Monday": "9:00-17:00", "Tuesday": "10:00-18:00"}</p>
+          <label for="availableHours">Available Hours</label>
+          <p v-if="!isModifyingHours" class="available-hours-display">
+            Monday to Friday: 8:00 AM - 5:00 PM
+          </p>
+          <button v-if="!isModifyingHours" @click="isModifyingHours = true" class="modify-button">
+            Modify
+          </button>
+          <textarea
+            v-if="isModifyingHours"
+            v-model="formData.availableHours"
+            id="availableHours"
+            placeholder="Example: {'Monday': '08:00-17:00', 'Tuesday': '08:00-17:00'}"
+          ></textarea>
+          <p v-if="isModifyingHours" class="hint">
+            Default: {"Monday": "08:00-17:00", "Tuesday": "08:00-17:00", "Wednesday": "08:00-17:00",
+            "Thursday": "08:00-17:00", "Friday": "08:00-17:00"}
+          </p>
         </div>
       </div>
 
@@ -77,7 +93,7 @@ import { ref } from 'vue'
 import { supabase, formActionDefault } from '@/components/util/supabase'
 
 // Reactive form data and status
-const userType = ref('normal') // 'normal' or 'medicalStaff'
+const userType = ref('normal') // 'normal' or 'medicalSta/ff'
 const formData = ref({
   name: '',
   dateOfBirth: '',
@@ -86,8 +102,12 @@ const formData = ref({
   address: '',
   role: '',
   specialization: '',
-  availableHours: '',
+  availableHours:
+    '{"Monday": "08:00-17:00", "Tuesday": "08:00-17:00", "Wednesday": "08:00-17:00", "Thursday": "08:00-17:00", "Friday": "08:00-17:00"}',
 })
+
+// Toggle editing of available hours
+const isModifyingHours = ref(false)
 
 const formStatus = ref(formActionDefault.formStatus)
 const formErrorMessage = ref(formActionDefault.formErrorMessage)
@@ -98,7 +118,7 @@ const handleSubmit = async () => {
   try {
     // Handle normal user registration
     if (userType.value === 'normal') {
-      const { data, error } = await supabase.from('Patients').insert([
+      const { data, error } = await supabase.from('patients').insert([
         {
           name: formData.value.name,
           date_of_birth: formData.value.dateOfBirth,
@@ -115,7 +135,7 @@ const handleSubmit = async () => {
 
     // Handle medical staff registration
     else if (userType.value === 'medicalStaff') {
-      const { data, error } = await supabase.from('Medical_Staff').insert([
+      const { data, error } = await supabase.from('medical_staff').insert([
         {
           name: formData.value.name,
           date_of_birth: formData.value.dateOfBirth,
