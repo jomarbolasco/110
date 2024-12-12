@@ -1,15 +1,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { supabase, formActionDefault } from '@/components/util/supabase'
+import { supabase } from '@/components/util/supabase'
 
 // State variables
-const isMedicalStaff = ref(false) // Replace with actual user role check
+const isMedicalStaff = ref(false)
 const appointmentTypes = ref([])
+const editAppointmentTypeData = ref(null)
 const newAppointmentType = ref({
   type_name: '',
   description: '',
 })
 const schedules = ref([])
+const editScheduleData = ref(null)
 const newSchedule = ref({
   appointment_type_id: '',
   day_of_week: '',
@@ -27,16 +29,12 @@ const daysOfWeek = ref([
   'Sunday',
 ])
 
-// Methods
+// Fetch initial data
 const fetchInitialData = async () => {
   try {
-    // Fetch the logged-in user
     const { data: authData, error: authError } = await supabase.auth.getUser()
     if (authError) throw authError
 
-    console.log('Logged-in user:', authData)
-
-    // Verify if the user is part of Medical_Staff
     const { data: staffData, error: staffError } = await supabase
       .from('medical_staff')
       .select('*')
@@ -44,56 +42,70 @@ const fetchInitialData = async () => {
 
     if (staffError) throw staffError
 
-    console.log('medical_staff data:', staffData)
-
-    // Update `isMedicalStaff` based on fetched data
     isMedicalStaff.value = staffData.length > 0
 
     if (isMedicalStaff.value) {
-      // Fetch appointment types
       const { data: types, error: typesError } = await supabase
         .from('appointment_types')
         .select('*')
       if (typesError) throw typesError
       appointmentTypes.value = types || []
 
-      // Fetch schedules
       const { data: schedulesData, error: schedulesError } = await supabase
         .from('schedules')
         .select('*')
       if (schedulesError) throw schedulesError
       schedules.value = schedulesData || []
 
-      // Fetch appointments
       const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('appointments')
         .select('*')
       if (appointmentsError) throw appointmentsError
       appointments.value = appointmentsData || []
-    } else {
-      console.warn('User is not a Medical Staff.')
     }
   } catch (error) {
     console.error('Error fetching initial data:', error)
   }
 }
 
+// Add, edit, update, delete methods for appointment types
 const addAppointmentType = async () => {
   try {
     const { data, error } = await supabase
       .from('appointment_types')
       .insert([newAppointmentType.value])
-      .select('*') // Ensures the inserted row is returned
-
+      .select('*')
     if (error) throw error
     if (data && data.length > 0) {
       appointmentTypes.value.push(data[0])
-    } else {
-      console.warn('No data returned after insert.')
     }
     newAppointmentType.value = { type_name: '', description: '' }
   } catch (error) {
     console.error('Error adding appointment type:', error)
+  }
+}
+
+const editAppointmentType = (type) => {
+  editAppointmentTypeData.value = { ...type }
+}
+
+const updateAppointmentType = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('appointment_types')
+      .update(editAppointmentTypeData.value)
+      .eq('appointment_type_id', editAppointmentTypeData.value.appointment_type_id)
+      .select('*')
+    if (error) throw error
+    const index = appointmentTypes.value.findIndex(
+      (type) => type.appointment_type_id === editAppointmentTypeData.value.appointment_type_id,
+    )
+    if (index !== -1) {
+      appointmentTypes.value[index] = { ...data[0] }
+    }
+    editAppointmentTypeData.value = null
+  } catch (error) {
+    console.error('Error updating appointment type:', error)
   }
 }
 
@@ -112,15 +124,41 @@ const deleteAppointmentType = async (id) => {
   }
 }
 
+// Add, edit, update, delete methods for schedules
 const addSchedule = async () => {
   try {
-    const { data, error } = await supabase.from('schedules').insert([newSchedule.value])
-
+    const { data, error } = await supabase.from('schedules').insert([newSchedule.value]).select('*')
     if (error) throw error
-    schedules.value.push(data[0])
+    if (data && data.length > 0) {
+      schedules.value.push(data[0])
+    }
     newSchedule.value = { appointment_type_id: '', day_of_week: '', start_time: '', end_time: '' }
   } catch (error) {
     console.error('Error adding schedule:', error)
+  }
+}
+
+const editSchedule = (schedule) => {
+  editScheduleData.value = { ...schedule }
+}
+
+const updateSchedule = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('schedules')
+      .update(editScheduleData.value)
+      .eq('schedule_id', editScheduleData.value.schedule_id)
+      .select('*')
+    if (error) throw error
+    const index = schedules.value.findIndex(
+      (schedule) => schedule.schedule_id === editScheduleData.value.schedule_id,
+    )
+    if (index !== -1) {
+      schedules.value[index] = { ...data[0] }
+    }
+    editScheduleData.value = null
+  } catch (error) {
+    console.error('Error updating schedule:', error)
   }
 }
 
@@ -134,89 +172,80 @@ const deleteSchedule = async (id) => {
   }
 }
 
-const getAppointmentTypeName = (id) => {
-  const type = appointmentTypes.value.find((type) => type.appointment_type_id === id)
-  return type ? type.type_name : 'Unknown'
-}
-
 onMounted(fetchInitialData)
 </script>
 
 <template>
   <div>
     <h1>Appointment Management</h1>
-
     <div v-if="isMedicalStaff">
-      <!-- Appointment Types Management -->
       <section>
         <h2>Manage Appointment Types</h2>
-        <div>
-          <h3>Add Appointment Type</h3>
-          <form @submit.prevent="addAppointmentType">
-            <input v-model="newAppointmentType.type_name" placeholder="Type Name" required />
-            <textarea v-model="newAppointmentType.description" placeholder="Description"></textarea>
-            <button type="submit">Add</button>
-          </form>
-        </div>
-        <div>
-          <h3>Existing Appointment Types</h3>
-          <ul>
-            <li v-for="type in appointmentTypes" :key="type.appointment_type_id">
+        <form @submit.prevent="addAppointmentType">
+          <input v-model="newAppointmentType.type_name" placeholder="Type Name" required />
+          <textarea v-model="newAppointmentType.description" placeholder="Description"></textarea>
+          <button type="submit">Add</button>
+        </form>
+        <ul>
+          <li v-for="type in appointmentTypes" :key="type.appointment_type_id">
+            <div v-if="editAppointmentTypeData?.appointment_type_id !== type.appointment_type_id">
               {{ type.type_name }}
+              <button @click="() => editAppointmentType(type)">Edit</button>
               <button @click="() => deleteAppointmentType(type.appointment_type_id)">Delete</button>
-            </li>
-          </ul>
-        </div>
+            </div>
+            <form v-else @submit.prevent="updateAppointmentType">
+              <input v-model="editAppointmentTypeData.type_name" placeholder="Type Name" />
+              <textarea
+                v-model="editAppointmentTypeData.description"
+                placeholder="Description"
+              ></textarea>
+              <button type="submit">Save</button>
+              <button @click="() => (editAppointmentTypeData = null)">Cancel</button>
+            </form>
+          </li>
+        </ul>
       </section>
 
-      <!-- Schedules Management -->
       <section>
         <h2>Manage Schedules</h2>
-        <div>
-          <h3>Add Schedule</h3>
-          <form @submit.prevent="addSchedule">
-            <select v-model="newSchedule.appointment_type_id">
-              <option
-                v-for="type in appointmentTypes"
-                :value="type.appointment_type_id"
-                :key="type.appointment_type_id"
-              >
-                {{ type.type_name }}
-              </option>
-            </select>
-            <select v-model="newSchedule.day_of_week">
-              <option v-for="day in daysOfWeek" :value="day" :key="day">{{ day }}</option>
-            </select>
-            <input v-model="newSchedule.start_time" type="time" required />
-            <input v-model="newSchedule.end_time" type="time" required />
-            <button type="submit">Add</button>
-          </form>
-        </div>
-        <div>
-          <h3>Existing Schedules</h3>
-          <ul>
-            <li v-for="schedule in schedules" :key="schedule.schedule_id">
-              {{ schedule.day_of_week }}: {{ schedule.start_time }} - {{ schedule.end_time }} ({{
-                getAppointmentTypeName(schedule.appointment_type_id)
-              }})
-              <button @click="() => deleteSchedule(schedule.schedule_id)">Delete</button>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- Appointments View -->
-      <section>
-        <h2>View Appointments</h2>
+        <form @submit.prevent="addSchedule">
+          <select v-model="newSchedule.appointment_type_id">
+            <option v-for="type in appointmentTypes" :value="type.appointment_type_id">
+              {{ type.type_name }}
+            </option>
+          </select>
+          <select v-model="newSchedule.day_of_week">
+            <option v-for="day in daysOfWeek" :value="day">{{ day }}</option>
+          </select>
+          <input v-model="newSchedule.start_time" type="time" required />
+          <input v-model="newSchedule.end_time" type="time" required />
+          <button type="submit">Add</button>
+        </form>
         <ul>
-          <li v-for="appointment in appointments" :key="appointment.appointment_id">
-            {{ appointment.patient_name }} - {{ appointment.appointment_date_time }} -
-            {{ getAppointmentTypeName(appointment.appointment_type_id) }} ({{ appointment.status }})
+          <li v-for="schedule in schedules" :key="schedule.schedule_id">
+            <div v-if="editScheduleData?.schedule_id !== schedule.schedule_id">
+              {{ schedule.day_of_week }}: {{ schedule.start_time }} - {{ schedule.end_time }}
+              <button @click="() => editSchedule(schedule)">Edit</button>
+              <button @click="() => deleteSchedule(schedule.schedule_id)">Delete</button>
+            </div>
+            <form v-else @submit.prevent="updateSchedule">
+              <select v-model="editScheduleData.appointment_type_id">
+                <option v-for="type in appointmentTypes" :value="type.appointment_type_id">
+                  {{ type.type_name }}
+                </option>
+              </select>
+              <select v-model="editScheduleData.day_of_week">
+                <option v-for="day in daysOfWeek" :value="day">{{ day }}</option>
+              </select>
+              <input v-model="editScheduleData.start_time" type="time" />
+              <input v-model="editScheduleData.end_time" type="time" />
+              <button type="submit">Save</button>
+              <button @click="() => (editScheduleData = null)">Cancel</button>
+            </form>
           </li>
         </ul>
       </section>
     </div>
-
     <div v-else>
       <p>You do not have access to manage appointments.</p>
     </div>
