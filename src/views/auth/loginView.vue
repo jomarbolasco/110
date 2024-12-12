@@ -100,6 +100,8 @@ const onRegisterFormSubmit = async () => {
     if (error) {
       registerMessage.value = error.message
     } else {
+      const user = data.user
+
       if (registerData.value.role === 'Normal User') {
         const user = data.user
         const { error: patientError } = await supabase.from('patients').insert([
@@ -116,6 +118,24 @@ const onRegisterFormSubmit = async () => {
         if (patientError) {
           registerMessage.value = `Error inserting patient data: ${patientError.message}`
           console.error(patientError)
+          return
+        }
+      } else if (registerData.value.role === 'Medical Staff') {
+        // Insert into the medical_staff table
+        const { error: staffError } = await supabase.from('medical_staff').insert([
+          {
+            user_id: user.id,
+            role: 'Medical Staff',
+            name: registerData.value.name,
+            specialization: registerData.value.specialization,
+            phone_number: registerData.value.phoneNumber,
+            available_hours: registerData.value.availableHours,
+          },
+        ])
+
+        if (staffError) {
+          registerMessage.value = `Error inserting medical staff data: ${staffError.message}`
+          console.error(staffError)
           return
         }
       }
