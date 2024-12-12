@@ -83,9 +83,14 @@ const addAppointmentType = async () => {
     const { data, error } = await supabase
       .from('appointment_types')
       .insert([newAppointmentType.value])
+      .select('*') // Ensures the inserted row is returned
 
     if (error) throw error
-    appointmentTypes.value.push(data[0])
+    if (data && data.length > 0) {
+      appointmentTypes.value.push(data[0])
+    } else {
+      console.warn('No data returned after insert.')
+    }
     newAppointmentType.value = { type_name: '', description: '' }
   } catch (error) {
     console.error('Error adding appointment type:', error)
