@@ -1,35 +1,23 @@
-# 110
+# HospiAPP
 
-This template should help get you started developing with Vue 3 in Vite.
+## Overview
 
-## Recommended IDE Setup
+This application is designed for educational purposes only.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Developers
 
-## Customize configuration
+- **Backend Developer:** Jomar Bolasco
+- **Frontend Developer:** Ryan Jose Silab
+- **System Analyst:** Ronel Batonghinog
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## Main Image
 
-## Project Setup
+![HospiAPP Logo](https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/logoname.png)
 
-```sh
-npm install
-```
+## About
 
-### Compile and Hot-Reload for Development
+HospiAPP is a project created by a dedicated team of developers aiming to enhance educational experiences through innovative software solutions.
 
-```sh
-npm run dev
-```
+## Acknowledgments
 
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+We appreciate your interest in our project and hope it serves as a valuable educational tool.
