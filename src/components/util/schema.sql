@@ -58,3 +58,7 @@ CREATE TABLE Schedules (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+ALTER TABLE Appointments
+ADD COLUMN schedule_id INT REFERENCES Schedules(schedule_id);

@@ -298,7 +298,7 @@ li {
   justify-content: space-between;
   align-items: center;
   padding: 10px;
-  background-color: #f9f9f9;
+  background-color: black;
   border: 1px solid #ddd;
   border-radius: 5px;
   margin-bottom: 5px;
