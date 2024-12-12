@@ -1,258 +1,195 @@
 <template>
-  <div class="register-form-container">
-    <div class="form-header">
-      <h2>Register</h2>
-      <p>Please fill out the form to create your account</p>
-    </div>
-    <div class="form-content">
-      <!-- User Type Selector -->
-      <div class="form-group">
-        <label for="userType">I am a</label>
-        <select v-model="userType" id="userType">
-          <option value="normal">Normal User</option>
-          <option value="medicalStaff">Medical Staff</option>
-        </select>
-      </div>
-      <!-- Common Fields -->
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" v-model="formData.email" id="email" required />
-      </div>
-      <div class="form-group">
-        <label for="name">Full Name</label>
-        <input type="text" v-model="formData.name" id="name" required />
-      </div>
-      <div class="form-group">
-        <label for="dateOfBirth">Date of Birth</label>
-        <input type="date" v-model="formData.dateOfBirth" id="dateOfBirth" />
-      </div>
-      <!-- Gender Field (only for normal users) -->
-      <div v-if="userType === 'normal'" class="form-group">
-        <label for="gender">Gender</label>
-        <select v-model="formData.gender" id="gender">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="phoneNumber">Phone Number</label>
-        <input type="text" v-model="formData.phoneNumber" id="phoneNumber" />
-      </div>
-      <!-- Address Field (for normal users only) -->
-      <div v-if="userType === 'normal'" class="form-group">
-        <label for="address">Address</label>
-        <textarea v-model="formData.address" id="address"></textarea>
-      </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" v-model="formData.password" id="password" required />
-      </div>
-      <!-- Medical Staff Specific Fields -->
-      <div v-if="userType === 'medicalStaff'">
-        <div class="form-group">
-          <label for="role">Role</label>
-          <input type="text" v-model="formData.role" id="role" required />
-        </div>
-        <div class="form-group">
-          <label for="specialization">Specialization</label>
-          <input type="text" v-model="formData.specialization" id="specialization" />
-        </div>
-        <!-- Available Hours Field with Default and Modify Option -->
-        <div class="form-group">
-          <label for="availableHours">Available Hours</label>
-          <p v-if="!isModifyingHours" class="available-hours-display">
-            Monday to Friday: 8:00 AM - 5:00 PM
-          </p>
-          <button v-if="!isModifyingHours" @click="isModifyingHours = true" class="modify-button">
-            Modify
-          </button>
-          <textarea
-            v-if="isModifyingHours"
-            v-model="formData.availableHours"
-            id="availableHours"
-            placeholder="Example: {'Monday': '08:00-17:00', 'Tuesday': '08:00-17:00'}"
-          ></textarea>
-          <p v-if="isModifyingHours" class="hint">
-            Default: {"Monday": "08:00-17:00", "Tuesday": "08:00-17:00", "Wednesday": "08:00-17:00",
-            "Thursday": "08:00-17:00", "Friday": "08:00-17:00"}
-          </p>
-        </div>
-      </div>
-      <!-- Submit Button -->
-      <div class="form-group">
-        <button @click="handleSubmit">Submit</button>
-      </div>
-      <!-- Status messages -->
-      <div v-if="formStatus === 200" class="success">{{ formSuccessMessage }}</div>
-      <div v-if="formStatus !== 200" class="error">{{ formErrorMessage }}</div>
-    </div>
+  <div>
+    <v-img
+      class="mx-auto my-6"
+      max-width="228"
+      src="https://cdn.vuetifyjs.com/docs/images/logos/vuetify-logo-v3-slim-text-light.svg"
+    ></v-img>
+
+    <v-card class="mx-auto pa-12 pb-8" elevation="8" max-width="448" rounded="lg">
+      <div class="text-subtitle-1 text-medium-emphasis">Create Account</div>
+
+      <v-select
+        v-model="userType"
+        :items="['Normal User', 'Medical Staff']"
+        label="Select User Type"
+      ></v-select>
+
+      <v-text-field
+        v-model="formData.email"
+        density="compact"
+        placeholder="Email address"
+        prepend-inner-icon="mdi-email-outline"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-text-field
+        v-model="formData.password"
+        :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
+        :type="visible ? 'text' : 'password'"
+        density="compact"
+        placeholder="Enter your password"
+        prepend-inner-icon="mdi-lock-outline"
+        variant="outlined"
+        @click:append-inner="visible = !visible"
+      ></v-text-field>
+
+      <v-text-field
+        v-model="formData.fullName"
+        density="compact"
+        placeholder="Full Name"
+        prepend-inner-icon="mdi-account-outline"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-text-field
+        v-model="formData.dateOfBirth"
+        density="compact"
+        placeholder="Date of Birth"
+        prepend-inner-icon="mdi-calendar"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-text-field
+        v-if="userType === 'Normal User'"
+        v-model="formData.gender"
+        density="compact"
+        placeholder="Gender"
+        prepend-inner-icon="mdi-gender-male-female"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-text-field
+        v-model="formData.phoneNumber"
+        density="compact"
+        placeholder="Phone Number"
+        prepend-inner-icon="mdi-phone"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-text-field
+        v-if="userType === 'Normal User'"
+        v-model="formData.address"
+        density="compact"
+        placeholder="Address"
+        prepend-inner-icon="mdi-map-marker"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-text-field
+        v-if="userType === 'Medical Staff'"
+        v-model="formData.role"
+        density="compact"
+        placeholder="Role"
+        prepend-inner-icon="mdi-account-outline"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-text-field
+        v-if="userType === 'Medical Staff'"
+        v-model="formData.specialization"
+        density="compact"
+        placeholder="Specialization"
+        prepend-inner-icon="mdi-hospital"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-text-field
+        v-if="userType === 'Medical Staff'"
+        v-model="formData.availableHours"
+        density="compact"
+        placeholder="Available Hours"
+        prepend-inner-icon="mdi-clock"
+        variant="outlined"
+      ></v-text-field>
+
+      <v-btn class="mb-8" color="blue" size="large" variant="tonal" block @click="signUp">
+        Sign Up
+      </v-btn>
+
+      <v-card-text class="text-center">
+        <a
+          class="text-blue text-decoration-none"
+          href="#"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Already have an account? Log in <v-icon icon="mdi-chevron-right"></v-icon>
+        </a>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { supabase, formActionDefault } from '@/components/util/supabase'
+<script>
+import { supabase, formActionDefault } from '@/components/util/supabase' // Make sure the path is correct
 
-// Reactive form data and status
-const userType = ref('normal') // 'normal' or 'medicalStaff'
-const formData = ref({
-  email: '', // Added email field
-  name: '',
-  dateOfBirth: '',
-  gender: '', // Removed gender for medical staff
-  phoneNumber: '',
-  address: '', // For normal users only
-  role: '', // For medical staff only
-  specialization: '', // For medical staff only
-  availableHours:
-    '{"Monday": "08:00-17:00", "Tuesday": "08:00-17:00", "Wednesday": "08:00-17:00", "Thursday": "08:00-17:00", "Friday": "08:00-17:00"}',
-  password: '', // Added password
-})
+export default {
+  data: () => ({
+    visible: false,
+    userType: '',
+    formData: {
+      email: '',
+      password: '',
+      fullName: '',
+      dateOfBirth: '',
+      gender: '',
+      phoneNumber: '',
+      address: '',
+      role: '',
+      specialization: '',
+      availableHours: '',
+    },
+    formAction: { ...formActionDefault },
+  }),
+  methods: {
+    async signUp() {
+      this.formAction.formProcess = true
+      try {
+        // Sign up the user with Supabase Auth
+        const { data, error } = await supabase.auth.signUp({
+          email: this.formData.email,
+          password: this.formData.password,
+        })
+        if (error) throw error
 
-// Toggle editing of available hours
-const isModifyingHours = ref(false)
-const formStatus = ref(formActionDefault.formStatus)
-const formErrorMessage = ref(formActionDefault.formErrorMessage)
-const formSuccessMessage = ref(formActionDefault.formSuccessMessage)
+        const userId = data.user.id
 
-// Submit form data
-const handleSubmit = async () => {
-  try {
-    // Validate email format
-    const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
-    if (!emailPattern.test(formData.value.email)) {
-      formStatus.value = 500
-      formErrorMessage.value = 'Please enter a valid email address.'
-      return
-    }
+        if (this.userType === 'Normal User') {
+          await this.createNormalUser(userId)
+        } else if (this.userType === 'Medical Staff') {
+          await this.createMedicalStaff(userId)
+        }
 
-    // Handle normal user registration
-    if (userType.value === 'normal') {
-      const { data: authUser, error: authError } = await supabase.auth.signUp({
-        email: formData.value.email,
-        password: formData.value.password,
+        this.formAction.formSuccessMessage = 'Account created successfully!'
+      } catch (error) {
+        this.formAction.formErrorMessage = error.message
+      } finally {
+        this.formAction.formProcess = false
+      }
+    },
+    async createNormalUser(userId) {
+      const { error } = await supabase.from('Patients').insert({
+        user_id: userId,
+        name: this.formData.fullName,
+        date_of_birth: this.formData.dateOfBirth,
+        gender: this.formData.gender,
+        phone_number: this.formData.phoneNumber,
+        address: this.formData.address,
       })
-      if (authError) throw authError
-
-      // Once the user is signed up, insert additional data into the 'patients' table
-      const { data, error } = await supabase.from('patients').insert([
-        {
-          user_id: authUser.id, // Link to the user in the auth table
-          name: formData.value.name,
-          date_of_birth: formData.value.dateOfBirth,
-          gender: formData.value.gender,
-          phone_number: formData.value.phoneNumber,
-          address: formData.value.address,
-        },
-      ])
       if (error) throw error
-
-      formStatus.value = 200
-      formSuccessMessage.value = 'Registration successful!'
-    }
-    // Handle medical staff registration
-    else if (userType.value === 'medicalStaff') {
-      const { data: authUser, error: authError } = await supabase.auth.signUp({
-        email: formData.value.email,
-        password: formData.value.password,
+    },
+    async createMedicalStaff(userId) {
+      const { error } = await supabase.from('Medical_Staff').insert({
+        user_id: userId,
+        name: this.formData.fullName,
+        role: this.formData.role,
+        specialization: this.formData.specialization,
+        phone_number: this.formData.phoneNumber,
+        available_hours: this.formData.availableHours,
       })
-      if (authError) throw authError
-
-      // Once the user is signed up, insert additional data into the 'medical_staff' table
-      const { data, error } = await supabase.from('medical_staff').insert([
-        {
-          user_id: authUser.id, // Link to the user in the auth table
-          name: formData.value.name,
-          phone_number: formData.value.phoneNumber,
-          role: formData.value.role,
-          specialization: formData.value.specialization,
-          available_hours: formData.value.availableHours,
-        },
-      ])
       if (error) throw error
-
-      formStatus.value = 200
-      formSuccessMessage.value = 'Medical Staff registration successful!'
-    }
-  } catch (error) {
-    formStatus.value = 500
-    formErrorMessage.value = error.message
-  }
+    },
+  },
 }
 </script>
-
-<style scoped>
-.register-form-container {
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-.form-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
-.form-header h2 {
-  font-size: 24px;
-  margin-bottom: 5px;
-}
-.form-header p {
-  font-size: 14px;
-  color: #666;
-}
-.form-content {
-  display: flex;
-  flex-direction: column;
-}
-.form-group {
-  margin-bottom: 20px;
-}
-label {
-  font-weight: bold;
-  font-size: 14px;
-  margin-bottom: 5px;
-  color: #333;
-}
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-textarea {
-  resize: vertical;
-  height: 100px;
-}
-button {
-  padding: 10px 20px;
-  background-color: #4caf50;
-  color: white;
-  font-size: 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-button:hover {
-  background-color: #45a049;
-}
-.hint {
-  font-size: 12px;
-  color: #888;
-}
-.success {
-  color: green;
-  margin-top: 20px;
-}
-.error {
-  color: red;
-  margin-top: 20px;
-}
-</style>
