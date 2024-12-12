@@ -100,6 +100,27 @@ const onRegisterFormSubmit = async () => {
     if (error) {
       registerMessage.value = error.message
     } else {
+      if (registerData.value.role === 'Normal User') {
+        const user = data.user
+        const { error: patientError } = await supabase.from('patients').insert([
+          {
+            user_id: user.id,
+            name: registerData.value.name,
+            date_of_birth: registerData.value.dateOfBirth,
+            gender: registerData.value.gender,
+            phone_number: registerData.value.phoneNumber,
+            address: registerData.value.address,
+          },
+        ])
+
+        if (patientError) {
+          registerMessage.value = `Error inserting patient data: ${patientError.message}`
+          console.error(patientError)
+          return
+        }
+      }
+
+      // Step 3: Redirect after successful registration
       messageType.value = 'success'
       registerMessage.value = 'Registration successful!'
       router.replace('/dashboard')
