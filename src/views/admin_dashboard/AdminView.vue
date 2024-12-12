@@ -1,174 +1,206 @@
+<template>
+  <form @submit.prevent="bookAppointment">
+    <!-- Patient Information -->
+    <div>
+      <label> <input type="checkbox" v-model="forSomeoneElse" /> Booking for someone else </label>
+    </div>
+    <div v-if="forSomeoneElse">
+      <label for="otherPatientName">Patient Name:</label>
+      <input type="text" id="otherPatientName" v-model="otherPatientName" />
+    </div>
+    <div v-else>
+      <label for="patientName">Patient Name:</label>
+      <input type="text" id="patientName" v-model="patientName" readonly />
+    </div>
+
+    <!-- Select Medical Staff -->
+    <div>
+      <label for="staff">Select Medical Staff:</label>
+      <select id="staff" v-model="selectedStaff">
+        <option v-for="staff in medicalStaff" :key="staff.staff_id" :value="staff.staff_id">
+          {{ staff.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Appointment Details -->
+    <div>
+      <label for="appointmentDateTime">Appointment Date & Time:</label>
+      <input
+        type="datetime-local"
+        id="appointmentDateTime"
+        v-model="appointmentDateTime"
+        required
+      />
+    </div>
+    <div>
+      <label for="appointmentType">Appointment Type:</label>
+      <select id="appointmentType" v-model="selectedAppointmentType">
+        <option
+          v-for="type in appointmentTypes"
+          :key="type.appointment_type_id"
+          :value="type.appointment_type_id"
+        >
+          {{ type.type_name }}
+        </option>
+      </select>
+    </div>
+    <div>
+      <label for="reason">Reason for Appointment:</label>
+      <textarea id="reason" v-model="reason" rows="4"></textarea>
+    </div>
+
+    <!-- Schedule Information -->
+    <div>
+      <label for="schedule">Available Schedule:</label>
+      <select id="schedule" v-model="selectedSchedule">
+        <option
+          v-for="schedule in schedules"
+          :key="schedule.schedule_id"
+          :value="schedule.schedule_id"
+        >
+          {{ schedule.day_of_week }} {{ schedule.start_time }} - {{ schedule.end_time }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit">Book Appointment</button>
+  </form>
+</template>
+
 <script setup>
-import { ref, onMounted, watch } from 'vue' // Added watch to the imports
+import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 
+// Define refs for form fields
+const forSomeoneElse = ref(false)
+const patientName = ref('Pre-filled Patient Name') // Assuming patient name is pre-filled
+const otherPatientName = ref('')
+const selectedStaff = ref(null)
+const appointmentDateTime = ref(null)
+const selectedAppointmentType = ref(null)
+const reason = ref('')
+const selectedSchedule = ref(null)
+
+// Data arrays for dropdowns
+const medicalStaff = ref([])
 const appointmentTypes = ref([])
 const schedules = ref([])
-const filteredSchedules = ref([])
-const newAppointment = ref({
-  appointment_type_id: '',
-  schedule_id: '',
-})
-const successMessage = ref('')
-const errorMessage = ref('')
 
-// Fetch appointment types and schedules
-const fetchInitialData = async () => {
+// Fetch data on component mount
+onMounted(async () => {
   try {
-    // Fetch appointment types
-    const { data: types, error: typesError } = await supabase.from('appointment_types').select('*')
-    if (typesError) throw typesError
-    appointmentTypes.value = types || []
+    // Fetch medical staff data
+    let { data: staffData, error: staffError } = await supabase
+      .from('medical_staff')
+      .select('staff_id, name')
+    if (staffError) throw staffError
+    medicalStaff.value = staffData
 
-    // Fetch schedules
-    const { data: scheduleData, error: scheduleError } = await supabase
+    // Fetch appointment types data
+    let { data: typeData, error: typeError } = await supabase
+      .from('appointment_types')
+      .select('appointment_type_id, type_name')
+    if (typeError) throw typeError
+    appointmentTypes.value = typeData
+
+    // Fetch schedule data
+    let { data: scheduleData, error: scheduleError } = await supabase
       .from('schedules')
-      .select('*')
+      .select('schedule_id, day_of_week, start_time, end_time')
     if (scheduleError) throw scheduleError
-    schedules.value = scheduleData || []
+    schedules.value = scheduleData
   } catch (error) {
     console.error('Error fetching data:', error)
   }
-}
+})
 
-// Filter schedules based on selected appointment type
-const filterSchedules = () => {
-  filteredSchedules.value = schedules.value.filter(
-    (schedule) => schedule.appointment_type_id === newAppointment.value.appointment_type_id,
-  )
-}
-
-// Watch appointment type selection
-watch(() => newAppointment.value.appointment_type_id, filterSchedules)
-
-// Book an appointment
+// Function to handle form submission
 const bookAppointment = async () => {
   try {
-    const { data: authData, error: authError } = await supabase.auth.getUser()
-    if (authError) throw authError
+    const appointmentData = {
+      patient_id: forSomeoneElse.value ? null : 1, // Replace with actual patient_id if booking for self
+      patient_name: forSomeoneElse.value ? otherPatientName.value : patientName.value,
+      staff_id: selectedStaff.value,
+      appointment_date_time: appointmentDateTime.value,
+      appointment_type_id: selectedAppointmentType.value,
+      reason: reason.value,
+      schedule_id: selectedSchedule.value,
+      status: 'scheduled',
+      booked_by_user_id: 'user-uuid', // Replace with actual user id from auth
+    }
 
-    const { error } = await supabase.from('appointments').insert({
-      patient_id: authData.user.id,
-      appointment_type_id: newAppointment.value.appointment_type_id,
-      schedule_id: newAppointment.value.schedule_id, // Ensure this is included
-    })
+    let { error } = await supabase.from('appointments').insert(appointmentData)
     if (error) throw error
 
-    successMessage.value = 'Appointment successfully booked!'
-    errorMessage.value = ''
-    newAppointment.value = { appointment_type_id: '', schedule_id: '' }
-    filteredSchedules.value = []
+    console.log('Appointment booked successfully')
   } catch (error) {
     console.error('Error booking appointment:', error)
-    successMessage.value = ''
-    errorMessage.value = 'Failed to book appointment. Please try again later.'
   }
 }
-
-onMounted(fetchInitialData)
 </script>
 
-<template>
-  <div>
-    <h1>Book an Appointment</h1>
-
-    <div v-if="appointmentTypes.length">
-      <form @submit.prevent="bookAppointment">
-        <div>
-          <label for="appointment-type">Appointment Type:</label>
-          <select id="appointment-type" v-model="newAppointment.appointment_type_id" required>
-            <option value="" disabled>Select a type</option>
-            <option
-              v-for="type in appointmentTypes"
-              :key="type.appointment_type_id"
-              :value="type.appointment_type_id"
-            >
-              {{ type.type_name }}
-            </option>
-          </select>
-        </div>
-
-        <div v-if="filteredSchedules.length">
-          <label for="schedule">Available Schedules:</label>
-          <select id="schedule" v-model="newAppointment.schedule_id" required>
-            <option value="" disabled>Select a schedule</option>
-            <option
-              v-for="schedule in filteredSchedules"
-              :key="schedule.schedule_id"
-              :value="schedule.schedule_id"
-            >
-              {{ schedule.day_of_week }}: {{ schedule.start_time }} - {{ schedule.end_time }}
-            </option>
-          </select>
-        </div>
-        <div v-else>
-          <p>No schedules available for the selected appointment type.</p>
-        </div>
-
-        <button type="submit" :disabled="!filteredSchedules.length">Book Appointment</button>
-      </form>
-
-      <p v-if="successMessage" style="color: green">{{ successMessage }}</p>
-      <p v-if="errorMessage" style="color: red">{{ errorMessage }}</p>
-    </div>
-
-    <div v-else>
-      <p>Loading available appointment types...</p>
-    </div>
-  </div>
-</template>
-
 <style scoped>
-h1 {
-  text-align: center;
-  color: #4a90e2;
-  margin-bottom: 20px;
+/* General form styling */
+form {
+  max-width: 600px;
+  margin: auto;
+  padding: 1.5rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  background-color: #f9f9f9;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Form field styling */
+div {
+  margin-bottom: 1rem;
 }
 
 label {
+  display: block;
+  margin-bottom: 0.5rem;
   font-weight: bold;
-  color: #333;
 }
 
+input,
 select,
-button {
-  padding: 10px;
+textarea {
+  width: 100%;
+  padding: 0.5rem;
   border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-select {
+  border-radius: 4px;
   background-color: #fff;
-  color: #333;
+  box-sizing: border-box;
 }
 
+/* Submit button styling */
 button {
-  background-color: #4caf50;
-  color: white;
-  font-weight: bold;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: center;
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: #0056b3;
 }
 
-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+/* Responsive styling */
+@media (max-width: 600px) {
+  form {
+    padding: 1rem;
+  }
+
+  button {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
 }
 </style>
