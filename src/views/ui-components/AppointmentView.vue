@@ -11,6 +11,7 @@ const newAppointmentType = ref({
   description: '',
 })
 const schedules = ref([])
+const allSchedules = ref([]) // Added this line
 const editScheduleData = ref(null)
 const newSchedule = ref({
   appointment_type_id: '',
@@ -28,45 +29,6 @@ const daysOfWeek = ref([
   'Saturday',
   'Sunday',
 ])
-
-// Fetch initial data
-const fetchInitialData = async () => {
-  try {
-    const { data: authData, error: authError } = await supabase.auth.getUser()
-    if (authError) throw authError
-
-    const { data: staffData, error: staffError } = await supabase
-      .from('medical_staff')
-      .select('*')
-      .eq('user_id', authData.user.id)
-
-    if (staffError) throw staffError
-
-    isMedicalStaff.value = staffData.length > 0
-
-    if (isMedicalStaff.value) {
-      const { data: types, error: typesError } = await supabase
-        .from('appointment_types')
-        .select('*')
-      if (typesError) throw typesError
-      appointmentTypes.value = types || []
-
-      const { data: schedulesData, error: schedulesError } = await supabase
-        .from('schedules')
-        .select('*')
-      if (schedulesError) throw schedulesError
-      schedules.value = schedulesData || []
-
-      const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('appointments')
-        .select('*')
-      if (appointmentsError) throw appointmentsError
-      appointments.value = appointmentsData || []
-    }
-  } catch (error) {
-    console.error('Error fetching initial data:', error)
-  }
-}
 
 // Add, edit, update, delete methods for appointment types
 const addAppointmentType = async () => {
@@ -125,12 +87,65 @@ const deleteAppointmentType = async (id) => {
 }
 
 // Add, edit, update, delete methods for schedules
+const fetchInitialData = async () => {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError) throw authError
+
+    const { data: staffData, error: staffError } = await supabase
+      .from('medical_staff')
+      .select('*')
+      .eq('user_id', authData.user.id)
+
+    if (staffError) throw staffError
+
+    isMedicalStaff.value = staffData.length > 0
+
+    if (isMedicalStaff.value) {
+      const { data: types, error: typesError } = await supabase
+        .from('appointment_types')
+        .select('*')
+      if (typesError) throw typesError
+      appointmentTypes.value = types || []
+
+      const { data: userSchedulesData, error: userSchedulesError } = await supabase
+        .from('schedules')
+        .select('*, medical_staff (name)')
+        .eq('user_id', authData.user.id)
+      if (userSchedulesError) throw userSchedulesError
+      schedules.value = userSchedulesData || []
+
+      const { data: allSchedulesData, error: allSchedulesError } = await supabase
+        .from('schedules')
+        .select('*, medical_staff (name)')
+      if (allSchedulesError) throw allSchedulesError
+      allSchedules.value = allSchedulesData || []
+
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('*')
+      if (appointmentsError) throw appointmentsError
+      appointments.value = appointmentsData || []
+    }
+  } catch (error) {
+    console.error('Error fetching initial data:', error)
+  }
+}
+
 const addSchedule = async () => {
   try {
-    const { data, error } = await supabase.from('schedules').insert([newSchedule.value]).select('*')
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError) throw authError
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .insert([{ ...newSchedule.value, user_id: authData.user.id }])
+      .select('*')
     if (error) throw error
+
     if (data && data.length > 0) {
       schedules.value.push(data[0])
+      allSchedules.value.push(data[0]) // Also add to allSchedules
     }
     newSchedule.value = { appointment_type_id: '', day_of_week: '', start_time: '', end_time: '' }
   } catch (error) {
@@ -138,37 +153,39 @@ const addSchedule = async () => {
   }
 }
 
-const editSchedule = (schedule) => {
-  editScheduleData.value = { ...schedule }
-}
-
 const updateSchedule = async () => {
   try {
-    const { data, error } = await supabase
-      .from('schedules')
-      .update(editScheduleData.value)
-      .eq('schedule_id', editScheduleData.value.schedule_id)
-      .select('*')
-    if (error) throw error
-    const index = schedules.value.findIndex(
-      (schedule) => schedule.schedule_id === editScheduleData.value.schedule_id,
-    )
-    if (index !== -1) {
-      schedules.value[index] = { ...data[0] }
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError) throw authError
+
+    if (editScheduleData.value.user_id === authData.user.id) {
+      const { data, error } = await supabase
+        .from('schedules')
+        .update(editScheduleData.value)
+        .eq('schedule_id', editScheduleData.value.schedule_id)
+        .select('*')
+      if (error) throw error
+
+      const index = schedules.value.findIndex(
+        (schedule) => schedule.schedule_id === editScheduleData.value.schedule_id,
+      )
+      if (index !== -1) {
+        schedules.value[index] = { ...data[0] }
+      }
+
+      const allIndex = allSchedules.value.findIndex(
+        (schedule) => schedule.schedule_id === editScheduleData.value.schedule_id,
+      )
+      if (allIndex !== -1) {
+        allSchedules.value[allIndex] = { ...data[0] }
+      }
+
+      editScheduleData.value = null
+    } else {
+      console.error('You do not have permission to edit this schedule.')
     }
-    editScheduleData.value = null
   } catch (error) {
     console.error('Error updating schedule:', error)
-  }
-}
-
-const deleteSchedule = async (id) => {
-  try {
-    const { error } = await supabase.from('schedules').delete().eq('schedule_id', id)
-    if (error) throw error
-    schedules.value = schedules.value.filter((schedule) => schedule.schedule_id !== id)
-  } catch (error) {
-    console.error('Error deleting schedule:', error)
   }
 }
 
@@ -242,6 +259,16 @@ onMounted(fetchInitialData)
               <button type="submit">Save</button>
               <button @click="() => (editScheduleData = null)">Cancel</button>
             </form>
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>All Schedules</h2>
+        <ul>
+          <li v-for="schedule in allSchedules" :key="schedule.schedule_id">
+            {{ schedule.day_of_week }}: {{ schedule.start_time }} - {{ schedule.end_time }} (Set by:
+            {{ schedule.medical_staff ? schedule.medical_staff.name : 'Unknown' }})
           </li>
         </ul>
       </section>
