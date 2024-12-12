@@ -1,309 +1,272 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { supabase } from '@/components/util/supabase'
-import { requiredValidator } from '@/components/util/validators'
-const theme = ref('dark')
+import { supabase, formActionDefault } from '@/components/util/supabase'
 
-const medicalStaff = ref([])
-const schedules = ref([])
-const bookings = ref([])
-const formData = ref({
-  name: '',
-  role: 'doctor',
-  specialization: '',
-  available_slots: 0,
+// State variables
+const isMedicalStaff = ref(false) // Replace with actual user role check
+const appointmentTypes = ref([])
+const newAppointmentType = ref({
+  type_name: '',
+  description: '',
 })
-const scheduleData = ref({
-  staff_id: '',
-  date: '',
+const schedules = ref([])
+const newSchedule = ref({
+  appointment_type_id: '',
+  day_of_week: '',
   start_time: '',
   end_time: '',
-  slots: 0,
 })
+const appointments = ref([])
+const daysOfWeek = ref([
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+])
 
-const loading = ref(false)
-const errorMessage = ref('')
+// Methods
+const fetchInitialData = async () => {
+  try {
+    // Fetch the logged-in user
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError) throw authError
 
-onMounted(async () => {
-  await fetchMedicalStaff()
-  await fetchSchedules()
-  await fetchBookings()
-})
+    console.log('Logged-in user:', authData)
 
-const fetchMedicalStaff = async () => {
-  const { data, error } = await supabase
-    .from('medicalstaff')
-    .select('staff_id, name, role, available_slots, schedules (date, slots)')
-  if (error) {
-    console.error('Error fetching medical staff:', error)
-  } else {
-    medicalStaff.value = data.map((staff) => ({
-      ...staff,
-      reserved_slots: staff.schedules.reduce((total, schedule) => total + schedule.slots, 0),
-    }))
-  }
-}
+    // Verify if the user is part of Medical_Staff
+    const { data: staffData, error: staffError } = await supabase
+      .from('medical_staff')
+      .select('*')
+      .eq('user_id', authData.user.id)
 
-const fetchSchedules = async () => {
-  const { data, error } = await supabase.from('schedules').select('*')
-  if (error) {
-    console.error('Error fetching schedules:', error)
-  } else {
-    schedules.value = data
-  }
-}
+    if (staffError) throw staffError
 
-const fetchBookings = async () => {
-  const { data, error } = await supabase.from('appointments_with_user_details').select('*')
-  if (error) {
-    console.error('Error fetching bookings:', error)
-  } else {
-    bookings.value = data
-  }
-}
+    console.log('medical_staff data:', staffData)
 
-const addMedicalStaff = async () => {
-  loading.value = true
-  errorMessage.value = ''
+    // Update `isMedicalStaff` based on fetched data
+    isMedicalStaff.value = staffData.length > 0
 
-  const { error } = await supabase.from('medicalstaff').insert([formData.value])
-  if (error) {
-    errorMessage.value = 'An error occurred while adding medical staff.'
-    console.error(error)
-  } else {
-    await fetchMedicalStaff()
-    formData.value = {
-      name: '',
-      role: 'doctor',
-      specialization: '',
-      available_slots: 0,
+    if (isMedicalStaff.value) {
+      // Fetch appointment types
+      const { data: types, error: typesError } = await supabase
+        .from('appointment_types')
+        .select('*')
+      if (typesError) throw typesError
+      appointmentTypes.value = types || []
+
+      // Fetch schedules
+      const { data: schedulesData, error: schedulesError } = await supabase
+        .from('schedules')
+        .select('*')
+      if (schedulesError) throw schedulesError
+      schedules.value = schedulesData || []
+
+      // Fetch appointments
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('*')
+      if (appointmentsError) throw appointmentsError
+      appointments.value = appointmentsData || []
+    } else {
+      console.warn('User is not a Medical Staff.')
     }
+  } catch (error) {
+    console.error('Error fetching initial data:', error)
   }
-  loading.value = false
+}
+
+const addAppointmentType = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('appointment_types')
+      .insert([newAppointmentType.value])
+
+    if (error) throw error
+    appointmentTypes.value.push(data[0])
+    newAppointmentType.value = { type_name: '', description: '' }
+  } catch (error) {
+    console.error('Error adding appointment type:', error)
+  }
+}
+
+const deleteAppointmentType = async (id) => {
+  try {
+    const { error } = await supabase
+      .from('appointment_types')
+      .delete()
+      .eq('appointment_type_id', id)
+    if (error) throw error
+    appointmentTypes.value = appointmentTypes.value.filter(
+      (type) => type.appointment_type_id !== id,
+    )
+  } catch (error) {
+    console.error('Error deleting appointment type:', error)
+  }
 }
 
 const addSchedule = async () => {
-  loading.value = true
-  errorMessage.value = ''
+  try {
+    const { data, error } = await supabase.from('schedules').insert([newSchedule.value])
 
-  const { error } = await supabase.from('schedules').insert([scheduleData.value])
-  if (error) {
-    errorMessage.value = 'An error occurred while adding the schedule.'
-    console.error(error)
-  } else {
-    await fetchSchedules()
-    scheduleData.value = {
-      staff_id: '',
-      date: '',
-      start_time: '',
-      end_time: '',
-      slots: 0,
-    }
+    if (error) throw error
+    schedules.value.push(data[0])
+    newSchedule.value = { appointment_type_id: '', day_of_week: '', start_time: '', end_time: '' }
+  } catch (error) {
+    console.error('Error adding schedule:', error)
   }
-  loading.value = false
 }
 
-const deleteSchedule = async (schedule_id) => {
-  const { error } = await supabase.from('schedules').delete().eq('schedule_id', schedule_id)
-  if (error) {
+const deleteSchedule = async (id) => {
+  try {
+    const { error } = await supabase.from('schedules').delete().eq('schedule_id', id)
+    if (error) throw error
+    schedules.value = schedules.value.filter((schedule) => schedule.schedule_id !== id)
+  } catch (error) {
     console.error('Error deleting schedule:', error)
-  } else {
-    await fetchSchedules()
   }
 }
 
-const deleteMedicalStaff = async (staff_id) => {
-  const { error } = await supabase.from('medicalstaff').delete().eq('staff_id', staff_id)
-  if (error) {
-    console.error('Error deleting medical staff:', error)
-  } else {
-    await fetchMedicalStaff()
-  }
+const getAppointmentTypeName = (id) => {
+  const type = appointmentTypes.value.find((type) => type.appointment_type_id === id)
+  return type ? type.type_name : 'Unknown'
 }
 
-const logout = async () => {
-  const { error } = await supabase.auth.signOut()
-  if (error) {
-    console.error('Error logging out:', error)
-  } else {
-    window.location.href = '/login'
-  }
-}
-
-const goToDashboard = () => {
-  window.location.href = '/dashboard'
-}
+onMounted(fetchInitialData)
 </script>
 
 <template>
-  <v-responsive>
-    <v-app :theme="theme">
-      <v-container class="my-5">
-        <v-btn @click="logout" color="primary">Logout</v-btn>
-        <v-btn @click="goToDashboard" color="primary" outlined>Dashboard</v-btn>
-        <v-row>
-          <v-col cols="12" md="8" offset-md="2">
-            <v-card class="pa-5">
-              <v-card-title class="text-h5">Admin Dashboard</v-card-title>
-              <v-card-subtitle>Manage medical staff and schedules.</v-card-subtitle>
+  <div>
+    <h1>Appointment Management</h1>
 
-              <v-divider class="my-4"></v-divider>
-              <v-card class="mb-4">
-                <v-card-title class="text-h6">Medical Staff List</v-card-title>
-                <v-card-text>
-                  <v-row>
-                    <v-col
-                      v-for="staff in medicalStaff"
-                      :key="staff.staff_id"
-                      cols="12"
-                      md="6"
-                      lg="4"
-                    >
-                      <v-card class="mb-4">
-                        <v-card-title>{{ staff.name }} </v-card-title>
-                        <v-card-subtitle>({{ staff.role }})</v-card-subtitle>
-                        <v-card-text>
-                          <div><strong>Available Slots:</strong> {{ staff.available_slots }}</div>
-                          <div><strong>Reserved Slots:</strong> {{ staff.reserved_slots }}</div>
-                          <div>
-                            <strong>Schedule Dates:</strong>
-                            <ul style="padding-left: 20px">
-                              <li v-for="schedule in staff.schedules" :key="schedule.date">
-                                {{ schedule.date }} ({{ schedule.slots }} slots)
-                              </li>
-                            </ul>
-                          </div>
-                        </v-card-text>
-                        <v-card-actions>
-                          <v-btn @click="deleteMedicalStaff(staff.staff_id)" color="red"
-                            >Remove</v-btn
-                          >
-                        </v-card-actions>
-                      </v-card>
-                    </v-col>
-                  </v-row>
-                </v-card-text>
-              </v-card>
+    <div v-if="isMedicalStaff">
+      <!-- Appointment Types Management -->
+      <section>
+        <h2>Manage Appointment Types</h2>
+        <div>
+          <h3>Add Appointment Type</h3>
+          <form @submit.prevent="addAppointmentType">
+            <input v-model="newAppointmentType.type_name" placeholder="Type Name" required />
+            <textarea v-model="newAppointmentType.description" placeholder="Description"></textarea>
+            <button type="submit">Add</button>
+          </form>
+        </div>
+        <div>
+          <h3>Existing Appointment Types</h3>
+          <ul>
+            <li v-for="type in appointmentTypes" :key="type.appointment_type_id">
+              {{ type.type_name }}
+              <button @click="() => deleteAppointmentType(type.appointment_type_id)">Delete</button>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-              <v-card class="mb-4">
-                <v-card-title class="text-h6">Schedules List</v-card-title>
-                <v-card-text>
-                  <v-list>
-                    <v-list-item v-for="schedule in schedules" :key="schedule.schedule_id">
-                      <v-list-item-title>{{ schedule.date }}</v-list-item-title>
-                      <v-list-item-subtitle
-                        >{{ schedule.start_time }} to {{ schedule.end_time }}</v-list-item-subtitle
-                      >
+      <!-- Schedules Management -->
+      <section>
+        <h2>Manage Schedules</h2>
+        <div>
+          <h3>Add Schedule</h3>
+          <form @submit.prevent="addSchedule">
+            <select v-model="newSchedule.appointment_type_id">
+              <option
+                v-for="type in appointmentTypes"
+                :value="type.appointment_type_id"
+                :key="type.appointment_type_id"
+              >
+                {{ type.type_name }}
+              </option>
+            </select>
+            <select v-model="newSchedule.day_of_week">
+              <option v-for="day in daysOfWeek" :value="day" :key="day">{{ day }}</option>
+            </select>
+            <input v-model="newSchedule.start_time" type="time" required />
+            <input v-model="newSchedule.end_time" type="time" required />
+            <button type="submit">Add</button>
+          </form>
+        </div>
+        <div>
+          <h3>Existing Schedules</h3>
+          <ul>
+            <li v-for="schedule in schedules" :key="schedule.schedule_id">
+              {{ schedule.day_of_week }}: {{ schedule.start_time }} - {{ schedule.end_time }} ({{
+                getAppointmentTypeName(schedule.appointment_type_id)
+              }})
+              <button @click="() => deleteSchedule(schedule.schedule_id)">Delete</button>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-                      <v-list-item-action>
-                        <v-btn @click="deleteSchedule(schedule.schedule_id)" color="red"
-                          >Delete</v-btn
-                        >
-                      </v-list-item-action>
-                    </v-list-item>
-                  </v-list>
-                </v-card-text>
-              </v-card>
+      <!-- Appointments View -->
+      <section>
+        <h2>View Appointments</h2>
+        <ul>
+          <li v-for="appointment in appointments" :key="appointment.appointment_id">
+            {{ appointment.patient_name }} - {{ appointment.appointment_date_time }} -
+            {{ getAppointmentTypeName(appointment.appointment_type_id) }} ({{ appointment.status }})
+          </li>
+        </ul>
+      </section>
+    </div>
 
-              <v-card class="mb-4">
-                <v-card-title class="text-h6">Bookings List</v-card-title>
-                <v-card-text>
-                  <v-list>
-                    <v-list-item v-for="booking in bookings" :key="booking.appointment_id">
-                      <v-list-item-title>{{ booking.user_name || 'N/A' }}</v-list-item-title>
-                      <v-list-item-subtitle>{{ booking.user_email }}</v-list-item-subtitle>
-                      <v-list-item-subtitle
-                        >{{ booking.appointment_date }}
-                        {{ booking.appointment_time }}</v-list-item-subtitle
-                      >
-                    </v-list-item>
-                  </v-list>
-                </v-card-text>
-              </v-card>
-
-              <v-alert v-if="errorMessage" type="error" class="mb-4">{{ errorMessage }}</v-alert>
-
-              <v-expansion-panels>
-                <v-expansion-panel>
-                  <v-expansion-panel-title>Manage Medical Staff</v-expansion-panel-title>
-                  <v-expansion-panel-text>
-                    <v-card class="mb-4">
-                      <v-card-text>
-                        <v-form @submit.prevent="addMedicalStaff">
-                          <v-text-field
-                            v-model="formData.name"
-                            label="Name"
-                            :rules="[requiredValidator]"
-                          ></v-text-field>
-                          <v-select
-                            v-model="formData.role"
-                            :items="['doctor', 'nurse']"
-                            label="Role"
-                          ></v-select>
-                          <v-text-field
-                            v-model="formData.specialization"
-                            label="Specialization"
-                            :rules="[requiredValidator]"
-                          ></v-text-field>
-                          <v-text-field
-                            v-model="formData.available_slots"
-                            label="Available Slots"
-                            type="number"
-                          ></v-text-field>
-                          <v-btn type="submit" :loading="loading">Add Staff</v-btn>
-                        </v-form>
-                      </v-card-text>
-                    </v-card>
-                  </v-expansion-panel-text>
-                </v-expansion-panel>
-
-                <v-expansion-panel>
-                  <v-expansion-panel-title>Manage Schedules</v-expansion-panel-title>
-                  <v-expansion-panel-text>
-                    <v-card class="mb-4">
-                      <v-card-text>
-                        <v-form @submit.prevent="addSchedule">
-                          <v-select
-                            v-model="scheduleData.staff_id"
-                            :items="
-                              medicalStaff.map((staff) => ({
-                                text: staff.name,
-                                value: staff.staff_id,
-                              }))
-                            "
-                            label="Select Staff"
-                          ></v-select>
-                          <v-text-field
-                            v-model="scheduleData.date"
-                            label="Date"
-                            type="date"
-                          ></v-text-field>
-                          <v-text-field
-                            v-model="scheduleData.start_time"
-                            label="Start Time"
-                            type="time"
-                          ></v-text-field>
-                          <v-text-field
-                            v-model="scheduleData.end_time"
-                            label="End Time"
-                            type="time"
-                          ></v-text-field>
-                          <v-text-field
-                            v-model="scheduleData.slots"
-                            label="Slots"
-                            type="number"
-                          ></v-text-field>
-                          <v-btn type="submit" :loading="loading">Add Schedule</v-btn>
-                        </v-form>
-                      </v-card-text>
-                    </v-card>
-                  </v-expansion-panel-text>
-                </v-expansion-panel>
-              </v-expansion-panels>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-app>
-  </v-responsive>
+    <div v-else>
+      <p>You do not have access to manage appointments.</p>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+h1 {
+  text-align: center;
+  color: #4a90e2;
+}
+
+section {
+  margin: 20px 0;
+}
+
+form {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input,
+textarea,
+select,
+button {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  background-color: #4caf50;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+</style>

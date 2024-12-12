@@ -1,0 +1,105 @@
+Users
+
+user_id (Primary Key)
+
+name
+
+email
+
+password_hash
+
+role (e.g., patient, medical_staff, admin)
+
+created_at
+
+updated_at
+
+Patients
+
+patient_id (Primary Key)
+
+user_id (Foreign Key, references Users.user_id)
+
+name
+
+date_of_birth
+
+gender
+
+phone_number
+
+address
+
+created_at
+
+updated_at
+
+Medical_Staff
+
+staff_id (Primary Key)
+
+user_id (Foreign Key, references Users.user_id)
+
+role (e.g., doctor, nurse)
+
+specialization (optional)
+
+phone_number
+
+available_hours (e.g., JSON or separate table for schedule)
+
+created_at
+
+updated_at
+
+Appointment_Types
+
+appointment_type_id (Primary Key)
+
+type_name (e.g., dental, general, pediatric, etc.)
+
+description (optional)
+
+created_at
+
+updated_at
+
+Appointments
+
+appointment_id (Primary Key)
+
+patient_id (Foreign Key, references Patients.patient_id)
+
+staff_id (Foreign Key, references Medical_Staff.staff_id)
+
+appointment_date_time
+
+appointment_type_id (Foreign Key, references Appointment_Types.appointment_type_id)
+
+reason
+
+status (e.g., scheduled, completed, cancelled)
+
+booked_by_user_id (Foreign Key, references Users.user_id)
+
+created_at
+
+updated_at
+
+Schedules
+
+schedule_id (Primary Key)
+
+staff_id (Foreign Key, references Medical_Staff.staff_id)
+
+appointment_type_id (Foreign Key, references Appointment_Types.appointment_type_id)
+
+day_of_week (e.g., Monday, Tuesday)
+
+start_time
+
+end_time
+
+created_at
+
+updated_at

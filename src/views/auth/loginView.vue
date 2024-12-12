@@ -4,8 +4,9 @@ import {
   emailValidator,
   passwordValidator,
   confirmedValidator,
+  integerValidator,
 } from '@/components/util/validators'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { supabase } from '@/components/util/supabase'
 import { useRouter } from 'vue-router'
 
@@ -18,19 +19,28 @@ const loginData = ref({
   password: '',
 })
 const registerData = ref({
+  role: 'Normal User', // Tracks if user is normal user or medical staff
   name: '',
   email: '',
   password: '',
   password_confirmation: '',
-  role: 'user', // Default value for role
+  dateOfBirth: '',
+  gender: '',
+  phoneNumber: '',
+  address: '',
+  specialization: '',
+  availableHours: '',
 })
+const genders = ['Male', 'Female', 'Prefer not to say'] // Gender options
+const roles = ['Normal User', 'Medical Staff'] // Options for the dropdown
 const loading = ref(false)
-const messageType = ref('error') // Type for v-alert
+const messageType = ref('error')
 const loginMessage = ref('')
 const registerMessage = ref('')
 const step = ref(1)
 const visible = ref(false)
-const roles = ['user', 'admin'] // Options for the dropdown
+
+const isNormalUser = computed(() => registerData.value.role === 'Normal User')
 
 const alertMessage = ref('')
 const showAlert = (message) => {
@@ -82,8 +92,7 @@ const onRegisterFormSubmit = async () => {
       password: registerData.value.password,
       options: {
         data: {
-          name: registerData.value.name,
-          role: registerData.value.role, // Ensure role is included in metadata
+          ...registerData.value,
         },
       },
     })
@@ -91,6 +100,47 @@ const onRegisterFormSubmit = async () => {
     if (error) {
       registerMessage.value = error.message
     } else {
+      const user = data.user
+
+      if (registerData.value.role === 'Normal User') {
+        const user = data.user
+        const { error: patientError } = await supabase.from('patients').insert([
+          {
+            user_id: user.id,
+            name: registerData.value.name,
+            date_of_birth: registerData.value.dateOfBirth,
+            gender: registerData.value.gender,
+            phone_number: registerData.value.phoneNumber,
+            address: registerData.value.address,
+          },
+        ])
+
+        if (patientError) {
+          registerMessage.value = `Error inserting patient data: ${patientError.message}`
+          console.error(patientError)
+          return
+        }
+      } else if (registerData.value.role === 'Medical Staff') {
+        // Insert into the medical_staff table
+        const { error: staffError } = await supabase.from('medical_staff').insert([
+          {
+            user_id: user.id,
+            role: 'Medical Staff',
+            name: registerData.value.name,
+            specialization: registerData.value.specialization,
+            phone_number: registerData.value.phoneNumber,
+            available_hours: registerData.value.availableHours,
+          },
+        ])
+
+        if (staffError) {
+          registerMessage.value = `Error inserting medical staff data: ${staffError.message}`
+          console.error(staffError)
+          return
+        }
+      }
+
+      // Step 3: Redirect after successful registration
       messageType.value = 'success'
       registerMessage.value = 'Registration successful!'
       router.replace('/dashboard')
@@ -281,69 +331,11 @@ const forgotPassword = () => {
                         <v-row align="center" justify="center">
                           <v-col cols="12" sm="8">
                             <v-form ref="registerForm" @submit.prevent="onRegisterFormSubmit">
-                              <v-text-field
-                                v-model="registerData.name"
-                                :rules="[requiredValidator]"
-                                label="Name"
-                                density="compact"
-                                variant="outlined"
-                                outlined
-                                dense
-                                color="blue"
-                                autocomplete="false"
-                              ></v-text-field>
-                              <v-text-field
-                                v-model="registerData.email"
-                                :rules="[requiredValidator, emailValidator]"
-                                prepend-inner-icon="mdi-email-outline"
-                                label="Email"
-                                density="compact"
-                                variant="outlined"
-                                outlined
-                                dense
-                                color="blue"
-                                autocomplete="false"
-                              ></v-text-field>
-                              <v-text-field
-                                v-model="registerData.password"
-                                :rules="[requiredValidator, passwordValidator]"
-                                prepend-inner-icon="mdi-lock-outline"
-                                :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
-                                :type="visible ? 'text' : 'password'"
-                                label="Password"
-                                density="compact"
-                                variant="outlined"
-                                outlined
-                                dense
-                                color="blue"
-                                autocomplete="false"
-                                @click:append-inner="visible = !visible"
-                              ></v-text-field>
-                              <v-text-field
-                                v-model="registerData.password_confirmation"
-                                :rules="[
-                                  requiredValidator,
-                                  confirmedValidator(
-                                    registerData.password_confirmation,
-                                    registerData.password,
-                                  ),
-                                ]"
-                                prepend-inner-icon="mdi-lock-outline"
-                                :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
-                                :type="visible ? 'text' : 'password'"
-                                label="Password Confirmation"
-                                density="compact"
-                                variant="outlined"
-                                outlined
-                                dense
-                                color="blue"
-                                autocomplete="false"
-                                @click:append-inner="visible = !visible"
-                              ></v-text-field>
                               <v-select
                                 v-model="registerData.role"
                                 :items="roles"
-                                label="Role"
+                                label="Select Role"
+                                :rules="[requiredValidator]"
                                 density="compact"
                                 variant="outlined"
                                 outlined
@@ -351,18 +343,183 @@ const forgotPassword = () => {
                                 color="blue"
                               ></v-select>
 
+                              <v-text-field
+                                v-model="registerData.name"
+                                :rules="[requiredValidator]"
+                                label="Full Name"
+                                density="compact"
+                                variant="outlined"
+                                outlined
+                                dense
+                                color="blue"
+                              ></v-text-field>
+
+                              <v-text-field
+                                v-model="registerData.email"
+                                :rules="[requiredValidator, emailValidator]"
+                                label="Email"
+                                density="compact"
+                                variant="outlined"
+                                outlined
+                                dense
+                                color="blue"
+                              ></v-text-field>
+
+                              <v-text-field
+                                v-model="registerData.password"
+                                :rules="[requiredValidator, passwordValidator]"
+                                label="Password"
+                                :type="visible ? 'text' : 'password'"
+                                density="compact"
+                                variant="outlined"
+                                outlined
+                                dense
+                                color="blue"
+                                @click:append-inner="visible = !visible"
+                              ></v-text-field>
+
+                              <v-text-field
+                                v-model="registerData.password_confirmation"
+                                :rules="[
+                                  confirmedValidator(
+                                    registerData.password_confirmation,
+                                    registerData.password,
+                                  ),
+                                ]"
+                                label="Confirm Password"
+                                :type="visible ? 'text' : 'password'"
+                                density="compact"
+                                variant="outlined"
+                                outlined
+                                dense
+                                color="blue"
+                              ></v-text-field>
+
+                              <!-- Conditional Fields for Normal User -->
+                              <template v-if="isNormalUser">
+                                <v-text-field
+                                  v-model="registerData.dateOfBirth"
+                                  :rules="[requiredValidator]"
+                                  label="Date of Birth"
+                                  type="date"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                />
+
+                                <v-dialog v-model="visible" persistent max-width="290">
+                                  <v-card>
+                                    <v-date-picker
+                                      v-model="registerData.dateOfBirth"
+                                      scrollable
+                                      @input="visible = false"
+                                    ></v-date-picker>
+                                  </v-card>
+                                </v-dialog>
+
+                                <v-select
+                                  v-model="registerData.gender"
+                                  :items="genders"
+                                  label="Select Gender"
+                                  :rules="[requiredValidator]"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                ></v-select>
+                                <v-text-field
+                                  v-model="registerData.phoneNumber"
+                                  label="Phone Number"
+                                  :rules="[integerValidator]"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                ></v-text-field>
+                                <v-text-field
+                                  v-model="registerData.address"
+                                  label="Address"
+                                  :rules="[requiredValidator]"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                ></v-text-field>
+                              </template>
+
+                              <!-- Conditional Fields for Medical Staff -->
+                              <template v-else>
+                                <v-text-field
+                                  v-model="registerData.dateOfBirth"
+                                  :rules="[requiredValidator]"
+                                  label="Date of Birth"
+                                  type="date"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                />
+
+                                <v-dialog v-model="visible" persistent max-width="290">
+                                  <v-card>
+                                    <v-date-picker
+                                      v-model="registerData.dateOfBirth"
+                                      scrollable
+                                      @input="visible = false"
+                                    ></v-date-picker>
+                                  </v-card>
+                                </v-dialog>
+
+                                <v-text-field
+                                  v-model="registerData.phoneNumber"
+                                  label="Phone Number"
+                                  :rules="[integerValidator]"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                ></v-text-field>
+                                <v-text-field
+                                  v-model="registerData.specialization"
+                                  label="Specialization"
+                                  :rules="[requiredValidator]"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                ></v-text-field>
+                                <v-text-field
+                                  v-model="registerData.availableHours"
+                                  label="Available Hours"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                ></v-text-field>
+                              </template>
+
                               <v-btn
                                 :disabled="loading"
-                                class="mb-8"
+                                class="mt-4"
                                 color="blue"
                                 size="large"
                                 variant="tonal"
                                 block
                                 tile
                                 type="submit"
-                                :loading="loading"
-                                >Register</v-btn
                               >
+                                <span v-if="loading">Registering...</span>
+                                <span v-else>Register</span>
+                              </v-btn>
                             </v-form>
                           </v-col>
                         </v-row>
