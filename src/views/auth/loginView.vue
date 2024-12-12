@@ -4,6 +4,7 @@ import {
   emailValidator,
   passwordValidator,
   confirmedValidator,
+  integerValidator,
 } from '@/components/util/validators'
 import { ref, computed } from 'vue'
 import { supabase } from '@/components/util/supabase'
@@ -391,6 +392,7 @@ const forgotPassword = () => {
                                 <v-text-field
                                   v-model="registerData.phoneNumber"
                                   label="Phone Number"
+                                  :rules="[integerValidator]"
                                   density="compact"
                                   variant="outlined"
                                   outlined
@@ -400,6 +402,7 @@ const forgotPassword = () => {
                                 <v-text-field
                                   v-model="registerData.address"
                                   label="Address"
+                                  :rules="[requiredValidator]"
                                   density="compact"
                                   variant="outlined"
                                   outlined
@@ -412,16 +415,30 @@ const forgotPassword = () => {
                               <template v-else>
                                 <v-text-field
                                   v-model="registerData.dateOfBirth"
+                                  :rules="[requiredValidator]"
                                   label="Date of Birth"
+                                  type="date"
                                   density="compact"
                                   variant="outlined"
                                   outlined
                                   dense
                                   color="blue"
-                                ></v-text-field>
+                                />
+
+                                <v-dialog v-model="visible" persistent max-width="290">
+                                  <v-card>
+                                    <v-date-picker
+                                      v-model="registerData.dateOfBirth"
+                                      scrollable
+                                      @input="visible = false"
+                                    ></v-date-picker>
+                                  </v-card>
+                                </v-dialog>
+
                                 <v-text-field
                                   v-model="registerData.phoneNumber"
                                   label="Phone Number"
+                                  :rules="[integerValidator]"
                                   density="compact"
                                   variant="outlined"
                                   outlined
@@ -431,6 +448,7 @@ const forgotPassword = () => {
                                 <v-text-field
                                   v-model="registerData.specialization"
                                   label="Specialization"
+                                  :rules="[requiredValidator]"
                                   density="compact"
                                   variant="outlined"
                                   outlined
