@@ -36,7 +36,7 @@ const sidebarMenu = ref([
   {
     title: 'ignore this area',
     icon: 'mdi-exclamation-thick',
-    to: '//ui-components/tables',
+    to: '/ui-components/tables',
   },
 ])
 
