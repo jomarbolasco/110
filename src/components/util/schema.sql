@@ -20,7 +20,8 @@ CREATE TABLE Medical_Staff (
     phone_number VARCHAR(20),
     available_hours JSONB,  -- JSON for flexible scheduling
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    name VARCHAR(255) NOT NULL
 );
 
 -- Creating the Appointment_Types table
