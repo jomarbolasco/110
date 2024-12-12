@@ -189,6 +189,21 @@ const updateSchedule = async () => {
   }
 }
 
+const deleteSchedule = async (scheduleId) => {
+  try {
+    const { error } = await supabase.from('schedules').delete().eq('schedule_id', scheduleId)
+    if (error) throw error
+
+    // Remove the schedule from the local arrays
+    schedules.value = schedules.value.filter((schedule) => schedule.schedule_id !== scheduleId)
+    allSchedules.value = allSchedules.value.filter(
+      (schedule) => schedule.schedule_id !== scheduleId,
+    )
+  } catch (error) {
+    console.error('Error deleting schedule:', error)
+  }
+}
+
 onMounted(fetchInitialData)
 </script>
 
