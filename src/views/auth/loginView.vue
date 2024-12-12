@@ -18,7 +18,7 @@ const loginData = ref({
   password: '',
 })
 const registerData = ref({
-  role: '', // Tracks if user is normal user or medical staff
+  role: 'Normal User', // Tracks if user is normal user or medical staff
   name: '',
   email: '',
   password: '',
@@ -357,13 +357,26 @@ const forgotPassword = () => {
                               <template v-if="isNormalUser">
                                 <v-text-field
                                   v-model="registerData.dateOfBirth"
+                                  :rules="[requiredValidator]"
                                   label="Date of Birth"
+                                  type="date"
                                   density="compact"
                                   variant="outlined"
                                   outlined
                                   dense
                                   color="blue"
-                                ></v-text-field>
+                                />
+
+                                <v-dialog v-model="visible" persistent max-width="290">
+                                  <v-card>
+                                    <v-date-picker
+                                      v-model="registerData.dateOfBirth"
+                                      scrollable
+                                      @input="visible = false"
+                                    ></v-date-picker>
+                                  </v-card>
+                                </v-dialog>
+
                                 <v-select
                                   v-model="registerData.gender"
                                   :items="genders"
