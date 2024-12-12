@@ -108,16 +108,18 @@ const fetchInitialData = async () => {
       if (typesError) throw typesError
       appointmentTypes.value = types || []
 
+      // Fetch user schedules with medical staff names (join the Medical_Staff table to get the name)
       const { data: userSchedulesData, error: userSchedulesError } = await supabase
         .from('schedules')
-        .select('*, medical_staff (name)')
-        .eq('user_id', authData.user.id)
+        .select('schedule_id, day_of_week, start_time, end_time, medical_staff(name)') // Correct join here
+        .eq('staff_id', staffData[0].staff_id) // Ensure we're fetching schedules for the logged-in staff
       if (userSchedulesError) throw userSchedulesError
       schedules.value = userSchedulesData || []
 
+      // Fetch all schedules with medical staff names
       const { data: allSchedulesData, error: allSchedulesError } = await supabase
         .from('schedules')
-        .select('*, medical_staff (name)')
+        .select('schedule_id, day_of_week, start_time, end_time, medical_staff(name)') // Correct join here
       if (allSchedulesError) throw allSchedulesError
       allSchedules.value = allSchedulesData || []
 
