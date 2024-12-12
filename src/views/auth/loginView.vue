@@ -30,6 +30,7 @@ const registerData = ref({
   specialization: '',
   availableHours: '',
 })
+const genders = ['Male', 'Female', 'Prefer not to say'] // Gender options
 const roles = ['Normal User', 'Medical Staff'] // Options for the dropdown
 const loading = ref(false)
 const messageType = ref('error')
@@ -363,15 +364,17 @@ const forgotPassword = () => {
                                   dense
                                   color="blue"
                                 ></v-text-field>
-                                <v-text-field
+                                <v-select
                                   v-model="registerData.gender"
-                                  label="Gender"
+                                  :items="genders"
+                                  label="Select Gender"
+                                  :rules="[requiredValidator]"
                                   density="compact"
                                   variant="outlined"
                                   outlined
                                   dense
                                   color="blue"
-                                ></v-text-field>
+                                ></v-select>
                                 <v-text-field
                                   v-model="registerData.phoneNumber"
                                   label="Phone Number"
