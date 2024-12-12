@@ -42,22 +42,36 @@
         variant="outlined"
       ></v-text-field>
 
-      <v-text-field
-        v-model="formData.dateOfBirth"
-        density="compact"
-        placeholder="Date of Birth"
-        prepend-inner-icon="mdi-calendar"
-        variant="outlined"
-      ></v-text-field>
+      <v-menu
+        ref="dateMenu"
+        v-model="dateMenu"
+        :close-on-content-click="false"
+        transition="scale-transition"
+        offset-y
+        max-width="290px"
+        min-width="290px"
+      >
+        <template v-slot:activator="{ on, attrs }">
+          <v-text-field
+            v-model="formData.dateOfBirth"
+            label="Date of Birth"
+            prepend-inner-icon="mdi-calendar"
+            readonly
+            v-bind="attrs"
+            v-on="on"
+          ></v-text-field>
+        </template>
+        <v-date-picker v-model="formData.dateOfBirth" @input="dateMenu = false"></v-date-picker>
+      </v-menu>
 
-      <v-text-field
+      <v-select
         v-if="userType === 'Normal User'"
         v-model="formData.gender"
-        density="compact"
-        placeholder="Gender"
+        :items="['Male', 'Female', 'Other']"
+        label="Gender"
         prepend-inner-icon="mdi-gender-male-female"
         variant="outlined"
-      ></v-text-field>
+      ></v-select>
 
       <v-text-field
         v-model="formData.phoneNumber"
@@ -141,6 +155,7 @@ export default {
       availableHours: '',
     },
     formAction: { ...formActionDefault },
+    dateMenu: false,
   }),
   methods: {
     async signUp() {
