@@ -10,8 +10,8 @@ const newAppointmentType = ref({
   type_name: '',
   description: '',
 })
-const schedules = ref([])
-const allSchedules = ref([]) // Added this line
+const schedules = ref([]) // Schedules specifically for the logged-in user
+const allSchedules = ref([]) // All schedules
 const editScheduleData = ref(null)
 const newSchedule = ref({
   appointment_type_id: '',
@@ -86,54 +86,37 @@ const deleteAppointmentType = async (id) => {
   }
 }
 
-// Add, edit, update, delete methods for schedules
-const fetchInitialData = async () => {
+// Fetch the user's schedules and check if they are medical staff
+const fetchSchedules = async () => {
   try {
     const { data: authData, error: authError } = await supabase.auth.getUser()
     if (authError) throw authError
 
     const { data: staffData, error: staffError } = await supabase
       .from('medical_staff')
-      .select('*')
+      .select('staff_id')
       .eq('user_id', authData.user.id)
 
     if (staffError) throw staffError
 
-    isMedicalStaff.value = staffData.length > 0
+    const staffId = staffData[0].staff_id
 
-    if (isMedicalStaff.value) {
-      const { data: types, error: typesError } = await supabase
-        .from('appointment_types')
-        .select('*')
-      if (typesError) throw typesError
-      appointmentTypes.value = types || []
+    // Fetch schedules for the logged-in medical staff
+    const { data: schedulesData, error: schedulesError } = await supabase
+      .from('schedules')
+      .select('schedule_id, day_of_week, start_time, end_time, appointment_types(type_name)')
+      .eq('staff_id', staffId)
 
-      // Fetch user schedules with medical staff names (join the Medical_Staff table to get the name)
-      const { data: userSchedulesData, error: userSchedulesError } = await supabase
-        .from('schedules')
-        .select('schedule_id, day_of_week, start_time, end_time, medical_staff(name)') // Correct join here
-        .eq('staff_id', staffData[0].staff_id) // Ensure we're fetching schedules for the logged-in staff
-      if (userSchedulesError) throw userSchedulesError
-      schedules.value = userSchedulesData || []
+    if (schedulesError) throw schedulesError
 
-      // Fetch all schedules with medical staff names
-      const { data: allSchedulesData, error: allSchedulesError } = await supabase
-        .from('schedules')
-        .select('schedule_id, day_of_week, start_time, end_time, medical_staff(name)') // Correct join here
-      if (allSchedulesError) throw allSchedulesError
-      allSchedules.value = allSchedulesData || []
-
-      const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('appointments')
-        .select('*')
-      if (appointmentsError) throw appointmentsError
-      appointments.value = appointmentsData || []
-    }
+    schedules.value = schedulesData || []
+    console.log('Schedules fetched:', schedules.value)
   } catch (error) {
-    console.error('Error fetching initial data:', error)
+    console.error('Error fetching schedules:', error)
   }
 }
 
+// Add new schedule
 const addSchedule = async () => {
   try {
     const { data: authData, error: authError } = await supabase.auth.getUser()
@@ -155,6 +138,7 @@ const addSchedule = async () => {
   }
 }
 
+// Update an existing schedule
 const updateSchedule = async () => {
   try {
     const { data: authData, error: authError } = await supabase.auth.getUser()
@@ -191,18 +175,54 @@ const updateSchedule = async () => {
   }
 }
 
+// Delete an existing schedule
 const deleteSchedule = async (scheduleId) => {
   try {
     const { error } = await supabase.from('schedules').delete().eq('schedule_id', scheduleId)
     if (error) throw error
 
-    // Remove the schedule from the local arrays
     schedules.value = schedules.value.filter((schedule) => schedule.schedule_id !== scheduleId)
     allSchedules.value = allSchedules.value.filter(
       (schedule) => schedule.schedule_id !== scheduleId,
     )
   } catch (error) {
     console.error('Error deleting schedule:', error)
+  }
+}
+
+// Fetch initial data (check user role, fetch appointment types, schedules, etc.)
+const fetchInitialData = async () => {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError) throw authError
+
+    const { data: staffData, error: staffError } = await supabase
+      .from('medical_staff')
+      .select('*')
+      .eq('user_id', authData.user.id)
+
+    if (staffError) throw staffError
+
+    isMedicalStaff.value = staffData.length > 0
+
+    if (isMedicalStaff.value) {
+      const { data: types, error: typesError } = await supabase
+        .from('appointment_types')
+        .select('*')
+      if (typesError) throw typesError
+      appointmentTypes.value = types || []
+
+      // Fetch schedules for the logged-in medical staff
+      await fetchSchedules()
+
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('*')
+      if (appointmentsError) throw appointmentsError
+      appointments.value = appointmentsData || []
+    }
+  } catch (error) {
+    console.error('Error fetching initial data:', error)
   }
 }
 
@@ -213,6 +233,7 @@ onMounted(fetchInitialData)
   <div>
     <h1>Appointment Management</h1>
     <div v-if="isMedicalStaff">
+      <!-- Appointment Types Section -->
       <section>
         <h2>Manage Appointment Types</h2>
         <form @submit.prevent="addAppointmentType">
@@ -240,6 +261,7 @@ onMounted(fetchInitialData)
         </ul>
       </section>
 
+      <!-- Schedule Management Section -->
       <section>
         <h2>Manage Schedules</h2>
         <form @submit.prevent="addSchedule">
@@ -258,7 +280,9 @@ onMounted(fetchInitialData)
         <ul>
           <li v-for="schedule in schedules" :key="schedule.schedule_id">
             <div v-if="editScheduleData?.schedule_id !== schedule.schedule_id">
-              {{ schedule.day_of_week }}: {{ schedule.start_time }} - {{ schedule.end_time }}
+              {{ schedule.day_of_week }}: {{ schedule.start_time }} -
+              {{ schedule.end_time }} (Appointment Type:
+              {{ schedule.appointment_types?.type_name }})
               <button @click="() => editSchedule(schedule)">Edit</button>
               <button @click="() => deleteSchedule(schedule.schedule_id)">Delete</button>
             </div>
@@ -280,21 +304,23 @@ onMounted(fetchInitialData)
         </ul>
       </section>
 
+      <!-- All Schedules Section -->
       <section>
         <h2>All Schedules</h2>
         <ul>
           <li v-for="schedule in allSchedules" :key="schedule.schedule_id">
-            {{ schedule.day_of_week }}: {{ schedule.start_time }} - {{ schedule.end_time }} (Set by:
-            {{ schedule.medical_staff ? schedule.medical_staff.name : 'Unknown' }})
+            {{ schedule.day_of_week }}: {{ schedule.start_time }} -
+            {{ schedule.end_time }} (Appointment Type: {{ schedule.appointment_types?.type_name }})
           </li>
         </ul>
       </section>
     </div>
-    <div v-else>
-      <p>You do not have access to manage appointments.</p>
-    </div>
   </div>
 </template>
+
+<style scoped>
+/* Add your custom styles here */
+</style>
 
 <style scoped>
 h1 {

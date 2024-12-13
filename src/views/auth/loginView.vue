@@ -29,7 +29,7 @@ const registerData = ref({
   phoneNumber: '',
   address: '',
   specialization: '',
-  availableHours: '',
+  // availableHours: '',
 })
 const genders = ['Male', 'Female', 'Prefer not to say'] // Gender options
 const roles = ['Normal User', 'Medical Staff'] // Options for the dropdown
@@ -130,7 +130,7 @@ const onRegisterFormSubmit = async () => {
           role: 'Medical Staff',
           specialization: registerData.value.specialization,
           phone_number: registerData.value.phoneNumber,
-          available_hours: registerData.value.availableHours,
+          // available_hours: registerData.value.availableHours,
         },
       ])
 
@@ -496,7 +496,7 @@ const forgotPassword = () => {
                                   dense
                                   color="blue"
                                 ></v-text-field>
-                                <v-text-field
+                                <!-- <v-text-field
                                   v-model="registerData.availableHours"
                                   label="Available Hours"
                                   density="compact"
@@ -504,7 +504,7 @@ const forgotPassword = () => {
                                   outlined
                                   dense
                                   color="blue"
-                                ></v-text-field>
+                                ></v-text-field> -->
                               </template>
 
                               <v-btn
