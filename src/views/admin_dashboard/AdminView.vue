@@ -50,7 +50,7 @@ const bookAppointment = async () => {
     const { error } = await supabase.from('appointments').insert({
       patient_id: authData.user.id,
       appointment_type_id: newAppointment.value.appointment_type_id,
-      schedule_id: newAppointment.value.schedule_id, // Ensure this is included
+      schedule_id: newAppointment.value.schedule_id, // Ensure this is included and matches the data type
     })
     if (error) throw error
 

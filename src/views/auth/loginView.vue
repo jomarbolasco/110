@@ -29,7 +29,7 @@ const registerData = ref({
   phoneNumber: '',
   address: '',
   specialization: '',
-  availableHours: '',
+  // availableHours: '',
 })
 const genders = ['Male', 'Female', 'Prefer not to say'] // Gender options
 const roles = ['Normal User', 'Medical Staff'] // Options for the dropdown
@@ -87,64 +87,64 @@ const onRegisterFormSubmit = async () => {
   messageType.value = 'error'
 
   try {
-    const { error, data } = await supabase.auth.signUp({
+    // Step 1: Register user in auth.users with metadata
+    const { data, error } = await supabase.auth.signUp({
       email: registerData.value.email,
       password: registerData.value.password,
       options: {
         data: {
-          ...registerData.value,
+          name: registerData.value.name, // Save name in metadata
+          role: registerData.value.role, // Save role in metadata
         },
       },
     })
 
     if (error) {
       registerMessage.value = error.message
-    } else {
-      const user = data.user
-
-      if (registerData.value.role === 'Normal User') {
-        const user = data.user
-        const { error: patientError } = await supabase.from('patients').insert([
-          {
-            user_id: user.id,
-            name: registerData.value.name,
-            date_of_birth: registerData.value.dateOfBirth,
-            gender: registerData.value.gender,
-            phone_number: registerData.value.phoneNumber,
-            address: registerData.value.address,
-          },
-        ])
-
-        if (patientError) {
-          registerMessage.value = `Error inserting patient data: ${patientError.message}`
-          console.error(patientError)
-          return
-        }
-      } else if (registerData.value.role === 'Medical Staff') {
-        // Insert into the medical_staff table
-        const { error: staffError } = await supabase.from('medical_staff').insert([
-          {
-            user_id: user.id,
-            role: 'Medical Staff',
-            name: registerData.value.name,
-            specialization: registerData.value.specialization,
-            phone_number: registerData.value.phoneNumber,
-            available_hours: registerData.value.availableHours,
-          },
-        ])
-
-        if (staffError) {
-          registerMessage.value = `Error inserting medical staff data: ${staffError.message}`
-          console.error(staffError)
-          return
-        }
-      }
-
-      // Step 3: Redirect after successful registration
-      messageType.value = 'success'
-      registerMessage.value = 'Registration successful!'
-      router.replace('/dashboard')
+      return
     }
+
+    const user = data.user
+
+    // Step 2: Insert additional data into related table
+    if (registerData.value.role === 'Normal User') {
+      const { error: patientError } = await supabase.from('patients').insert([
+        {
+          user_id: user.id, // Link to auth.users
+          date_of_birth: registerData.value.dateOfBirth,
+          gender: registerData.value.gender,
+          phone_number: registerData.value.phoneNumber,
+          address: registerData.value.address,
+        },
+      ])
+
+      if (patientError) {
+        registerMessage.value = `Error inserting patient data: ${patientError.message}`
+        console.error(patientError)
+        return
+      }
+    } else if (registerData.value.role === 'Medical Staff') {
+      const { error: staffError } = await supabase.from('medical_staff').insert([
+        {
+          user_id: user.id, // Link to auth.users
+          role: 'Medical Staff',
+          specialization: registerData.value.specialization,
+          phone_number: registerData.value.phoneNumber,
+          // available_hours: registerData.value.availableHours,
+        },
+      ])
+
+      if (staffError) {
+        registerMessage.value = `Error inserting medical staff data: ${staffError.message}`
+        console.error(staffError)
+        return
+      }
+    }
+
+    // Step 3: Redirect after successful registration
+    messageType.value = 'success'
+    registerMessage.value = 'Registration successful!'
+    router.replace('/dashboard')
   } catch (error) {
     registerMessage.value = 'An unexpected error occurred. Please try again.'
     console.error(error)
@@ -496,7 +496,7 @@ const forgotPassword = () => {
                                   dense
                                   color="blue"
                                 ></v-text-field>
-                                <v-text-field
+                                <!-- <v-text-field
                                   v-model="registerData.availableHours"
                                   label="Available Hours"
                                   density="compact"
@@ -504,7 +504,7 @@ const forgotPassword = () => {
                                   outlined
                                   dense
                                   color="blue"
-                                ></v-text-field>
+                                ></v-text-field> -->
                               </template>
 
                               <v-btn
