@@ -1,52 +1,106 @@
-<script setup lang="ts">
-import { ref } from "vue";
-import BaseCard from "@/components/BaseCard.vue";
+<template>
+  <div class="appointment-page">
+    <h1>Available Schedules</h1>
+    <div class="schedules-section">
+      <ul>
+        <li v-for="schedule in schedules" :key="schedule.schedule_id">
+          <div class="schedule-details">
+            <div class="schedule-time">
+              <strong>{{ schedule.day_of_week }}</strong
+              >: {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
+            </div>
+            <div class="staff-details">
+              <em>Staff: {{ schedule.staff_name }} ({{ schedule.staff_role }})</em>
+            </div>
+            <div class="available-slots">Slots available: {{ schedule.available_slots }}</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <!-- Another section can be added here later -->
+  </div>
+</template>
 
-import ButtonsDefault from "@/components/vuetifyComponents/buttons/ButtonsDefault.vue";
-import ButtonsOutlined from "@/components/vuetifyComponents/buttons/ButtonsOutlined.vue";
-import ButtonsBlock from "@/components/vuetifyComponents/buttons/ButtonsBlock.vue";
-import ButtonsIcon from "@/components/vuetifyComponents/buttons/ButtonsIcon.vue";
-import ButtonsRounded from "@/components/vuetifyComponents/buttons/ButtonsRounded.vue";
-import ButtonsSizing from "@/components/vuetifyComponents/buttons/ButtonsSizing.vue";
+<script>
+import { fetchSchedules } from '@/components/util/supabase' // Adjust the path as needed
 
+export default {
+  name: 'AppointmentPage',
+  data() {
+    return {
+      schedules: [],
+      error: null,
+    }
+  },
+  methods: {
+    async fetchSchedules() {
+      try {
+        const data = await fetchSchedules()
+        this.schedules = data
+      } catch (error) {
+        this.error = error.message
+      }
+    },
+    formatTime(time) {
+      const [hours, minutes, seconds] = time.split(':')
+      const date = new Date()
+      date.setHours(hours, minutes, seconds)
+
+      const options = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }
+      return date.toLocaleTimeString([], options)
+    },
+  },
+  created() {
+    this.fetchSchedules()
+  },
+}
 </script>
 
-<template>
-  <v-row>
-    <v-col cols="12" sm="12">
-      <BaseCard heading="Default">
-        <ButtonsDefault />
-      </BaseCard>
-    </v-col>
+<style scoped>
+.appointment-page {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
 
-    <v-col cols="12" sm="12">
-      <BaseCard heading="Outlined">
-        <ButtonsOutlined />
-      </BaseCard>
-    </v-col>
+.schedules-section ul {
+  list-style-type: none;
+  padding: 0;
+}
 
-    <v-col cols="12" sm="12" lg="4">
-      <BaseCard heading="Block">
-        <ButtonsBlock />
-      </BaseCard>
-    </v-col>
+.schedules-section li {
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  transition: transform 0.2s;
+}
 
-    <v-col cols="12" sm="12" lg="4" class="d-flex align-items-stretch">
-      <BaseCard heading="Icons">
-        <ButtonsIcon />
-      </BaseCard>
-    </v-col>
+.schedules-section li:hover {
+  transform: scale(1.02);
+}
 
-    <v-col cols="12" sm="12" lg="4" class="d-flex align-items-stretch">
-      <BaseCard heading="Rounded">
-        <ButtonsRounded />
-      </BaseCard>
-    </v-col>
+.schedule-details {
+  display: flex;
+  flex-direction: column;
+}
 
-    <v-col cols="12" sm="12" class="d-flex align-items-stretch">
-      <BaseCard heading="Button Size">
-        <ButtonsSizing />
-      </BaseCard>
-    </v-col>
-  </v-row>
-</template>
+.schedule-time {
+  font-weight: bold;
+  color: #333;
+}
+
+.staff-details {
+  font-style: italic;
+  color: #555;
+}
+
+.available-slots {
+  font-size: 0.9em;
+  color: #777;
+}
+</style>
