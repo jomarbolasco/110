@@ -18,11 +18,29 @@
             </div>
             <div class="appointment-type">Appointment Type: {{ schedule.appointment_type }}</div>
             <div class="available-slots">Slots available: {{ schedule.available_slots }}</div>
+            <button @click="openModal(schedule)">Make an Appointment</button>
           </div>
         </li>
       </ul>
     </div>
-    <!-- Another section can be added here later -->
+
+    <div v-if="showModal" class="modal">
+      <div class="modal-content">
+        <span class="close" @click="closeModal">&times;</span>
+        <h2>Make an Appointment</h2>
+        <form @submit.prevent="submitForm">
+          <div>
+            <label for="patientName">Patient Name:</label>
+            <input type="text" id="patientName" v-model="appointmentForm.patientName" required />
+          </div>
+          <div>
+            <label for="reason">Reason:</label>
+            <textarea id="reason" v-model="appointmentForm.reason" required></textarea>
+          </div>
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -35,6 +53,12 @@ export default {
     return {
       schedules: [],
       error: null,
+      showModal: false,
+      selectedSchedule: null,
+      appointmentForm: {
+        patientName: '',
+        reason: '',
+      },
     }
   },
   methods: {
@@ -68,6 +92,26 @@ export default {
       const options = { weekday: 'long' }
       return date.toLocaleDateString([], options)
     },
+    openModal(schedule) {
+      this.selectedSchedule = schedule
+      this.showModal = true
+    },
+    closeModal() {
+      this.showModal = false
+      this.appointmentForm = {
+        patientName: '',
+        reason: '',
+      }
+    },
+    async submitForm() {
+      try {
+        // Add your logic here to save the appointment using Supabase
+        console.log('Appointment submitted:', this.appointmentForm, this.selectedSchedule)
+        this.closeModal()
+      } catch (error) {
+        console.error('Error submitting appointment:', error)
+      }
+    },
   },
   created() {
     this.fetchSchedules()
@@ -87,6 +131,7 @@ export default {
 }
 
 .schedules-section li {
+  color: black;
   margin: 10px 0;
   border: 1px solid #ccc;
   border-radius: 5px;
@@ -104,28 +149,69 @@ export default {
   flex-direction: column;
 }
 
-.schedule-date {
-  font-weight: bold;
-  color: #333;
-}
-
-.schedule-time {
-  font-weight: bold;
-  color: #333;
-}
-
-.staff-details {
-  font-style: italic;
-  color: #555;
-}
-
-.appointment-type {
-  font-size: 1em;
-  color: #555;
-}
-
+.schedule-date,
+.schedule-time,
+.staff-details,
+.appointment-type,
 .available-slots {
-  font-size: 0.9em;
-  color: #777;
+  margin-bottom: 5px;
+}
+
+button {
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.modal {
+  color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  color: black;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border: 1px solid black;
+  border-radius: 10px;
+  width: 500px;
+  max-width: 90%;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+form div {
+  margin-bottom: 15px;
 }
 </style>
