@@ -12,6 +12,7 @@
             <div class="staff-details">
               <em>Staff: {{ schedule.staff_name }} ({{ schedule.staff_role }})</em>
             </div>
+            <div class="appointment-type">Appointment Type: {{ schedule.appointment_type }}</div>
             <div class="available-slots">Slots available: {{ schedule.available_slots }}</div>
           </div>
         </li>
@@ -96,6 +97,11 @@ export default {
 
 .staff-details {
   font-style: italic;
+  color: #555;
+}
+
+.appointment-type {
+  font-size: 1em;
   color: #555;
 }
 
