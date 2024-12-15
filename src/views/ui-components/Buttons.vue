@@ -5,9 +5,13 @@
       <ul>
         <li v-for="schedule in schedules" :key="schedule.schedule_id">
           <div class="schedule-details">
+            <div class="schedule-date">
+              <strong>Date:</strong> {{ formatDate(schedule.schedule_date) }} ({{
+                getDayOfWeek(schedule.schedule_date)
+              }})
+            </div>
             <div class="schedule-time">
-              <strong>{{ schedule.day_of_week }}</strong
-              >: {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
+              {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
             </div>
             <div class="staff-details">
               <em>Staff: {{ schedule.staff_name }} ({{ schedule.staff_role }})</em>
@@ -54,6 +58,16 @@ export default {
       }
       return date.toLocaleTimeString([], options)
     },
+    formatDate(dateString) {
+      const date = new Date(dateString)
+      const options = { year: 'numeric', month: 'long', day: 'numeric' }
+      return date.toLocaleDateString([], options)
+    },
+    getDayOfWeek(dateString) {
+      const date = new Date(dateString)
+      const options = { weekday: 'long' }
+      return date.toLocaleDateString([], options)
+    },
   },
   created() {
     this.fetchSchedules()
@@ -88,6 +102,11 @@ export default {
 .schedule-details {
   display: flex;
   flex-direction: column;
+}
+
+.schedule-date {
+  font-weight: bold;
+  color: #333;
 }
 
 .schedule-time {
