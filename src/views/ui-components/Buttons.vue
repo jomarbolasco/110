@@ -6,8 +6,9 @@
         <li v-for="schedule in schedules" :key="schedule.schedule_id" class="schedule-item">
           <div class="schedule-details">
             <div class="schedule-date">
-              <strong>Date:</strong> {{ formatDate(schedule.schedule_date) }} ({
-              getDayOfWeek(schedule.schedule_date) })
+              <strong>Date:</strong> {{ formatDate(schedule.schedule_date) }} ({{
+                getDayOfWeek(schedule.schedule_date)
+              }})
             </div>
             <div class="schedule-time">
               {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
@@ -23,6 +24,18 @@
           </div>
         </li>
       </ul>
+    </div>
+
+    <div v-if="showForm" class="modal">
+      <div class="modal-content">
+        <span class="close" @click="closeAppointmentForm">&times;</span>
+        <h2>Book Appointment</h2>
+        <div>
+          <label for="reason">Reason:</label>
+          <input v-model="appointmentData.reason" id="reason" />
+        </div>
+        <button @click="submitAppointment" class="btn btn-primary">Submit</button>
+      </div>
     </div>
 
     <h1>Your Booked Appointments</h1>
@@ -51,7 +64,9 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore'
 import {
   createAppointment,
   fetchSchedules,
@@ -60,6 +75,8 @@ import {
 
 export default {
   setup() {
+    const router = useRouter()
+    const userStore = useUserStore()
     const appointmentData = ref({
       staff_id: null,
       appointment_date_time: '',
@@ -75,16 +92,38 @@ export default {
     const appointments = ref([])
 
     onMounted(async () => {
+      resetData()
       try {
         const scheduleData = await fetchSchedules()
         schedules.value = scheduleData
 
-        const userAppointments = await fetchUserAppointments()
-        appointments.value = userAppointments
+        if (userStore.user) {
+          const userAppointments = await fetchUserAppointments(userStore.user.id)
+          appointments.value = userAppointments
+        }
       } catch (error) {
         console.error('Error fetching data:', error.message)
       }
     })
+
+    watch(
+      () => userStore.user,
+      async (newUser, oldUser) => {
+        if (newUser) {
+          const userAppointments = await fetchUserAppointments(newUser.id)
+          appointments.value = userAppointments
+        } else {
+          resetData()
+        }
+      },
+    )
+
+    function resetData() {
+      schedules.value = []
+      selectedSchedule.value = null
+      showForm.value = false
+      appointments.value = []
+    }
 
     function openAppointmentForm(schedule) {
       const appointmentDateTime = `${schedule.schedule_date}T${schedule.start_time}`
@@ -92,6 +131,7 @@ export default {
       appointmentData.value.schedule_id = schedule.schedule_id
       appointmentData.value.staff_id = schedule.staff_id
       appointmentData.value.appointment_date_time = appointmentDateTime
+      appointmentData.value.booked_by_user_id = userStore.user ? userStore.user.id : null // Set booked_by_user_id
       showForm.value = true
     }
 
@@ -101,6 +141,12 @@ export default {
 
     async function submitAppointment() {
       try {
+        if (!appointmentData.value.booked_by_user_id) {
+          console.error('Booked by user ID is missing!')
+          alert('Error: User ID is missing. Please try logging in again.')
+          return
+        }
+
         await createAppointment(appointmentData.value)
         alert('Appointment booked successfully!')
         showForm.value = false
@@ -139,6 +185,7 @@ export default {
       formatTime,
       formatDate,
       getDayOfWeek,
+      resetData,
     }
   },
 }

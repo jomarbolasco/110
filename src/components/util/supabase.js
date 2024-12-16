@@ -73,7 +73,7 @@ export async function fetchMedicalStaff() {
   }
 }
 
-export const fetchUserAppointments = async () => {
+export const fetchUserAppointments = async (userId) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
@@ -89,6 +89,7 @@ export const fetchUserAppointments = async () => {
         )
       `,
       )
+      .eq('booked_by_user_id', userId)
       .order('appointment_date_time', { ascending: true })
 
     if (error) throw error
