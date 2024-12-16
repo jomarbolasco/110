@@ -72,3 +72,37 @@ export async function fetchMedicalStaff() {
     throw error
   }
 }
+
+export const fetchUserAppointments = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(
+        `
+        appointment_id,
+        appointment_date_time,
+        reason,
+        status,
+        staff: medical_staff (
+          name,
+          role
+        )
+      `,
+      )
+      .order('appointment_date_time', { ascending: true })
+
+    if (error) throw error
+
+    return data.map((appointment) => ({
+      appointment_id: appointment.appointment_id,
+      appointment_date_time: appointment.appointment_date_time,
+      reason: appointment.reason,
+      status: appointment.status,
+      staff_name: appointment.staff ? appointment.staff.name : 'Unknown Staff',
+      staff_role: appointment.staff ? appointment.staff.role : 'Unknown Role',
+    }))
+  } catch (error) {
+    console.error('Error fetching user appointments:', error.message)
+    return []
+  }
+}

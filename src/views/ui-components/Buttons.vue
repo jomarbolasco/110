@@ -6,9 +6,8 @@
         <li v-for="schedule in schedules" :key="schedule.schedule_id" class="schedule-item">
           <div class="schedule-details">
             <div class="schedule-date">
-              <strong>Date:</strong> {{ formatDate(schedule.schedule_date) }} ({{
-                getDayOfWeek(schedule.schedule_date)
-              }})
+              <strong>Date:</strong> {{ formatDate(schedule.schedule_date) }} ({
+              getDayOfWeek(schedule.schedule_date) })
             </div>
             <div class="schedule-time">
               {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
@@ -26,34 +25,38 @@
       </ul>
     </div>
 
-    <div v-if="showForm" class="modal">
-      <div class="modal-content">
-        <span class="close" @click="closeAppointmentForm">&times;</span>
-        <h2>Book an Appointment</h2>
-        <form @submit.prevent="submitAppointment" class="appointment-form">
-          <div class="form-group">
-            <label for="date">Date and Time:</label>
-            <input
-              type="text"
-              v-model="selectedSchedule.appointment_date_time"
-              readonly
-              class="form-control"
-            />
+    <h1>Your Booked Appointments</h1>
+    <div class="appointments-section">
+      <ul>
+        <li
+          v-for="appointment in appointments"
+          :key="appointment.appointment_id"
+          class="appointment-item"
+        >
+          <div class="appointment-details">
+            <div class="appointment-date">
+              <strong>Date:</strong> {{ formatDate(appointment.appointment_date_time) }}
+            </div>
+            <div class="appointment-time">{{ formatTime(appointment.appointment_date_time) }}</div>
+            <div class="staff-details">
+              <em>Staff: {{ appointment.staff_name }} ({{ appointment.staff_role }})</em>
+            </div>
+            <div class="reason">Reason: {{ appointment.reason }}</div>
+            <div class="status">Status: {{ appointment.status }}</div>
           </div>
-          <div class="form-group">
-            <label for="reason">Reason:</label>
-            <textarea v-model="appointmentData.reason" required class="form-control"></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Book Appointment</button>
-        </form>
-      </div>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
-import { createAppointment, fetchSchedules } from '@/components/util/supabase'
+import {
+  createAppointment,
+  fetchSchedules,
+  fetchUserAppointments,
+} from '@/components/util/supabase'
 
 export default {
   setup() {
@@ -69,25 +72,23 @@ export default {
     const schedules = ref([])
     const selectedSchedule = ref(null)
     const showForm = ref(false)
+    const appointments = ref([])
 
     onMounted(async () => {
       try {
-        const data = await fetchSchedules()
-        schedules.value = data
+        const scheduleData = await fetchSchedules()
+        schedules.value = scheduleData
+
+        const userAppointments = await fetchUserAppointments()
+        appointments.value = userAppointments
       } catch (error) {
-        console.error('Error fetching schedules:', error.message)
+        console.error('Error fetching data:', error.message)
       }
     })
 
     function openAppointmentForm(schedule) {
-      // Combine schedule_date and start_time into a single TIMESTAMP
       const appointmentDateTime = `${schedule.schedule_date}T${schedule.start_time}`
-
-      selectedSchedule.value = {
-        ...schedule,
-        appointment_date_time: appointmentDateTime,
-      }
-
+      selectedSchedule.value = { ...schedule, appointment_date_time: appointmentDateTime }
       appointmentData.value.schedule_id = schedule.schedule_id
       appointmentData.value.staff_id = schedule.staff_id
       appointmentData.value.appointment_date_time = appointmentDateTime
@@ -108,21 +109,14 @@ export default {
       }
     }
 
-    function formatTime(time) {
-      const [hours, minutes, seconds] = time.split(':')
-      const date = new Date()
-      date.setHours(hours, minutes, seconds)
-
-      const options = {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }
+    function formatTime(dateTimeString) {
+      const date = new Date(dateTimeString)
+      const options = { hour: '2-digit', minute: '2-digit', hour12: true }
       return date.toLocaleTimeString([], options)
     }
 
-    function formatDate(dateString) {
-      const date = new Date(dateString)
+    function formatDate(dateTimeString) {
+      const date = new Date(dateTimeString)
       const options = { year: 'numeric', month: 'long', day: 'numeric' }
       return date.toLocaleDateString([], options)
     }
@@ -138,6 +132,7 @@ export default {
       showForm,
       selectedSchedule,
       appointmentData,
+      appointments,
       openAppointmentForm,
       closeAppointmentForm,
       submitAppointment,
