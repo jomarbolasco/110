@@ -128,10 +128,18 @@ export default {
     function openAppointmentForm(schedule) {
       const appointmentDateTime = `${schedule.schedule_date}T${schedule.start_time}`
       selectedSchedule.value = { ...schedule, appointment_date_time: appointmentDateTime }
+
+      // Set staff_id from the schedule (this should be UUID)
       appointmentData.value.schedule_id = schedule.schedule_id
-      appointmentData.value.staff_id = schedule.staff_id
+      appointmentData.value.staff_id = schedule.staff_id // UUID here
       appointmentData.value.appointment_date_time = appointmentDateTime
-      appointmentData.value.booked_by_user_id = userStore.user ? userStore.user.id : null // Set booked_by_user_id
+
+      // Set patient_id (from Supabase Auth user)
+      appointmentData.value.patient_id = userStore.user ? userStore.user.id : null // UUID here
+
+      // Set booked_by_user_id (also UUID)
+      appointmentData.value.booked_by_user_id = userStore.user ? userStore.user.id : null
+
       showForm.value = true
     }
 
