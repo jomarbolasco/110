@@ -28,25 +28,31 @@ export async function fetchSchedules() {
 }
 
 // Create an appointment
+// Create an appointment
 export async function createAppointment(appointmentData) {
   const { patient_id, staff_id, appointment_date_time, schedule_id, reason, booked_by_user_id } =
     appointmentData
 
   try {
-    const { data, error } = await supabase.rpc('create_appointment', {
-      patient_id,
-      staff_id,
-      appointment_date_time,
-      schedule_id,
-      reason,
-      booked_by_user_id,
-    })
+    const { data, error } = await supabase
+      .from('appointments') // Target the 'Appointments' table
+      .insert([
+        {
+          staff_id: staff_id,
+          appointment_date_time: appointment_date_time,
+          reason: reason,
+          patient_id: patient_id,
+          schedule_id: schedule_id,
+          booked_by_user_id: booked_by_user_id,
+        },
+      ])
+      .select('appointment_id') // Return the ID of the created appointment
 
     if (error) {
       throw error
     }
 
-    return data
+    return data // Return the inserted data
   } catch (error) {
     console.error('Error creating appointment:', error.message)
     throw error
