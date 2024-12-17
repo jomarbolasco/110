@@ -44,9 +44,7 @@
           </option>
         </select>
         <div v-if="formData.schedule_id">
-          <small>
-            {{ selectedScheduleStaff }}
-          </small>
+          <small>{{ selectedScheduleStaff }}</small>
         </div>
       </div>
 
@@ -92,7 +90,10 @@
     </div>
 
     <!-- No Appointments Message -->
-    <p v-else>No appointments booked yet.</p>
+    <p v-else>
+      No appointments booked yet.
+      <a href="#" @click.prevent="scrollToAppointmentForm">Book one now!</a>
+    </p>
   </div>
 </template>
 
@@ -280,20 +281,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Same styles as before */
-</style>
-
-<style scoped>
 .appointment-container {
   max-width: 600px;
   margin: auto;
   padding: 20px;
   font-family: Arial, sans-serif;
+  background-color: gray; /* Adding a light background color for better contrast */
+  border-radius: 8px; /* Slightly rounded corners for a modern look */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); /* Adding a shadow for depth */
 }
 
 h1 {
   text-align: center;
   margin-bottom: 20px;
+  color: #333; /* Dark text color for better readability */
 }
 
 .form-group {
@@ -304,45 +305,77 @@ label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
+  color: #555; /* Slightly lighter text color for labels */
 }
 
 input,
 select,
 textarea {
   width: 100%;
-  padding: 8px;
+  padding: 10px; /* Increased padding for better touch target */
   box-sizing: border-box;
   border: 1px solid #ccc;
   border-radius: 4px;
+  transition: border-color 0.3s ease; /* Smooth transition effect */
+}
+
+input:invalid,
+select:invalid,
+textarea:invalid {
+  border-color: red;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #007bff; /* Blue border on focus for accessibility */
+  outline: none;
 }
 
 button {
+  width: 100%;
   background-color: #007bff;
   color: white;
   padding: 10px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s ease; /* Smooth transition effect */
 }
 
 button:disabled {
   background-color: #aaa;
 }
 
+button:hover:enabled {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
 .success {
   color: green;
+  text-align: center; /* Centered success message */
+  margin-top: 20px; /* Added space above the message */
 }
 
 .error {
   color: red;
+  text-align: center; /* Centered error message */
+  margin-top: 20px; /* Added space above the message */
 }
 
 .appointments-section {
   margin-top: 30px;
+  background-color: #fff; /* White background for contrast */
+  border: 1px solid #ddd; /* Light border for separation */
+  border-radius: 8px; /* Rounded corners */
+  padding: 20px; /* Added padding */
 }
 
 .appointments-section h2 {
   margin-bottom: 10px;
+  color: #333; /* Dark text color */
+  border-bottom: 2px solid #007bff; /* Blue underline */
+  padding-bottom: 10px; /* Space below underline */
 }
 
 .appointments-section ul {
@@ -355,9 +388,21 @@ button:disabled {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
+  background-color: #f9f9f9; /* Light background color for list items */
 }
 
 .appointments-section li strong {
   font-size: 1.2em;
+  color: #007bff; /* Blue color for headings */
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #0056b3;
 }
 </style>
