@@ -10,7 +10,8 @@ const successMessage = ref('')
 
 // New schedule form
 const newSchedule = ref({
-  appointment_type_id: '',
+  type_name: '',
+  description: '',
   schedule_date: '',
   start_time: '',
   end_time: '',
@@ -40,7 +41,7 @@ const fetchMedicalStaffID = async () => {
   }
 }
 
-// Fetch schedules assigned to the medical staff
+// Fetch schedules
 const fetchSchedules = async (staff_id) => {
   try {
     const { data, error } = await supabase
@@ -51,33 +52,13 @@ const fetchSchedules = async (staff_id) => {
       .eq('staff_id', staff_id)
 
     if (error) throw error
-    schedules.value = data
+
+    schedules.value = data.map((schedule) => ({
+      ...schedule,
+      isEditing: false, // Add editing flag
+    }))
   } catch (err) {
     errorMessage.value = `Error fetching schedules: ${err.message}`
-  }
-}
-
-// Fetch appointments for the medical staff
-const fetchAppointments = async (staff_id) => {
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select(
-        `
-        appointment_id,
-        status,
-        reason,
-        appointment_date_time,
-        patients (name),
-        schedules(schedule_date)
-      `,
-      )
-      .eq('staff_id', staff_id)
-
-    if (error) throw error
-    appointments.value = data
-  } catch (err) {
-    errorMessage.value = `Error fetching appointments: ${err.message}`
   }
 }
 
@@ -87,20 +68,16 @@ const addSchedule = async () => {
     const staff_id = await fetchMedicalStaffID()
     if (!staff_id) throw new Error('Failed to fetch staff ID.')
 
-    // Step 1: Check if appointment type exists
-    const { data: existingType, error: typeError } = await supabase
+    // Check if appointment type exists
+    const { data: existingType } = await supabase
       .from('appointment_types')
       .select('appointment_type_id')
       .eq('type_name', newSchedule.value.type_name)
       .single()
 
-    let appointment_type_id
+    let appointment_type_id = existingType?.appointment_type_id
 
-    if (existingType) {
-      // Use existing ID
-      appointment_type_id = existingType.appointment_type_id
-    } else {
-      // Step 2: Insert new appointment type
+    if (!appointment_type_id) {
       const { data: insertedType, error: insertError } = await supabase
         .from('appointment_types')
         .insert([
@@ -113,7 +90,6 @@ const addSchedule = async () => {
       appointment_type_id = insertedType.appointment_type_id
     }
 
-    // Step 3: Add the new schedule with the retrieved appointment_type_id
     const { error } = await supabase.from('schedules').insert([
       {
         staff_id: staff_id,
@@ -128,47 +104,57 @@ const addSchedule = async () => {
     if (error) throw error
 
     successMessage.value = 'Schedule added successfully!'
-    newSchedule.value = {
-      type_name: '',
-      description: '',
-      schedule_date: '',
-      start_time: '',
-      end_time: '',
-      available_slots: '',
-    }
     fetchSchedules(staff_id) // Refresh schedules
   } catch (err) {
     errorMessage.value = `Error adding schedule: ${err.message}`
   }
 }
 
-// Update appointment status
-const updateAppointmentStatus = async (appointment_id, newStatus) => {
+// Update a schedule
+const saveSchedule = async (schedule) => {
+  const updatedSchedule = {
+    schedule_date: schedule.schedule_date,
+    start_time: schedule.start_time,
+    end_time: schedule.end_time,
+    available_slots: schedule.available_slots,
+  }
+
   try {
     const { error } = await supabase
-      .from('appointments')
-      .update({ status: newStatus })
-      .eq('appointment_id', appointment_id)
+      .from('schedules')
+      .update(updatedSchedule)
+      .eq('schedule_id', schedule.schedule_id)
 
     if (error) throw error
-    successMessage.value = 'Appointment status updated successfully!'
+    successMessage.value = 'Schedule updated successfully!'
+    schedule.isEditing = false // Exit edit mode
     const staff_id = await fetchMedicalStaffID()
-    if (staff_id) fetchAppointments(staff_id) // Refresh appointments
+    if (staff_id) fetchSchedules(staff_id)
   } catch (err) {
-    errorMessage.value = `Error updating status: ${err.message}`
+    errorMessage.value = `Error updating schedule: ${err.message}`
+  }
+}
+
+// Delete a schedule
+const deleteSchedule = async (schedule_id) => {
+  try {
+    const { error } = await supabase.from('schedules').delete().eq('schedule_id', schedule_id)
+
+    if (error) throw error
+    successMessage.value = 'Schedule deleted successfully!'
+    const staff_id = await fetchMedicalStaffID()
+    if (staff_id) fetchSchedules(staff_id)
+  } catch (err) {
+    errorMessage.value = `Error deleting schedule: ${err.message}`
   }
 }
 
 // Initialize component
 onMounted(async () => {
   const staff_id = await fetchMedicalStaffID()
-  if (staff_id) {
-    fetchSchedules(staff_id)
-    fetchAppointments(staff_id)
-  }
+  if (staff_id) fetchSchedules(staff_id)
 })
 </script>
-
 <template>
   <div class="medicalstaff-container">
     <h1>Medical Staff Dashboard</h1>
@@ -181,29 +167,15 @@ onMounted(async () => {
     <section>
       <h2>Add New Schedule</h2>
       <form @submit.prevent="addSchedule">
+        <label> Type Name: <input v-model="newSchedule.type_name" type="text" required /> </label>
         <label>
-          Appointment Type Name:
-          <input v-model="newSchedule.type_name" type="text" required />
+          Description: <input v-model="newSchedule.description" type="text" required />
         </label>
+        <label> Date: <input v-model="newSchedule.schedule_date" type="date" required /> </label>
+        <label> Start Time: <input v-model="newSchedule.start_time" type="time" required /> </label>
+        <label> End Time: <input v-model="newSchedule.end_time" type="time" required /> </label>
         <label>
-          Description:
-          <input v-model="newSchedule.description" type="text" required />
-        </label>
-        <label>
-          Date:
-          <input v-model="newSchedule.schedule_date" type="date" required />
-        </label>
-        <label>
-          Start Time:
-          <input v-model="newSchedule.start_time" type="time" required />
-        </label>
-        <label>
-          End Time:
-          <input v-model="newSchedule.end_time" type="time" required />
-        </label>
-        <label>
-          Available Slots:
-          <input v-model="newSchedule.available_slots" type="number" required />
+          Available Slots: <input v-model="newSchedule.available_slots" type="number" required />
         </label>
         <button type="submit">Add Schedule</button>
       </form>
@@ -214,100 +186,79 @@ onMounted(async () => {
       <h2>My Schedules</h2>
       <ul v-if="schedules.length > 0">
         <li v-for="schedule in schedules" :key="schedule.schedule_id">
-          <strong>{{ schedule.appointment_types.type_name }}</strong
-          ><br />
-          Date: {{ schedule.schedule_date }}<br />
-          Time: {{ schedule.start_time }} - {{ schedule.end_time }}<br />
-          Available Slots: {{ schedule.available_slots }}
+          <div v-if="!schedule.isEditing">
+            <strong>{{ schedule.appointment_types.type_name }}</strong
+            ><br />
+            Date: {{ schedule.schedule_date }}<br />
+            Time: {{ schedule.start_time }} - {{ schedule.end_time }}<br />
+            Slots: {{ schedule.available_slots }}
+          </div>
+          <div v-else>
+            <input v-model="schedule.schedule_date" type="date" />
+            <input v-model="schedule.start_time" type="time" />
+            <input v-model="schedule.end_time" type="time" />
+            <input v-model="schedule.available_slots" type="number" />
+            <button @click="saveSchedule(schedule)">Save</button>
+            <button @click="schedule.isEditing = false">Cancel</button>
+          </div>
+
+          <div>
+            <button @click="schedule.isEditing = true">Modify</button>
+            <button @click="deleteSchedule(schedule.schedule_id)">Delete</button>
+          </div>
         </li>
       </ul>
       <p v-else>No schedules assigned yet.</p>
     </section>
-
-    <!-- Manage Appointments -->
-    <section>
-      <h2>My Appointments</h2>
-      <ul v-if="appointments.length > 0" class="appointments-list">
-        <li v-for="appointment in appointments" :key="appointment.appointment_id">
-          <div>
-            <strong>Patient:</strong> {{ appointment.patients.name }}<br />
-            <strong>Date:</strong> {{ appointment.schedules.schedule_date }}<br />
-            <strong>Reason:</strong> {{ appointment.reason }}<br />
-            <strong>Status:</strong> {{ appointment.status }}
-          </div>
-
-          <!-- Update Status Buttons -->
-          <div class="status-buttons">
-            <button @click="updateAppointmentStatus(appointment.appointment_id, 'completed')">
-              Mark as Completed
-            </button>
-            <button @click="updateAppointmentStatus(appointment.appointment_id, 'cancelled')">
-              Cancel Appointment
-            </button>
-          </div>
-        </li>
-      </ul>
-      <p v-else>No appointments found.</p>
-    </section>
   </div>
 </template>
-
 <style scoped>
 .medicalstaff-container {
   padding: 20px;
   font-family: Arial, sans-serif;
 }
-
 h1,
 h2 {
   color: #333;
 }
-
 ul {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
 }
-
 li {
   border: 1px solid #ccc;
   margin: 10px 0;
   padding: 10px;
   border-radius: 5px;
 }
-
-form label {
-  display: block;
-  margin: 10px 0;
-}
-
-form input {
-  padding: 5px;
-  margin-top: 5px;
-  width: 100%;
-}
-
 button {
-  margin-top: 10px;
+  margin: 5px;
   padding: 5px 10px;
-  cursor: pointer;
-  background-color: #4caf50;
   color: #fff;
   border: none;
   border-radius: 5px;
 }
-
 button:hover {
   opacity: 0.8;
 }
-
+button:first-child {
+  background-color: #4caf50;
+}
 button:last-child {
   background-color: #f44336;
 }
-
+form label {
+  display: block;
+  margin: 10px 0;
+}
+form input {
+  width: 100%;
+  padding: 5px;
+  margin-top: 5px;
+}
 .error {
   color: red;
 }
-
 .success {
   color: green;
 }
