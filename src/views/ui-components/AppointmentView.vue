@@ -122,15 +122,23 @@ const bookAppointment = async () => {
     // Get the current user
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
+    if (authError || !user || !user.id) {
+      console.error('Authentication error:', authError)
+      throw new Error('User not authenticated or invalid user ID')
+    }
+
+    console.log('User ID:', user.id) // Log the user ID for debugging
 
     // Check if the patient already exists
-    const { data: existingPatient } = await supabase
+    const { data: existingPatient, error: patientError } = await supabase
       .from('patients')
       .select('patient_id')
       .eq('user_id', user.id)
       .maybeSingle()
+
+    if (patientError) throw patientError
 
     let patient_id = existingPatient?.patient_id
 
@@ -146,23 +154,26 @@ const bookAppointment = async () => {
       patient_id = newPatient.patient_id
     }
 
+    console.log('Patient ID:', patient_id) // Log patient ID for debugging
+
     // Insert Appointment
-    const { error } = await supabase.from('appointments').insert([
+    const { error: appointmentError } = await supabase.from('appointments').insert([
       {
         patient_id: patient_id,
-        staff_id: null, // Staff to be assigned later
+        staff_id: null, // Staff can be assigned later
         appointment_date_time: new Date(),
         schedule_id: formData.value.schedule_id,
         reason: formData.value.reason,
         status: 'scheduled',
-        booked_by_user_id: user.id,
+        booked_by_user_id: user.id, // Ensure user.id is valid
       },
     ])
 
-    if (error) throw error
+    if (appointmentError) throw appointmentError
 
     successMessage.value = 'Appointment booked successfully!'
   } catch (err) {
+    console.error('Error booking appointment:', err.message)
     errorMessage.value = `Error: ${err.message}`
   } finally {
     loading.value = false
