@@ -1,131 +1,229 @@
 <template>
-  <div class="appointment-page">
-    <h1>Available Schedules</h1>
-    <div class="schedules-section">
-      <ul>
-        <li v-for="schedule in schedules" :key="schedule.schedule_id">
-          <div class="schedule-details">
-            <div class="schedule-date">
-              <strong>Date:</strong> {{ formatDate(schedule.schedule_date) }} ({{
-                getDayOfWeek(schedule.schedule_date)
-              }})
-            </div>
-            <div class="schedule-time">
-              {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
-            </div>
-            <div class="staff-details">
-              <em>Staff: {{ schedule.staff_name }} ({{ schedule.staff_role }})</em>
-            </div>
-            <div class="appointment-type">Appointment Type: {{ schedule.appointment_type }}</div>
-            <div class="available-slots">Slots available: {{ schedule.available_slots }}</div>
-          </div>
-        </li>
-      </ul>
-    </div>
-    <!-- Another section can be added here later -->
+  <div class="appointment-container">
+    <h1>Book an Appointment</h1>
+
+    <!-- Appointment Form -->
+    <form @submit.prevent="bookAppointment">
+      <!-- Patient Name -->
+      <div class="form-group">
+        <label for="name">Patient Name</label>
+        <input id="name" v-model="formData.name" type="text" required placeholder="Your name" />
+      </div>
+
+      <!-- Appointment Type -->
+      <div class="form-group">
+        <label for="appointmentType">Appointment Type</label>
+        <select
+          id="appointmentType"
+          v-model="formData.appointment_type_id"
+          @change="fetchSchedules"
+          required
+        >
+          <option disabled value="">Select Appointment Type</option>
+          <option
+            v-for="type in appointmentTypes"
+            :key="type.appointment_type_id"
+            :value="type.appointment_type_id"
+          >
+            {{ type.type_name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Schedules -->
+      <div class="form-group">
+        <label for="schedule">Available Schedules</label>
+        <select id="schedule" v-model="formData.schedule_id" required>
+          <option disabled value="">Select Schedule</option>
+          <option
+            v-for="schedule in schedules"
+            :key="schedule.schedule_id"
+            :value="schedule.schedule_id"
+          >
+            {{ schedule.schedule_date }} ({{ schedule.start_time }} - {{ schedule.end_time }})
+          </option>
+        </select>
+      </div>
+
+      <!-- Reason -->
+      <div class="form-group">
+        <label for="reason">Reason for Appointment</label>
+        <textarea
+          id="reason"
+          v-model="formData.reason"
+          placeholder="Describe your reason"
+          required
+        ></textarea>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" :disabled="loading">
+        {{ loading ? 'Booking...' : 'Book Appointment' }}
+      </button>
+    </form>
+
+    <!-- Success/Error Message -->
+    <p v-if="successMessage" class="success">{{ successMessage }}</p>
+    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   </div>
 </template>
 
-<script>
-import { fetchSchedules } from '@/components/util/supabase' // Adjust the path as needed
+<script setup>
+import { ref, onMounted } from 'vue'
+import { supabase } from '@/components/util/supabase'
 
-export default {
-  name: 'AppointmentPage',
-  data() {
-    return {
-      schedules: [],
-      error: null,
-    }
-  },
-  methods: {
-    async fetchSchedules() {
-      try {
-        const data = await fetchSchedules()
-        this.schedules = data
-      } catch (error) {
-        this.error = error.message
-      }
-    },
-    formatTime(time) {
-      const [hours, minutes, seconds] = time.split(':')
-      const date = new Date()
-      date.setHours(hours, minutes, seconds)
+// State Variables
+const appointmentTypes = ref([])
+const schedules = ref([])
+const loading = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
 
-      const options = {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }
-      return date.toLocaleTimeString([], options)
-    },
-    formatDate(dateString) {
-      const date = new Date(dateString)
-      const options = { year: 'numeric', month: 'long', day: 'numeric' }
-      return date.toLocaleDateString([], options)
-    },
-    getDayOfWeek(dateString) {
-      const date = new Date(dateString)
-      const options = { weekday: 'long' }
-      return date.toLocaleDateString([], options)
-    },
-  },
-  created() {
-    this.fetchSchedules()
-  },
+// Form Data
+const formData = ref({
+  name: '',
+  appointment_type_id: '',
+  schedule_id: '',
+  reason: '',
+})
+
+// Fetch Appointment Types on Load
+const fetchAppointmentTypes = async () => {
+  const { data, error } = await supabase.from('appointment_types').select('*')
+  if (error) {
+    console.error('Error fetching appointment types:', error.message)
+  } else {
+    appointmentTypes.value = data
+  }
 }
+
+// Fetch Schedules Based on Appointment Type
+const fetchSchedules = async () => {
+  if (!formData.value.appointment_type_id) return
+  const { data, error } = await supabase
+    .from('schedules')
+    .select('*')
+    .eq('appointment_type_id', formData.value.appointment_type_id)
+  if (error) {
+    console.error('Error fetching schedules:', error.message)
+    schedules.value = []
+  } else {
+    schedules.value = data
+  }
+}
+
+// Book an Appointment
+const bookAppointment = async () => {
+  loading.value = true
+  successMessage.value = ''
+  errorMessage.value = ''
+
+  try {
+    // Get the current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw new Error('User not authenticated')
+
+    // Check if the patient already exists
+    const { data: existingPatient } = await supabase
+      .from('patients')
+      .select('patient_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    let patient_id = existingPatient?.patient_id
+
+    // Create patient if not exists
+    if (!patient_id) {
+      const { data: newPatient, error: newPatientError } = await supabase
+        .from('patients')
+        .insert([{ user_id: user.id, name: formData.value.name }])
+        .select()
+        .single()
+
+      if (newPatientError) throw newPatientError
+      patient_id = newPatient.patient_id
+    }
+
+    // Insert Appointment
+    const { error } = await supabase.from('appointments').insert([
+      {
+        patient_id: patient_id,
+        staff_id: null, // Staff to be assigned later
+        appointment_date_time: new Date(),
+        schedule_id: formData.value.schedule_id,
+        reason: formData.value.reason,
+        status: 'scheduled',
+        booked_by_user_id: user.id,
+      },
+    ])
+
+    if (error) throw error
+
+    successMessage.value = 'Appointment booked successfully!'
+  } catch (err) {
+    errorMessage.value = `Error: ${err.message}`
+  } finally {
+    loading.value = false
+  }
+}
+
+// Fetch Appointment Types on Mount
+onMounted(fetchAppointmentTypes)
 </script>
 
 <style scoped>
-.appointment-page {
+.appointment-container {
+  max-width: 600px;
+  margin: auto;
   padding: 20px;
   font-family: Arial, sans-serif;
 }
 
-.schedules-section ul {
-  list-style-type: none;
-  padding: 0;
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-.schedules-section li {
-  margin: 10px 0;
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
   padding: 10px;
-  background-color: #f9f9f9;
-  transition: transform 0.2s;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.schedules-section li:hover {
-  transform: scale(1.02);
+button:disabled {
+  background-color: #aaa;
 }
 
-.schedule-details {
-  display: flex;
-  flex-direction: column;
+.success {
+  color: green;
 }
 
-.schedule-date {
-  font-weight: bold;
-  color: #333;
-}
-
-.schedule-time {
-  font-weight: bold;
-  color: #333;
-}
-
-.staff-details {
-  font-style: italic;
-  color: #555;
-}
-
-.appointment-type {
-  font-size: 1em;
-  color: #555;
-}
-
-.available-slots {
-  font-size: 0.9em;
-  color: #777;
+.error {
+  color: red;
 }
 </style>

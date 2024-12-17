@@ -13,97 +13,12 @@ export const formActionDefault = {
   formSuccessMessage: '',
 }
 
-// Fetch available schedules from Supabase
-export async function fetchSchedules() {
-  try {
-    const { data, error } = await supabase.rpc('get_available_schedules')
-    if (error) {
-      throw error
-    }
-    return data
-  } catch (error) {
-    console.error('Error fetching schedules:', error.message)
-    throw error
+// Create Appointment function
+export const createAppointment = async (appointmentData) => {
+  const { data, error } = await supabase.from('Appointments').insert([appointmentData])
+
+  if (error) {
+    throw new Error(`Failed to create appointment: ${error.message}`)
   }
-}
-
-// Create an appointment
-// Create an appointment
-export async function createAppointment(appointmentData) {
-  const { patient_id, staff_id, appointment_date_time, schedule_id, reason, booked_by_user_id } =
-    appointmentData
-
-  try {
-    const { data, error } = await supabase
-      .from('appointments') // Target the 'Appointments' table
-      .insert([
-        {
-          staff_id: staff_id,
-          appointment_date_time: appointment_date_time,
-          reason: reason,
-          patient_id: patient_id,
-          schedule_id: schedule_id,
-          booked_by_user_id: booked_by_user_id,
-        },
-      ])
-      .select('appointment_id') // Return the ID of the created appointment
-
-    if (error) {
-      throw error
-    }
-
-    return data // Return the inserted data
-  } catch (error) {
-    console.error('Error creating appointment:', error.message)
-    throw error
-  }
-}
-
-// Fetch medical staff from Supabase
-export async function fetchMedicalStaff() {
-  try {
-    const { data, error } = await supabase.from('medical_staff').select('*')
-    if (error) {
-      throw error
-    }
-    return data
-  } catch (error) {
-    console.error('Error fetching medical staff:', error.message)
-    throw error
-  }
-}
-
-export const fetchUserAppointments = async (userId) => {
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select(
-        `
-        appointment_id,
-        appointment_date_time,
-        reason,
-        status,
-        staff: medical_staff (
-          name,
-          role
-        )
-      `,
-      )
-      .eq('booked_by_user_id', userId)
-      .order('appointment_date_time', { ascending: true })
-
-    if (error) throw error
-
-    return data.map((appointment) => ({
-      appointment_id: appointment.appointment_id,
-      appointment_date_time: appointment.appointment_date_time,
-      reason: appointment.reason,
-      status: appointment.status,
-      staff_name: appointment.staff ? appointment.staff.name : 'Unknown Staff',
-      staff_role: appointment.staff ? appointment.staff.role : 'Unknown Role',
-    }))
-  } catch (error) {
-    console.error('Error fetching user appointments:', error.message)
-    return []
-  }
+  return data
 }
