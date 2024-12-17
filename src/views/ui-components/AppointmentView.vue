@@ -41,6 +41,14 @@
             :value="schedule.schedule_id"
           >
             {{ schedule.schedule_date }} ({{ schedule.start_time }} - {{ schedule.end_time }})
+            <br />
+            <small>
+              {{
+                schedule.staff && schedule.staff.name
+                  ? 'Assigned Staff: ' + schedule.staff.name
+                  : 'Staff: Not Assigned'
+              }}
+            </small>
           </option>
         </select>
       </div>
@@ -73,10 +81,15 @@
         <li v-for="appointment in userAppointments" :key="appointment.appointment_id">
           <div>
             <strong>{{ appointment.appointment_type_name }}</strong>
-            on {{ appointment.appointment_date_time }}
+            on {{ formatDate(appointment.appointment_date_time) }}
           </div>
-          <div>Status: {{ appointment.status }}</div>
+          <div>
+            Status: <strong>{{ appointment.status }}</strong>
+          </div>
           <div>Reason: {{ appointment.reason }}</div>
+          <div v-if="appointment.staff_name">
+            <strong>Assigned Staff:</strong> {{ appointment.staff_name }}
+          </div>
         </li>
       </ul>
     </div>
@@ -106,6 +119,19 @@ const formData = ref({
   reason: '',
 })
 
+// Format Date for Display
+const formatDate = (date) => {
+  const options = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  }
+  return new Date(date).toLocaleDateString(undefined, options)
+}
+
 // Fetch Appointment Types on Load
 const fetchAppointmentTypes = async () => {
   const { data, error } = await supabase.from('appointment_types').select('*')
@@ -119,10 +145,22 @@ const fetchAppointmentTypes = async () => {
 // Fetch Schedules Based on Appointment Type
 const fetchSchedules = async () => {
   if (!formData.value.appointment_type_id) return
+
   const { data, error } = await supabase
     .from('schedules')
-    .select('*')
+    .select(
+      `
+      schedule_id,
+      schedule_date,
+      start_time,
+      end_time,
+      available_slots,
+      staff:staff_id(name, role, specialization, phone_number),
+      appointment_types:appointment_type_id(type_name)
+    `, // Check if this is the right way to refer to the staff table
+    )
     .eq('appointment_type_id', formData.value.appointment_type_id)
+
   if (error) {
     console.error('Error fetching schedules:', error.message)
     schedules.value = []
@@ -131,7 +169,6 @@ const fetchSchedules = async () => {
   }
 }
 
-// Fetch User's Booked Appointments
 // Fetch User's Booked Appointments
 const fetchUserAppointments = async () => {
   try {
@@ -144,7 +181,6 @@ const fetchUserAppointments = async () => {
       throw new Error('User not authenticated or invalid user ID')
     }
 
-    // Fetch the user's appointments with appointment types
     const { data, error } = await supabase
       .from('appointments')
       .select(
@@ -154,7 +190,8 @@ const fetchUserAppointments = async () => {
         status,
         reason,
         schedules (
-          appointment_types (type_name)
+          appointment_types (type_name),
+          medical_staff (name)
         )
       `,
       )
@@ -175,7 +212,6 @@ const bookAppointment = async () => {
   errorMessage.value = ''
 
   try {
-    // Get the current user
     const {
       data: { user },
       error: authError,
@@ -185,7 +221,6 @@ const bookAppointment = async () => {
       throw new Error('User not authenticated or invalid user ID')
     }
 
-    // Check if the patient already exists
     const { data: existingPatient, error: patientError } = await supabase
       .from('patients')
       .select('patient_id')
@@ -196,7 +231,6 @@ const bookAppointment = async () => {
 
     let patient_id = existingPatient?.patient_id
 
-    // Create patient if not exists
     if (!patient_id) {
       const { data: newPatient, error: newPatientError } = await supabase
         .from('patients')
@@ -208,11 +242,10 @@ const bookAppointment = async () => {
       patient_id = newPatient.patient_id
     }
 
-    // Insert Appointment
     const { error: appointmentError } = await supabase.from('appointments').insert([
       {
-        patient_id: patient_id,
-        staff_id: null, // Staff can be assigned later
+        patient_id,
+        staff_id: null,
         appointment_date_time: new Date(),
         schedule_id: formData.value.schedule_id,
         reason: formData.value.reason,
@@ -233,10 +266,9 @@ const bookAppointment = async () => {
   }
 }
 
-// Fetch Appointment Types on Mount
 onMounted(() => {
   fetchAppointmentTypes()
-  fetchUserAppointments() // Fetch user appointments on mount
+  fetchUserAppointments()
 })
 </script>
 
@@ -309,5 +341,12 @@ button:disabled {
 
 .appointments-section li {
   margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.appointments-section li strong {
+  font-size: 1.2em;
 }
 </style>
