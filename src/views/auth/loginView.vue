@@ -19,7 +19,7 @@ const loginData = ref({
   password: '',
 })
 const registerData = ref({
-  role: 'Normal User', // Tracks if user is normal user or medical staff
+  userType: 'Normal User', // Tracks if user is normal user or medical staff
   name: '',
   email: '',
   password: '',
@@ -29,10 +29,11 @@ const registerData = ref({
   phoneNumber: '',
   address: '',
   specialization: '',
+  role: '', // Added for medical staff role
   // availableHours: '',
 })
 const genders = ['Male', 'Female', 'Prefer not to say'] // Gender options
-const roles = ['Normal User', 'Medical Staff'] // Options for the dropdown
+const userTypes = ['Normal User', 'Medical Staff'] // Options for the dropdown
 const loading = ref(false)
 const messageType = ref('error')
 const loginMessage = ref('')
@@ -40,7 +41,7 @@ const registerMessage = ref('')
 const step = ref(1)
 const visible = ref(false)
 
-const isNormalUser = computed(() => registerData.value.role === 'Normal User')
+const isNormalUser = computed(() => registerData.value.userType === 'Normal User')
 
 const alertMessage = ref('')
 const showAlert = (message) => {
@@ -87,7 +88,7 @@ const onRegisterFormSubmit = async () => {
   messageType.value = 'error'
 
   // Validation for Medical Staff role
-  if (registerData.value.role === 'Medical Staff' && !registerData.value.name.trim()) {
+  if (registerData.value.userType === 'Medical Staff' && !registerData.value.name.trim()) {
     registerMessage.value = 'Name is required for medical staff.'
     loading.value = false
     return
@@ -101,7 +102,7 @@ const onRegisterFormSubmit = async () => {
       options: {
         data: {
           name: registerData.value.name,
-          role: registerData.value.role,
+          role: registerData.value.userType,
         },
       },
     })
@@ -114,7 +115,7 @@ const onRegisterFormSubmit = async () => {
     const user = data.user
 
     // Step 2: Insert additional data into appropriate table
-    if (registerData.value.role === 'Normal User') {
+    if (registerData.value.userType === 'Normal User') {
       const { error: patientError } = await supabase.from('patients').insert([
         {
           user_id: user.id,
@@ -130,12 +131,12 @@ const onRegisterFormSubmit = async () => {
         console.error(patientError)
         return
       }
-    } else if (registerData.value.role === 'Medical Staff') {
+    } else if (registerData.value.userType === 'Medical Staff') {
       const { error: staffError } = await supabase.from('medical_staff').insert([
         {
           user_id: user.id,
           name: registerData.value.name,
-          role: 'Medical Staff',
+          role: registerData.value.role, // Ensure this is set correctly
           specialization: registerData.value.specialization,
           phone_number: registerData.value.phoneNumber,
         },
@@ -338,9 +339,9 @@ const forgotPassword = () => {
                           <v-col cols="12" sm="8">
                             <v-form ref="registerForm" @submit.prevent="onRegisterFormSubmit">
                               <v-select
-                                v-model="registerData.role"
-                                :items="roles"
-                                label="Select Role"
+                                v-model="registerData.userType"
+                                :items="userTypes"
+                                label="Select User Type"
                                 :rules="[requiredValidator]"
                                 density="compact"
                                 variant="outlined"
@@ -402,7 +403,7 @@ const forgotPassword = () => {
                               ></v-text-field>
 
                               <!-- Conditional Fields for Normal User -->
-                              <template v-if="isNormalUser">
+                              <template v-if="registerData.userType === 'Normal User'">
                                 <v-text-field
                                   v-model="registerData.dateOfBirth"
                                   :rules="[requiredValidator]"
@@ -459,7 +460,7 @@ const forgotPassword = () => {
                               </template>
 
                               <!-- Conditional Fields for Medical Staff -->
-                              <template v-else>
+                              <template v-else-if="registerData.userType === 'Medical Staff'">
                                 <v-text-field
                                   v-model="registerData.dateOfBirth"
                                   :rules="[requiredValidator]"
@@ -495,6 +496,17 @@ const forgotPassword = () => {
                                 <v-text-field
                                   v-model="registerData.specialization"
                                   label="Specialization"
+                                  :rules="[requiredValidator]"
+                                  density="compact"
+                                  variant="outlined"
+                                  outlined
+                                  dense
+                                  color="blue"
+                                ></v-text-field>
+                                <!-- New Role Input Field -->
+                                <v-text-field
+                                  v-model="registerData.role"
+                                  label="Role"
                                   :rules="[requiredValidator]"
                                   density="compact"
                                   variant="outlined"
