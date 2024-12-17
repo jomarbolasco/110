@@ -41,16 +41,13 @@
             :value="schedule.schedule_id"
           >
             {{ schedule.schedule_date }} ({{ schedule.start_time }} - {{ schedule.end_time }})
-            <br />
-            <small>
-              {{
-                schedule.staff && schedule.staff.name
-                  ? 'Assigned Staff: ' + schedule.staff.name
-                  : 'Staff: Not Assigned'
-              }}
-            </small>
           </option>
         </select>
+        <div v-if="formData.schedule_id">
+          <small>
+            {{ selectedScheduleStaff }}
+          </small>
+        </div>
       </div>
 
       <!-- Reason -->
@@ -100,7 +97,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 
 // State Variables
@@ -205,6 +202,16 @@ const fetchUserAppointments = async () => {
   }
 }
 
+// Computed property for displaying assigned staff for selected schedule
+const selectedScheduleStaff = computed(() => {
+  const selectedSchedule = schedules.value.find(
+    (schedule) => schedule.schedule_id === formData.value.schedule_id,
+  )
+  return selectedSchedule && selectedSchedule.staff
+    ? `Assigned Staff: ${selectedSchedule.staff.name}`
+    : 'Staff: Not Assigned'
+})
+
 // Book an Appointment
 const bookAppointment = async () => {
   loading.value = true
@@ -271,6 +278,10 @@ onMounted(() => {
   fetchUserAppointments()
 })
 </script>
+
+<style scoped>
+/* Same styles as before */
+</style>
 
 <style scoped>
 .appointment-container {
