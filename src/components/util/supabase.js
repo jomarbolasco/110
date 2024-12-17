@@ -20,5 +20,31 @@ export const createAppointment = async (appointmentData) => {
   if (error) {
     throw new Error(`Failed to create appointment: ${error.message}`)
   }
+
+  // Update available slots for the schedule
+  const { error: updateError } = await supabase
+    .from('Schedules')
+    .update({
+      available_slots: supabase.raw('available_slots - 1'), // Decrease slot by 1
+    })
+    .eq('schedule_id', appointmentData.schedule_id)
+
+  if (updateError) {
+    throw new Error(`Failed to update available slots: ${updateError.message}`)
+  }
+
+  return data
+}
+
+// Fetch Appointments for Staff
+export const fetchAppointmentsForStaff = async (staff_id) => {
+  const { data, error } = await supabase
+    .from('Appointments')
+    .select('appointment_id, patient_id, appointment_date_time, status, Patients(name)')
+    .eq('staff_id', staff_id)
+
+  if (error) {
+    throw new Error(`Failed to fetch appointments: ${error.message}`)
+  }
   return data
 }

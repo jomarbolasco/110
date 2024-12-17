@@ -19,7 +19,7 @@ const loginData = ref({
   password: '',
 })
 const registerData = ref({
-  userType: 'Normal User', // Tracks if user is normal user or medical staff
+  role: 'Normal User', // Tracks if user is normal user or medical staff
   name: '',
   email: '',
   password: '',
@@ -29,11 +29,10 @@ const registerData = ref({
   phoneNumber: '',
   address: '',
   specialization: '',
-  role: '', // Added for medical staff role
   // availableHours: '',
 })
 const genders = ['Male', 'Female', 'Prefer not to say'] // Gender options
-const userTypes = ['Normal User', 'Medical Staff'] // Options for the dropdown
+const roles = ['Normal User', 'Medical Staff'] // Options for the dropdown
 const loading = ref(false)
 const messageType = ref('error')
 const loginMessage = ref('')
@@ -41,7 +40,7 @@ const registerMessage = ref('')
 const step = ref(1)
 const visible = ref(false)
 
-const isNormalUser = computed(() => registerData.value.userType === 'Normal User')
+const isNormalUser = computed(() => registerData.value.role === 'Normal User')
 
 const alertMessage = ref('')
 const showAlert = (message) => {
@@ -87,71 +86,65 @@ const onRegisterFormSubmit = async () => {
   registerMessage.value = ''
   messageType.value = 'error'
 
-  // Validation for Medical Staff role
-  if (registerData.value.userType === 'Medical Staff' && !registerData.value.name.trim()) {
-    registerMessage.value = 'Name is required for medical staff.'
-    loading.value = false
-    return
-  }
-
   try {
-    // Step 1: Register user in auth.users
-    const { data, error } = await supabase.auth.signUp({
+    const { error, data } = await supabase.auth.signUp({
       email: registerData.value.email,
       password: registerData.value.password,
       options: {
         data: {
-          name: registerData.value.name,
-          role: registerData.value.userType,
+          ...registerData.value,
         },
       },
     })
 
     if (error) {
       registerMessage.value = error.message
-      return
-    }
+    } else {
+      const user = data.user
 
-    const user = data.user
+      if (registerData.value.role === 'Normal User') {
+        const user = data.user
+        const { error: patientError } = await supabase.from('patients').insert([
+          {
+            user_id: user.id,
+            name: registerData.value.name,
+            date_of_birth: registerData.value.dateOfBirth,
+            gender: registerData.value.gender,
+            phone_number: registerData.value.phoneNumber,
+            address: registerData.value.address,
+          },
+        ])
 
-    // Step 2: Insert additional data into appropriate table
-    if (registerData.value.userType === 'Normal User') {
-      const { error: patientError } = await supabase.from('patients').insert([
-        {
-          user_id: user.id,
-          name: registerData.value.name,
-          date_of_birth: registerData.value.dateOfBirth,
-          gender: registerData.value.gender,
-          phone_number: registerData.value.phoneNumber,
-          address: registerData.value.address,
-        },
-      ])
-      if (patientError) {
-        registerMessage.value = `Error inserting patient data: ${patientError.message}`
-        console.error(patientError)
-        return
+        if (patientError) {
+          registerMessage.value = `Error inserting patient data: ${patientError.message}`
+          console.error(patientError)
+          return
+        }
+      } else if (registerData.value.role === 'Medical Staff') {
+        // Insert into the medical_staff table
+        const { error: staffError } = await supabase.from('medical_staff').insert([
+          {
+            user_id: user.id,
+            role: 'Medical Staff',
+            name: registerData.value.name,
+            specialization: registerData.value.specialization,
+            phone_number: registerData.value.phoneNumber,
+            // available_hours: registerData.value.availableHours,
+          },
+        ])
+
+        if (staffError) {
+          registerMessage.value = `Error inserting medical staff data: ${staffError.message}`
+          console.error(staffError)
+          return
+        }
       }
-    } else if (registerData.value.userType === 'Medical Staff') {
-      const { error: staffError } = await supabase.from('medical_staff').insert([
-        {
-          user_id: user.id,
-          name: registerData.value.name,
-          role: registerData.value.role, // Ensure this is set correctly
-          specialization: registerData.value.specialization,
-          phone_number: registerData.value.phoneNumber,
-        },
-      ])
-      if (staffError) {
-        registerMessage.value = `Error inserting medical staff data: ${staffError.message}`
-        console.error(staffError)
-        return
-      }
-    }
 
-    // Step 3: Success message and redirect
-    messageType.value = 'success'
-    registerMessage.value = 'Registration successful!'
-    router.replace('/dashboard')
+      // Step 3: Redirect after successful registration
+      messageType.value = 'success'
+      registerMessage.value = 'Registration successful!'
+      router.replace('/dashboard')
+    }
   } catch (error) {
     registerMessage.value = 'An unexpected error occurred. Please try again.'
     console.error(error)
@@ -339,9 +332,9 @@ const forgotPassword = () => {
                           <v-col cols="12" sm="8">
                             <v-form ref="registerForm" @submit.prevent="onRegisterFormSubmit">
                               <v-select
-                                v-model="registerData.userType"
-                                :items="userTypes"
-                                label="Select User Type"
+                                v-model="registerData.role"
+                                :items="roles"
+                                label="Select Role"
                                 :rules="[requiredValidator]"
                                 density="compact"
                                 variant="outlined"
@@ -403,7 +396,7 @@ const forgotPassword = () => {
                               ></v-text-field>
 
                               <!-- Conditional Fields for Normal User -->
-                              <template v-if="registerData.userType === 'Normal User'">
+                              <template v-if="isNormalUser">
                                 <v-text-field
                                   v-model="registerData.dateOfBirth"
                                   :rules="[requiredValidator]"
@@ -460,7 +453,7 @@ const forgotPassword = () => {
                               </template>
 
                               <!-- Conditional Fields for Medical Staff -->
-                              <template v-else-if="registerData.userType === 'Medical Staff'">
+                              <template v-else>
                                 <v-text-field
                                   v-model="registerData.dateOfBirth"
                                   :rules="[requiredValidator]"
@@ -503,17 +496,15 @@ const forgotPassword = () => {
                                   dense
                                   color="blue"
                                 ></v-text-field>
-                                <!-- New Role Input Field -->
-                                <v-text-field
-                                  v-model="registerData.role"
-                                  label="Role"
-                                  :rules="[requiredValidator]"
+                                <!-- <v-text-field
+                                  v-model="registerData.availableHours"
+                                  label="Available Hours"
                                   density="compact"
                                   variant="outlined"
                                   outlined
                                   dense
                                   color="blue"
-                                ></v-text-field>
+                                ></v-text-field> -->
                               </template>
 
                               <v-btn

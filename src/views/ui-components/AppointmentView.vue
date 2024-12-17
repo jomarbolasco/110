@@ -43,6 +43,9 @@
             {{ schedule.schedule_date }} ({{ schedule.start_time }} - {{ schedule.end_time }})
           </option>
         </select>
+        <div v-if="formData.schedule_id">
+          <small>{{ selectedScheduleStaff }}</small>
+        </div>
       </div>
 
       <!-- Reason -->
@@ -73,21 +76,29 @@
         <li v-for="appointment in userAppointments" :key="appointment.appointment_id">
           <div>
             <strong>{{ appointment.appointment_type_name }}</strong>
-            on {{ appointment.appointment_date_time }}
+            on {{ formatDate(appointment.appointment_date_time) }}
           </div>
-          <div>Status: {{ appointment.status }}</div>
+          <div>
+            Status: <strong>{{ appointment.status }}</strong>
+          </div>
           <div>Reason: {{ appointment.reason }}</div>
+          <div v-if="appointment.schedules?.medical_staff?.name">
+            <strong>Assigned Staff:</strong> {{ appointment.schedules.medical_staff.name }}
+          </div>
         </li>
       </ul>
     </div>
 
     <!-- No Appointments Message -->
-    <p v-else>No appointments booked yet.</p>
+    <p v-else>
+      No appointments booked yet.
+      <a href="#" @click.prevent="scrollToAppointmentForm">Book one now!</a>
+    </p>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 
 // State Variables
@@ -106,6 +117,19 @@ const formData = ref({
   reason: '',
 })
 
+// Format Date for Display
+const formatDate = (date) => {
+  const options = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  }
+  return new Date(date).toLocaleDateString(undefined, options)
+}
+
 // Fetch Appointment Types on Load
 const fetchAppointmentTypes = async () => {
   const { data, error } = await supabase.from('appointment_types').select('*')
@@ -119,10 +143,22 @@ const fetchAppointmentTypes = async () => {
 // Fetch Schedules Based on Appointment Type
 const fetchSchedules = async () => {
   if (!formData.value.appointment_type_id) return
+
   const { data, error } = await supabase
     .from('schedules')
-    .select('*')
+    .select(
+      `
+      schedule_id,
+      schedule_date,
+      start_time,
+      end_time,
+      available_slots,
+      staff:staff_id(name),  
+      appointment_types:appointment_type_id(type_name)
+    `, // Fetching the assigned staff's name
+    )
     .eq('appointment_type_id', formData.value.appointment_type_id)
+
   if (error) {
     console.error('Error fetching schedules:', error.message)
     schedules.value = []
@@ -131,7 +167,6 @@ const fetchSchedules = async () => {
   }
 }
 
-// Fetch User's Booked Appointments
 // Fetch User's Booked Appointments
 const fetchUserAppointments = async () => {
   try {
@@ -144,7 +179,6 @@ const fetchUserAppointments = async () => {
       throw new Error('User not authenticated or invalid user ID')
     }
 
-    // Fetch the user's appointments with appointment types
     const { data, error } = await supabase
       .from('appointments')
       .select(
@@ -154,9 +188,10 @@ const fetchUserAppointments = async () => {
         status,
         reason,
         schedules (
-          appointment_types (type_name)
+          appointment_types (type_name),
+          medical_staff (name)  
         )
-      `,
+      `, // Corrected to use dot notation
       )
       .eq('booked_by_user_id', user.id)
 
@@ -168,6 +203,16 @@ const fetchUserAppointments = async () => {
   }
 }
 
+// Computed property for displaying assigned staff for selected schedule
+const selectedScheduleStaff = computed(() => {
+  const selectedSchedule = schedules.value.find(
+    (schedule) => schedule.schedule_id === formData.value.schedule_id,
+  )
+  return selectedSchedule && selectedSchedule.staff
+    ? `Assigned Staff: ${selectedSchedule.staff.name}`
+    : 'Staff: Not Assigned'
+})
+
 // Book an Appointment
 const bookAppointment = async () => {
   loading.value = true
@@ -175,7 +220,6 @@ const bookAppointment = async () => {
   errorMessage.value = ''
 
   try {
-    // Get the current user
     const {
       data: { user },
       error: authError,
@@ -185,7 +229,6 @@ const bookAppointment = async () => {
       throw new Error('User not authenticated or invalid user ID')
     }
 
-    // Check if the patient already exists
     const { data: existingPatient, error: patientError } = await supabase
       .from('patients')
       .select('patient_id')
@@ -196,7 +239,6 @@ const bookAppointment = async () => {
 
     let patient_id = existingPatient?.patient_id
 
-    // Create patient if not exists
     if (!patient_id) {
       const { data: newPatient, error: newPatientError } = await supabase
         .from('patients')
@@ -208,11 +250,10 @@ const bookAppointment = async () => {
       patient_id = newPatient.patient_id
     }
 
-    // Insert Appointment
     const { error: appointmentError } = await supabase.from('appointments').insert([
       {
-        patient_id: patient_id,
-        staff_id: null, // Staff can be assigned later
+        patient_id,
+        staff_id: null,
         appointment_date_time: new Date(),
         schedule_id: formData.value.schedule_id,
         reason: formData.value.reason,
@@ -233,10 +274,9 @@ const bookAppointment = async () => {
   }
 }
 
-// Fetch Appointment Types on Mount
 onMounted(() => {
   fetchAppointmentTypes()
-  fetchUserAppointments() // Fetch user appointments on mount
+  fetchUserAppointments()
 })
 </script>
 
@@ -246,11 +286,15 @@ onMounted(() => {
   margin: auto;
   padding: 20px;
   font-family: Arial, sans-serif;
+  background-color: gray; /* Adding a light background color for better contrast */
+  border-radius: 8px; /* Slightly rounded corners for a modern look */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); /* Adding a shadow for depth */
 }
 
 h1 {
   text-align: center;
   margin-bottom: 20px;
+  color: #333; /* Dark text color for better readability */
 }
 
 .form-group {
@@ -261,45 +305,77 @@ label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
+  color: #555; /* Slightly lighter text color for labels */
 }
 
 input,
 select,
 textarea {
   width: 100%;
-  padding: 8px;
+  padding: 10px; /* Increased padding for better touch target */
   box-sizing: border-box;
   border: 1px solid #ccc;
   border-radius: 4px;
+  transition: border-color 0.3s ease; /* Smooth transition effect */
+}
+
+input:invalid,
+select:invalid,
+textarea:invalid {
+  border-color: red;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #007bff; /* Blue border on focus for accessibility */
+  outline: none;
 }
 
 button {
+  width: 100%;
   background-color: #007bff;
   color: white;
   padding: 10px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s ease; /* Smooth transition effect */
 }
 
 button:disabled {
   background-color: #aaa;
 }
 
+button:hover:enabled {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
 .success {
   color: green;
+  text-align: center; /* Centered success message */
+  margin-top: 20px; /* Added space above the message */
 }
 
 .error {
   color: red;
+  text-align: center; /* Centered error message */
+  margin-top: 20px; /* Added space above the message */
 }
 
 .appointments-section {
   margin-top: 30px;
+  background-color: #fff; /* White background for contrast */
+  border: 1px solid #ddd; /* Light border for separation */
+  border-radius: 8px; /* Rounded corners */
+  padding: 20px; /* Added padding */
 }
 
 .appointments-section h2 {
   margin-bottom: 10px;
+  color: #333; /* Dark text color */
+  border-bottom: 2px solid #007bff; /* Blue underline */
+  padding-bottom: 10px; /* Space below underline */
 }
 
 .appointments-section ul {
@@ -309,5 +385,24 @@ button:disabled {
 
 .appointments-section li {
   margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9; /* Light background color for list items */
+}
+
+.appointments-section li strong {
+  font-size: 1.2em;
+  color: #007bff; /* Blue color for headings */
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #0056b3;
 }
 </style>
