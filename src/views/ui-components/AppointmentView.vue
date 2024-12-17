@@ -65,6 +65,24 @@
     <!-- Success/Error Message -->
     <p v-if="successMessage" class="success">{{ successMessage }}</p>
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+
+    <!-- User's Booked Appointments -->
+    <div v-if="userAppointments.length > 0" class="appointments-section">
+      <h2>Your Booked Appointments</h2>
+      <ul>
+        <li v-for="appointment in userAppointments" :key="appointment.appointment_id">
+          <div>
+            <strong>{{ appointment.appointment_type_name }}</strong>
+            on {{ appointment.appointment_date_time }}
+          </div>
+          <div>Status: {{ appointment.status }}</div>
+          <div>Reason: {{ appointment.reason }}</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- No Appointments Message -->
+    <p v-else>No appointments booked yet.</p>
   </div>
 </template>
 
@@ -78,6 +96,7 @@ const schedules = ref([])
 const loading = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
+const userAppointments = ref([]) // To store the user's appointments
 
 // Form Data
 const formData = ref({
@@ -112,6 +131,43 @@ const fetchSchedules = async () => {
   }
 }
 
+// Fetch User's Booked Appointments
+// Fetch User's Booked Appointments
+const fetchUserAppointments = async () => {
+  try {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+    if (authError || !user || !user.id) {
+      console.error('Authentication error:', authError)
+      throw new Error('User not authenticated or invalid user ID')
+    }
+
+    // Fetch the user's appointments with appointment types
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(
+        `
+        appointment_id,
+        appointment_date_time,
+        status,
+        reason,
+        schedules (
+          appointment_types (type_name)
+        )
+      `,
+      )
+      .eq('booked_by_user_id', user.id)
+
+    if (error) throw error
+    userAppointments.value = data
+  } catch (err) {
+    console.error('Error fetching user appointments:', err.message)
+    errorMessage.value = `Error: ${err.message}`
+  }
+}
+
 // Book an Appointment
 const bookAppointment = async () => {
   loading.value = true
@@ -128,8 +184,6 @@ const bookAppointment = async () => {
       console.error('Authentication error:', authError)
       throw new Error('User not authenticated or invalid user ID')
     }
-
-    console.log('User ID:', user.id) // Log the user ID for debugging
 
     // Check if the patient already exists
     const { data: existingPatient, error: patientError } = await supabase
@@ -154,8 +208,6 @@ const bookAppointment = async () => {
       patient_id = newPatient.patient_id
     }
 
-    console.log('Patient ID:', patient_id) // Log patient ID for debugging
-
     // Insert Appointment
     const { error: appointmentError } = await supabase.from('appointments').insert([
       {
@@ -165,13 +217,14 @@ const bookAppointment = async () => {
         schedule_id: formData.value.schedule_id,
         reason: formData.value.reason,
         status: 'scheduled',
-        booked_by_user_id: user.id, // Ensure user.id is valid
+        booked_by_user_id: user.id,
       },
     ])
 
     if (appointmentError) throw appointmentError
 
     successMessage.value = 'Appointment booked successfully!'
+    fetchUserAppointments() // Refresh appointments list after booking
   } catch (err) {
     console.error('Error booking appointment:', err.message)
     errorMessage.value = `Error: ${err.message}`
@@ -181,7 +234,10 @@ const bookAppointment = async () => {
 }
 
 // Fetch Appointment Types on Mount
-onMounted(fetchAppointmentTypes)
+onMounted(() => {
+  fetchAppointmentTypes()
+  fetchUserAppointments() // Fetch user appointments on mount
+})
 </script>
 
 <style scoped>
@@ -236,5 +292,22 @@ button:disabled {
 
 .error {
   color: red;
+}
+
+.appointments-section {
+  margin-top: 30px;
+}
+
+.appointments-section h2 {
+  margin-bottom: 10px;
+}
+
+.appointments-section ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.appointments-section li {
+  margin-bottom: 20px;
 }
 </style>
