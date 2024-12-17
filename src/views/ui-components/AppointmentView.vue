@@ -87,8 +87,8 @@
             Status: <strong>{{ appointment.status }}</strong>
           </div>
           <div>Reason: {{ appointment.reason }}</div>
-          <div v-if="appointment.staff_name">
-            <strong>Assigned Staff:</strong> {{ appointment.staff_name }}
+          <div v-if="appointment.schedules?.medical_staff?.name">
+            <strong>Assigned Staff:</strong> {{ appointment.schedules.medical_staff.name }}
           </div>
         </li>
       </ul>
@@ -155,9 +155,9 @@ const fetchSchedules = async () => {
       start_time,
       end_time,
       available_slots,
-      staff:staff_id(name, role, specialization, phone_number),
+      staff:staff_id(name),  
       appointment_types:appointment_type_id(type_name)
-    `, // Check if this is the right way to refer to the staff table
+    `, // Fetching the assigned staff's name
     )
     .eq('appointment_type_id', formData.value.appointment_type_id)
 
@@ -191,9 +191,9 @@ const fetchUserAppointments = async () => {
         reason,
         schedules (
           appointment_types (type_name),
-          medical_staff (name)
+          medical_staff (name)  
         )
-      `,
+      `, // Corrected to use dot notation
       )
       .eq('booked_by_user_id', user.id)
 
