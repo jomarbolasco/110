@@ -4,6 +4,10 @@
 
     <!-- Appointment Form -->
     <form @submit.prevent="bookAppointment">
+      <div class="form-group">
+        <label for="schedule">Available Schedules</label>
+        <FullCalendar :events="calendarEvents" :options="calendarOptions" ref="calendar" />
+      </div>
       <!-- Patient Name -->
       <div class="form-group">
         <label for="name">Patient Name</label>
@@ -100,6 +104,25 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
+import FullCalendar from '@fullcalendar/vue3'
+import dayGridPlugin from '@fullcalendar/daygrid'
+
+const calendarEvents = ref([])
+
+// const selectedScheduleStaff = ref('');
+
+const handleEventClick = (info) => {
+  const selectedSchedule = info.event.extendedProps
+  formData.value.schedule_id = selectedSchedule.schedule_id
+  selectedScheduleStaff.value = `Assigned Staff: ${selectedSchedule.staff.name}`
+}
+
+const calendarOptions = computed(() => ({
+  // Use computed property
+  plugins: [dayGridPlugin],
+  initialView: 'dayGridMonth',
+  eventClick: handleEventClick, // Now handleEventClick is defined
+}))
 
 // State Variables
 const appointmentTypes = ref([])
@@ -294,9 +317,18 @@ const bookAppointment = async () => {
   }
 }
 
-onMounted(() => {
-  fetchAppointmentTypes()
-  fetchUserAppointments()
+onMounted(async () => {
+  await fetchAppointmentTypes()
+  await fetchUserAppointments()
+  await fetchSchedules()
+
+  const formattedSchedules = schedules.value.map((schedule) => ({
+    title: `${schedule.appointment_types.type_name} - ${schedule.start_time} - ${schedule.end_time}`,
+    start: schedule.schedule_date, // Use 'start' for date
+    allDay: true,
+    extendedProps: schedule,
+  }))
+  calendarEvents.value = formattedSchedules
 })
 </script>
 
