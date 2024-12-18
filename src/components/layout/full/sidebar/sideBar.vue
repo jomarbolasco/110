@@ -1,52 +1,65 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore'
 
 const sidebarMenu = ref([
   {
     title: 'Dashboard',
     icon: 'mdi-view-dashboard-outline',
     to: '/dashboard',
+    roles: ['Normal User', 'Medical Staff'], // Accessible by both roles
   },
   {
     title: 'Appointments',
     icon: 'mdi-form-dropdown',
     to: '/ui-components/Appointments',
+    roles: ['Normal User'], // Accessible only by Normal Users
   },
   {
     title: 'Ask me Doc!',
     icon: 'mdi-exclamation-thick',
     to: '/ui-components/Ai-section/AskMe',
+    roles: ['Normal User', 'Medical Staff'], // Accessible by both roles
   },
   {
-    title: 'ignore this area',
-    icon: 'mdi-exclamation-thick',
+    title: 'Manage Schedules',
+    icon: 'mdi-form-dropdown',
     to: '/ui-components/buttons',
+    roles: ['Medical Staff'], // Accessible only by Medical Staff
   },
-  {
-    title: 'ignore this area',
-    icon: 'mdi-exclamation-thick',
-    to: '/ui-components/cards',
-  },
-  {
-    title: 'ignore this area',
-    icon: 'mdi-exclamation-thick',
-    to: '/ui-components/menus',
-  },
-  {
-    title: 'ignore this area',
-    icon: 'mdi-exclamation-thick',
-    to: '/ui-components/tables',
-  },
+  // {
+  //   title: 'ignore this area',
+  //   icon: 'mdi-exclamation-thick',
+  //   to: '/ui-components/cards',
+  // },
+  // {
+  //   title: 'ignore this area',
+  //   icon: 'mdi-exclamation-thick',
+  //   to: '/ui-components/menus',
+  // },
+  // {
+  //   title: 'ignore this area',
+  //   icon: 'mdi-exclamation-thick',
+  //   to: '/ui-components/tables',
+  // },
 ])
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+
+// Filter menu items based on the user's role
+const filteredSidebarMenu = computed(() => {
+  if (!userStore.user) return [] // If no user, show no menu
+  const userRole = userStore.user.additionalDetails.role // Assuming `role` is part of `additionalDetails`
+  return sidebarMenu.value.filter((item) => item.roles.includes(userRole))
+})
 
 const isActive = (item) => route.path === item.to
 
 const activeItemTitle = computed(() => {
-  const activeItem = sidebarMenu.value.find((item) => isActive(item))
+  const activeItem = filteredSidebarMenu.value.find((item) => isActive(item))
   return activeItem ? activeItem.title : ''
 })
 
@@ -70,7 +83,7 @@ watch(route, () => {
     </div>
     <div class="scrollnavbar">
       <v-list class="pa-4" color="transparent">
-        <template v-for="(item, i) in sidebarMenu" :key="i">
+        <template v-for="(item, i) in filteredSidebarMenu" :key="i">
           <v-list-item
             :to="item.to"
             rounded="lg"
