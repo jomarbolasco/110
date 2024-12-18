@@ -8,7 +8,7 @@ const sidebarMenu = ref([
     title: 'Dashboard',
     icon: 'mdi-view-dashboard-outline',
     to: '/dashboard',
-    roles: ['Normal User', 'Medical Staff'], // Accessible by both roles
+    roles: ['Normal User'], // Accessible by both roles
   },
   {
     title: 'Appointments',
@@ -28,11 +28,12 @@ const sidebarMenu = ref([
     to: '/ui-components/buttons',
     roles: ['Medical Staff'], // Accessible only by Medical Staff
   },
-  // {
-  //   title: 'ignore this area',
-  //   icon: 'mdi-exclamation-thick',
-  //   to: '/ui-components/cards',
-  // },
+  {
+    title: 'Dashboard',
+    icon: 'mdi-exclamation-thick',
+    to: '/ui-components/StaffDashboard',
+    roles: ['Medical Staff'],
+  },
   // {
   //   title: 'ignore this area',
   //   icon: 'mdi-exclamation-thick',
