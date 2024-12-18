@@ -11,17 +11,18 @@ const sidebarMenu = ref([
     roles: ['Normal User'], // Accessible by both roles
   },
   {
+    title: 'Dashboard',
+    icon: 'mdi-view-dashboard-outline',
+    to: '/ui-components/StaffDashboard',
+    roles: ['Medical Staff'],
+  },
+  {
     title: 'Appointments',
     icon: 'mdi-form-dropdown',
     to: '/ui-components/Appointments',
     roles: ['Normal User'], // Accessible only by Normal Users
   },
-  {
-    title: 'Ask me Doc!',
-    icon: 'mdi-exclamation-thick',
-    to: '/ui-components/Ai-section/AskMe',
-    roles: ['Normal User', 'Medical Staff'], // Accessible by both roles
-  },
+
   {
     title: 'Manage Schedules',
     icon: 'mdi-form-dropdown',
@@ -29,11 +30,12 @@ const sidebarMenu = ref([
     roles: ['Medical Staff'], // Accessible only by Medical Staff
   },
   {
-    title: 'Dashboard',
+    title: 'Ask me Doc!',
     icon: 'mdi-exclamation-thick',
-    to: '/ui-components/StaffDashboard',
-    roles: ['Medical Staff'],
+    to: '/ui-components/Ai-section/AskMe',
+    roles: ['Normal User', 'Medical Staff'], // Accessible by both roles
   },
+
   // {
   //   title: 'ignore this area',
   //   icon: 'mdi-exclamation-thick',
