@@ -229,6 +229,7 @@ const bookAppointment = async () => {
       throw new Error('User not authenticated or invalid user ID')
     }
 
+    // Check if patient exists or create a new one
     const { data: existingPatient, error: patientError } = await supabase
       .from('patients')
       .select('patient_id')
@@ -250,6 +251,7 @@ const bookAppointment = async () => {
       patient_id = newPatient.patient_id
     }
 
+    // Book the appointment
     const { error: appointmentError } = await supabase.from('appointments').insert([
       {
         patient_id,
@@ -264,8 +266,26 @@ const bookAppointment = async () => {
 
     if (appointmentError) throw appointmentError
 
+    // Update the available_slots in the selected schedule
+    const selectedSchedule = schedules.value.find(
+      (schedule) => schedule.schedule_id === formData.value.schedule_id,
+    )
+    if (!selectedSchedule) throw new Error('Selected schedule not found')
+
+    if (selectedSchedule.available_slots <= 0) {
+      throw new Error('No available slots for the selected schedule')
+    }
+
+    const { error: updateError } = await supabase
+      .from('schedules')
+      .update({ available_slots: selectedSchedule.available_slots - 1 })
+      .eq('schedule_id', selectedSchedule.schedule_id)
+
+    if (updateError) throw updateError
+
     successMessage.value = 'Appointment booked successfully!'
     fetchUserAppointments() // Refresh appointments list after booking
+    fetchSchedules() // Refresh schedules list to update available slots
   } catch (err) {
     console.error('Error booking appointment:', err.message)
     errorMessage.value = `Error: ${err.message}`

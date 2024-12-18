@@ -1,5 +1,9 @@
-<script setup></script>
+<script setup>
+import Schedules from '@/views/staffDashboard/Schedules.vue'
+</script>
 
-<template></template>
+<template>
+  <v-card> <Schedules></Schedules></v-card>
+</template>
 
 <style scope></style>
