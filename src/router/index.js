@@ -70,9 +70,9 @@ const routes = [
         component: () => import('@/views/ui-components/Buttons.vue'),
       },
       {
-        name: 'Cards',
-        path: 'ui-components/cards',
-        component: () => import('@/views/ui-components/Cards.vue'),
+        name: 'DashBoard',
+        path: 'ui-components/StaffDashboard',
+        component: () => import('@/views/ui-components/StaffDashboard.vue'),
       },
       {
         name: 'Menus',
