@@ -22,18 +22,19 @@ export const useUserStore = defineStore('user', {
           console.warn('No active session found:', error?.message || 'User is not logged in.')
           this.user = null
         } else {
-          // Fetch detailed user data
           const { data: userDetails, error: userError } = await supabase.auth.getUser()
           if (userError) {
             console.error('Error fetching user details:', userError.message)
           }
 
-          // Assign user details, including id and metadata
           this.user = {
-            id: session.session.user.id, // User ID
+            id: session.session.user.id,
             name: session.session.user.user_metadata?.name || '',
             email: session.session.user.email,
-            additionalDetails: userDetails?.user || {}, // Store extra user details
+            additionalDetails: {
+              ...userDetails?.user,
+              role: session.session.user.user_metadata?.role || 'Normal User', // Default to 'Normal User'
+            },
           }
         }
       } catch (err) {
