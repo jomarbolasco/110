@@ -9,10 +9,10 @@
       </div>
 
       <!-- Patient Name -->
-      <div class="form-group">
+      <!-- <div class="form-group">
         <label for="name">Patient Name</label>
         <input id="name" v-model="formData.name" type="text" required placeholder="Your name" />
-      </div>
+      </div> -->
 
       <!-- Appointment Type -->
       <div class="form-group">
