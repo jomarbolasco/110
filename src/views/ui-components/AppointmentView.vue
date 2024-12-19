@@ -89,6 +89,20 @@
           <div v-if="appointment.schedules?.medical_staff?.name">
             <strong>Assigned Staff:</strong> {{ appointment.schedules.medical_staff.name }}
           </div>
+          <!-- Cancel Button for Scheduled Appointments -->
+          <button
+            v-if="appointment.status !== 'canceled'"
+            @click="cancelAppointment(appointment.appointment_id)"
+          >
+            Cancel Appointment
+          </button>
+          <!-- Delete Button for Canceled Appointments -->
+          <button
+            v-if="appointment.status === 'canceled'"
+            @click="deleteAppointment(appointment.appointment_id)"
+          >
+            Delete Appointment
+          </button>
         </li>
       </ul>
     </div>
@@ -314,6 +328,43 @@ const bookAppointment = async () => {
     errorMessage.value = `Error: ${err.message}`
   } finally {
     loading.value = false
+  }
+}
+
+// Cancel an Appointment
+const cancelAppointment = async (appointmentId) => {
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'canceled' })
+      .eq('appointment_id', appointmentId)
+
+    if (error) throw error
+
+    successMessage.value = 'Appointment canceled successfully!'
+    fetchUserAppointments() // Refresh the appointments list
+  } catch (err) {
+    console.error('Error canceling appointment:', err.message)
+    errorMessage.value = `Error: ${err.message}`
+  }
+}
+
+// Delete an Appointment if Canceled
+const deleteAppointment = async (appointmentId) => {
+  try {
+    // First, delete the appointment from the database
+    const { error } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('appointment_id', appointmentId)
+
+    if (error) throw error
+
+    successMessage.value = 'Appointment deleted successfully!'
+    fetchUserAppointments() // Refresh the appointments list
+  } catch (err) {
+    console.error('Error deleting appointment:', err.message)
+    errorMessage.value = `Error: ${err.message}`
   }
 }
 
