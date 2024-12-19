@@ -5,9 +5,9 @@
     <!-- Appointment Form -->
     <form @submit.prevent="bookAppointment">
       <div class="form-group">
-        <label for="schedule">Available Schedules</label>
-        <FullCalendar :events="calendarEvents" :options="calendarOptions" ref="calendar" />
+        <!-- Removed calendar here -->
       </div>
+
       <!-- Patient Name -->
       <div class="form-group">
         <label for="name">Patient Name</label>
@@ -114,29 +114,12 @@
     </p>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
-import FullCalendar from '@fullcalendar/vue3'
-import dayGridPlugin from '@fullcalendar/daygrid'
 
-const calendarEvents = ref([])
-
-// const selectedScheduleStaff = ref('');
-
-const handleEventClick = (info) => {
-  const selectedSchedule = info.event.extendedProps
-  formData.value.schedule_id = selectedSchedule.schedule_id
-  selectedScheduleStaff.value = `Assigned Staff: ${selectedSchedule.staff.name}`
-}
-
-const calendarOptions = computed(() => ({
-  // Use computed property
-  plugins: [dayGridPlugin],
-  initialView: 'dayGridMonth',
-  eventClick: handleEventClick, // Now handleEventClick is defined
-}))
+const calendarEvents = ref([]) // This is no longer needed
+const calendarOptions = ref({}) // This is no longer needed
 
 // State Variables
 const appointmentTypes = ref([])
@@ -184,17 +167,8 @@ const fetchSchedules = async () => {
   const { data, error } = await supabase
     .from('schedules')
     .select(
-      `
-      schedule_id,
-      schedule_date,
-      start_time,
-      end_time,
-      available_slots,
-      staff:staff_id(name),  
-      appointment_types:appointment_type_id(type_name)
-    `, // Fetching the assigned staff's name
+      `schedule_id, schedule_date, start_time, end_time, available_slots, staff:staff_id(name), appointment_types:appointment_type_id(type_name)`,
     )
-    .eq('appointment_type_id', formData.value.appointment_type_id)
 
   if (error) {
     console.error('Error fetching schedules:', error.message)
@@ -219,16 +193,7 @@ const fetchUserAppointments = async () => {
     const { data, error } = await supabase
       .from('appointments')
       .select(
-        `
-        appointment_id,
-        appointment_date_time,
-        status,
-        reason,
-        schedules (
-          appointment_types (type_name),
-          medical_staff (name)  
-        )
-      `, // Corrected to use dot notation
+        `appointment_id, appointment_date_time, status, reason, schedules (appointment_types (type_name), medical_staff (name))`,
       )
       .eq('booked_by_user_id', user.id)
 
@@ -352,7 +317,6 @@ const cancelAppointment = async (appointmentId) => {
 // Delete an Appointment if Canceled
 const deleteAppointment = async (appointmentId) => {
   try {
-    // First, delete the appointment from the database
     const { error } = await supabase
       .from('appointments')
       .delete()
@@ -372,17 +336,8 @@ onMounted(async () => {
   await fetchAppointmentTypes()
   await fetchUserAppointments()
   await fetchSchedules()
-
-  const formattedSchedules = schedules.value.map((schedule) => ({
-    title: `${schedule.appointment_types.type_name} - ${schedule.start_time} - ${schedule.end_time}`,
-    start: schedule.schedule_date, // Use 'start' for date
-    allDay: true,
-    extendedProps: schedule,
-  }))
-  calendarEvents.value = formattedSchedules
 })
 </script>
-
 <style scoped>
 .appointment-container {
   max-width: 600px;
