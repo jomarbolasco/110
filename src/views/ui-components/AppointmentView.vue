@@ -4,6 +4,10 @@
 
     <!-- Appointment Form -->
     <form @submit.prevent="bookAppointment">
+      <div class="form-group">
+        <!-- Removed calendar here -->
+      </div>
+
       <!-- Patient Name -->
       <div class="form-group">
         <label for="name">Patient Name</label>
@@ -85,6 +89,20 @@
           <div v-if="appointment.schedules?.medical_staff?.name">
             <strong>Assigned Staff:</strong> {{ appointment.schedules.medical_staff.name }}
           </div>
+          <!-- Cancel Button for Scheduled Appointments -->
+          <button
+            v-if="appointment.status !== 'canceled'"
+            @click="cancelAppointment(appointment.appointment_id)"
+          >
+            Cancel Appointment
+          </button>
+          <!-- Delete Button for Canceled Appointments -->
+          <button
+            v-if="appointment.status === 'canceled'"
+            @click="deleteAppointment(appointment.appointment_id)"
+          >
+            Delete Appointment
+          </button>
         </li>
       </ul>
     </div>
@@ -96,10 +114,12 @@
     </p>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
+
+const calendarEvents = ref([]) // This is no longer needed
+const calendarOptions = ref({}) // This is no longer needed
 
 // State Variables
 const appointmentTypes = ref([])
@@ -147,17 +167,8 @@ const fetchSchedules = async () => {
   const { data, error } = await supabase
     .from('schedules')
     .select(
-      `
-      schedule_id,
-      schedule_date,
-      start_time,
-      end_time,
-      available_slots,
-      staff:staff_id(name),  
-      appointment_types:appointment_type_id(type_name)
-    `, // Fetching the assigned staff's name
+      `schedule_id, schedule_date, start_time, end_time, available_slots, staff:staff_id(name), appointment_types:appointment_type_id(type_name)`,
     )
-    .eq('appointment_type_id', formData.value.appointment_type_id)
 
   if (error) {
     console.error('Error fetching schedules:', error.message)
@@ -182,16 +193,7 @@ const fetchUserAppointments = async () => {
     const { data, error } = await supabase
       .from('appointments')
       .select(
-        `
-        appointment_id,
-        appointment_date_time,
-        status,
-        reason,
-        schedules (
-          appointment_types (type_name),
-          medical_staff (name)  
-        )
-      `, // Corrected to use dot notation
+        `appointment_id, appointment_date_time, status, reason, schedules (appointment_types (type_name), medical_staff (name))`,
       )
       .eq('booked_by_user_id', user.id)
 
@@ -294,12 +296,98 @@ const bookAppointment = async () => {
   }
 }
 
-onMounted(() => {
-  fetchAppointmentTypes()
-  fetchUserAppointments()
+const cancelAppointment = async (appointmentId) => {
+  if (!appointmentId) {
+    errorMessage.value = 'Invalid appointment ID.'
+    return
+  }
+
+  try {
+    // Fetch the appointment to check its details (including schedule_id)
+    const { data: appointmentData, error: fetchAppointmentError } = await supabase
+      .from('appointments')
+      .select('appointment_id, schedule_id') // Fetch the schedule_id here
+      .eq('appointment_id', appointmentId)
+      .single()
+
+    if (fetchAppointmentError || !appointmentData) {
+      throw new Error('Failed to fetch appointment data or schedule ID is missing')
+    }
+
+    const { schedule_id } = appointmentData // Get the schedule_id from the fetched appointment data
+
+    // Mark the appointment as canceled
+    const { error: updateStatusError } = await supabase
+      .from('appointments')
+      .update({ status: 'canceled' })
+      .eq('appointment_id', appointmentId)
+
+    if (updateStatusError) throw updateStatusError
+
+    successMessage.value = 'Appointment canceled successfully!'
+    fetchUserAppointments() // Refresh the appointments list
+
+    // Ensure that the schedule_id exists before proceeding with slot update
+    if (!schedule_id) {
+      errorMessage.value = 'Schedule not found for the canceled appointment.'
+      return
+    }
+
+    // Fetch the current available slots for the schedule
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from('schedules')
+      .select('available_slots')
+      .eq('schedule_id', schedule_id)
+      .single()
+
+    if (scheduleError || !scheduleData) {
+      throw new Error('Error fetching schedule data.')
+    }
+
+    // Increment the available slots by 1
+    const newAvailableSlots = scheduleData.available_slots + 1
+    console.log(`New available slots for schedule ${schedule_id}: ${newAvailableSlots}`)
+
+    // Update the schedule with the new available slots
+    const { error: updateScheduleError } = await supabase
+      .from('schedules')
+      .update({ available_slots: newAvailableSlots })
+      .eq('schedule_id', schedule_id)
+
+    if (updateScheduleError) throw updateScheduleError
+
+    // After successfully updating the slots, fetch the schedules again
+    fetchSchedules()
+  } catch (err) {
+    console.error('Error canceling appointment:', err.message)
+    errorMessage.value = `Error: ${err.message}`
+  }
+}
+
+// Delete an Appointment if Canceled
+const deleteAppointment = async (appointmentId) => {
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('appointment_id', appointmentId)
+
+    if (error) throw error
+
+    successMessage.value = 'Appointment deleted successfully!'
+    fetchUserAppointments() // Refresh the appointments list
+  } catch (err) {
+    console.error('Error deleting appointment:', err.message)
+    errorMessage.value = `Error: ${err.message}`
+  }
+}
+
+onMounted(async () => {
+  await fetchAppointmentTypes()
+  await fetchUserAppointments()
+  await fetchSchedules()
 })
 </script>
-
 <style scoped>
 .appointment-container {
   max-width: 600px;
