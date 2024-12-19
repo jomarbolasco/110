@@ -15,7 +15,7 @@ export const formActionDefault = {
 
 // Create Appointment function
 export const createAppointment = async (appointmentData) => {
-  const { data, error } = await supabase.from('Appointments').insert([appointmentData])
+  const { data, error } = await supabase.from('appointments').insert([appointmentData])
 
   if (error) {
     throw new Error(`Failed to create appointment: ${error.message}`)
@@ -23,9 +23,9 @@ export const createAppointment = async (appointmentData) => {
 
   // Update available slots for the schedule
   const { error: updateError } = await supabase
-    .from('Schedules')
+    .from('schedules')
     .update({
-      available_slots: supabase.raw('available_slots - 1'), // Decrease slot by 1
+      available_slots: supabase.rpc('available_slots - 1'), // Decrease slot by 1
     })
     .eq('schedule_id', appointmentData.schedule_id)
 

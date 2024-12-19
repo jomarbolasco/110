@@ -296,18 +296,68 @@ const bookAppointment = async () => {
   }
 }
 
-// Cancel an Appointment
 const cancelAppointment = async (appointmentId) => {
+  if (!appointmentId) {
+    errorMessage.value = 'Invalid appointment ID.'
+    return
+  }
+
   try {
-    const { error } = await supabase
+    // Fetch the appointment to check its details (including schedule_id)
+    const { data: appointmentData, error: fetchAppointmentError } = await supabase
+      .from('appointments')
+      .select('appointment_id, schedule_id') // Fetch the schedule_id here
+      .eq('appointment_id', appointmentId)
+      .single()
+
+    if (fetchAppointmentError || !appointmentData) {
+      throw new Error('Failed to fetch appointment data or schedule ID is missing')
+    }
+
+    const { schedule_id } = appointmentData // Get the schedule_id from the fetched appointment data
+
+    // Mark the appointment as canceled
+    const { error: updateStatusError } = await supabase
       .from('appointments')
       .update({ status: 'canceled' })
       .eq('appointment_id', appointmentId)
 
-    if (error) throw error
+    if (updateStatusError) throw updateStatusError
 
     successMessage.value = 'Appointment canceled successfully!'
     fetchUserAppointments() // Refresh the appointments list
+
+    // Ensure that the schedule_id exists before proceeding with slot update
+    if (!schedule_id) {
+      errorMessage.value = 'Schedule not found for the canceled appointment.'
+      return
+    }
+
+    // Fetch the current available slots for the schedule
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from('schedules')
+      .select('available_slots')
+      .eq('schedule_id', schedule_id)
+      .single()
+
+    if (scheduleError || !scheduleData) {
+      throw new Error('Error fetching schedule data.')
+    }
+
+    // Increment the available slots by 1
+    const newAvailableSlots = scheduleData.available_slots + 1
+    console.log(`New available slots for schedule ${schedule_id}: ${newAvailableSlots}`)
+
+    // Update the schedule with the new available slots
+    const { error: updateScheduleError } = await supabase
+      .from('schedules')
+      .update({ available_slots: newAvailableSlots })
+      .eq('schedule_id', schedule_id)
+
+    if (updateScheduleError) throw updateScheduleError
+
+    // After successfully updating the slots, fetch the schedules again
+    fetchSchedules()
   } catch (err) {
     console.error('Error canceling appointment:', err.message)
     errorMessage.value = `Error: ${err.message}`
