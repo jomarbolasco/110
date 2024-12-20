@@ -1,212 +1,3 @@
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { supabase } from '@/components/util/supabase'
-import { useUserStore } from '@/stores/userStore'
-import { useRouter } from 'vue-router'
-
-const userStore = useUserStore()
-const router = useRouter()
-const availableSchedules = ref([])
-const mySchedules = ref([])
-const selectedSchedule = ref(null)
-const appointments = ref([])
-const showModal = ref(false)
-const newSchedule = ref({
-  schedule_date: '',
-  start_time: '',
-  end_time: '',
-  available_slots: 0,
-  appointment_type: {
-    type_name: '',
-    description: '',
-  },
-  appointment_type_id: null,
-  staff_id: null,
-})
-const activeTab = ref('schedules')
-
-const fetchAvailableSchedules = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('schedules')
-      .select(
-        `
-        schedule_id,
-        schedule_date,
-        start_time,
-        end_time,
-        available_slots,
-        medical_staff (
-          name
-        ),
-        appointment_types (
-          type_name
-        )
-      `,
-      )
-      .gt('available_slots', 0) // Only fetch schedules with available slots
-
-    if (error) {
-      console.error('Error fetching available schedules:', error.message)
-      availableSchedules.value = []
-    } else {
-      availableSchedules.value = data
-    }
-  } catch (err) {
-    console.error('Unexpected error fetching available schedules:', err.message)
-    availableSchedules.value = []
-  }
-}
-
-const fetchMySchedules = async (staffId) => {
-  try {
-    const { data, error } = await supabase
-      .from('schedules')
-      .select(
-        `
-        schedule_id,
-        schedule_date,
-        start_time,
-        end_time,
-        available_slots,
-        appointment_types (
-          type_name
-        )
-      `,
-      )
-      .eq('staff_id', staffId)
-
-    if (error) {
-      console.error('Error fetching my schedules:', error.message)
-      mySchedules.value = []
-    } else {
-      mySchedules.value = data
-    }
-  } catch (err) {
-    console.error('Unexpected error fetching my schedules:', err.message)
-    mySchedules.value = []
-  }
-}
-
-const fetchStaffId = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('medical_staff')
-      .select('staff_id')
-      .eq('user_id', userStore.user.id)
-      .single()
-
-    if (error) {
-      console.error('Error fetching staff ID:', error.message)
-      return null
-    } else {
-      return data.staff_id
-    }
-  } catch (err) {
-    console.error('Unexpected error fetching staff ID:', err.message)
-    return null
-  }
-}
-
-const fetchAppointments = async (scheduleId) => {
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('appointment_id, patient_id, appointment_date_time, status, patients(name)')
-      .eq('schedule_id', scheduleId)
-
-    if (error) {
-      console.error('Error fetching appointments:', error.message)
-      appointments.value = []
-    } else {
-      appointments.value = data
-    }
-  } catch (err) {
-    console.error('Unexpected error fetching appointments:', err.message)
-    appointments.value = []
-  }
-}
-
-const setSchedule = async () => {
-  try {
-    // Fetch the staff ID
-    const staffId = await fetchStaffId()
-    if (!staffId) {
-      console.error('Staff ID not found')
-      return
-    }
-
-    // Insert the new appointment type first
-    const { data: appointmentTypeData, error: appointmentTypeError } = await supabase
-      .from('appointment_types')
-      .insert([newSchedule.value.appointment_type])
-      .select('appointment_type_id')
-      .single()
-
-    if (appointmentTypeError) {
-      console.error('Error setting appointment type:', appointmentTypeError.message)
-      return
-    }
-
-    console.log('Appointment Type Data:', appointmentTypeData)
-
-    // Set the appointment_type_id in the new schedule
-    newSchedule.value.appointment_type_id = appointmentTypeData.appointment_type_id
-
-    // Set the staff_id from the fetched staff ID
-    newSchedule.value.staff_id = staffId
-
-    // Insert the new schedule
-    const { error: scheduleError } = await supabase.from('schedules').insert([
-      {
-        schedule_date: newSchedule.value.schedule_date,
-        start_time: newSchedule.value.start_time,
-        end_time: newSchedule.value.end_time,
-        available_slots: newSchedule.value.available_slots,
-        appointment_type_id: newSchedule.value.appointment_type_id,
-        staff_id: newSchedule.value.staff_id,
-      },
-    ])
-
-    if (scheduleError) {
-      console.error('Error setting schedule:', scheduleError.message)
-    } else {
-      await fetchAvailableSchedules()
-      await fetchMySchedules(staffId)
-      // Reset the form
-      newSchedule.value = {
-        schedule_date: '',
-        start_time: '',
-        end_time: '',
-        available_slots: 0,
-        appointment_type: {
-          type_name: '',
-          description: '',
-        },
-        appointment_type_id: null,
-        staff_id: null,
-      }
-    }
-  } catch (err) {
-    console.error('Unexpected error setting schedule:', err.message)
-  }
-}
-
-const handleScheduleClick = async (schedule) => {
-  selectedSchedule.value = schedule
-  await fetchAppointments(schedule.schedule_id)
-  showModal.value = true
-}
-
-onMounted(async () => {
-  await fetchAvailableSchedules()
-  const staffId = await fetchStaffId()
-  if (staffId) {
-    await fetchMySchedules(staffId)
-  }
-})
-</script>
-
 <template>
   <v-row>
     <v-col cols="12" sm="12">
@@ -383,11 +174,330 @@ onMounted(async () => {
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue darken-1" text="true" @click="showModal = false">Close</v-btn>
+        <v-btn color="green darken-1" text @click="editSchedule">Modify</v-btn>
+        <v-btn v-if="appointments.length === 0" color="red darken-1" text @click="deleteSchedule"
+          >Delete</v-btn
+        >
+        <v-btn color="blue darken-1" text @click="showModal = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Modal for editing schedule -->
+  <v-dialog v-model="showEditModal" max-width="600px">
+    <v-card>
+      <v-card-title>
+        <span class="headline">Edit Schedule</span>
+      </v-card-title>
+      <v-card-text>
+        <v-form @submit.prevent="updateSchedule">
+          <v-text-field
+            v-model="editScheduleData.schedule_date"
+            label="Schedule Date"
+            type="date"
+            required
+          ></v-text-field>
+          <v-text-field
+            v-model="editScheduleData.start_time"
+            label="Start Time"
+            type="time"
+            required
+          ></v-text-field>
+          <v-text-field
+            v-model="editScheduleData.end_time"
+            label="End Time"
+            type="time"
+            required
+          ></v-text-field>
+          <v-text-field
+            v-model="editScheduleData.available_slots"
+            label="Available Slots"
+            type="number"
+            required
+          ></v-text-field>
+          <v-btn type="submit" color="primary">Save Changes</v-btn>
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue darken-1" text @click="showEditModal = false">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { supabase } from '@/components/util/supabase'
+import { useUserStore } from '@/stores/userStore'
+
+const userStore = useUserStore()
+const availableSchedules = ref([])
+const mySchedules = ref([])
+const selectedSchedule = ref(null)
+const appointments = ref([])
+const showModal = ref(false)
+const showEditModal = ref(false)
+const newSchedule = ref({
+  schedule_date: '',
+  start_time: '',
+  end_time: '',
+  available_slots: 0,
+  appointment_type: {
+    type_name: '',
+    description: '',
+  },
+  appointment_type_id: null,
+  staff_id: null,
+})
+const editScheduleData = ref({
+  schedule_date: '',
+  start_time: '',
+  end_time: '',
+  available_slots: 0,
+})
+const activeTab = ref('schedules')
+
+const fetchAvailableSchedules = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('schedules')
+      .select(
+        `
+        schedule_id,
+        schedule_date,
+        start_time,
+        end_time,
+        available_slots,
+        medical_staff (
+          name
+        ),
+        appointment_types (
+          type_name
+        )
+      `,
+      )
+      .gt('available_slots', 0) // Only fetch schedules with available slots
+
+    if (error) {
+      console.error('Error fetching available schedules:', error.message)
+      availableSchedules.value = []
+    } else {
+      availableSchedules.value = data
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching available schedules:', err.message)
+    availableSchedules.value = []
+  }
+}
+
+const fetchMySchedules = async (staffId) => {
+  try {
+    const { data, error } = await supabase
+      .from('schedules')
+      .select(
+        `
+        schedule_id,
+        schedule_date,
+        start_time,
+        end_time,
+        available_slots,
+        appointment_types (
+          type_name
+        )
+      `,
+      )
+      .eq('staff_id', staffId)
+
+    if (error) {
+      console.error('Error fetching my schedules:', error.message)
+      mySchedules.value = []
+    } else {
+      mySchedules.value = data
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching my schedules:', err.message)
+    mySchedules.value = []
+  }
+}
+
+const fetchStaffId = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('medical_staff')
+      .select('staff_id')
+      .eq('user_id', userStore.user.id)
+      .single()
+
+    if (error) {
+      console.error('Error fetching staff ID:', error.message)
+      return null
+    } else {
+      return data.staff_id
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching staff ID:', err.message)
+    return null
+  }
+}
+
+const fetchAppointments = async (scheduleId) => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('appointment_id, patient_id, appointment_date_time, status, patients(name)')
+      .eq('schedule_id', scheduleId)
+
+    if (error) {
+      console.error('Error fetching appointments:', error.message)
+      appointments.value = []
+    } else {
+      appointments.value = data
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching appointments:', err.message)
+    appointments.value = []
+  }
+}
+
+const setSchedule = async () => {
+  try {
+    // Fetch the staff ID
+    const staffId = await fetchStaffId()
+    if (!staffId) {
+      console.error('Staff ID not found')
+      return
+    }
+
+    // Insert the new appointment type first
+    const { data: appointmentTypeData, error: appointmentTypeError } = await supabase
+      .from('appointment_types')
+      .insert([newSchedule.value.appointment_type])
+      .select('appointment_type_id')
+      .single()
+
+    if (appointmentTypeError) {
+      console.error('Error setting appointment type:', appointmentTypeError.message)
+      return
+    }
+
+    console.log('Appointment Type Data:', appointmentTypeData)
+
+    // Set the appointment_type_id in the new schedule
+    newSchedule.value.appointment_type_id = appointmentTypeData.appointment_type_id
+
+    // Set the staff_id from the fetched staff ID
+    newSchedule.value.staff_id = staffId
+
+    // Insert the new schedule
+    const { error: scheduleError } = await supabase.from('schedules').insert([
+      {
+        schedule_date: newSchedule.value.schedule_date,
+        start_time: newSchedule.value.start_time,
+        end_time: newSchedule.value.end_time,
+        available_slots: newSchedule.value.available_slots,
+        appointment_type_id: newSchedule.value.appointment_type_id,
+        staff_id: newSchedule.value.staff_id,
+      },
+    ])
+
+    if (scheduleError) {
+      console.error('Error setting schedule:', scheduleError.message)
+    } else {
+      await fetchAvailableSchedules()
+      await fetchMySchedules(staffId)
+      // Reset the form
+      newSchedule.value = {
+        schedule_date: '',
+        start_time: '',
+        end_time: '',
+        available_slots: 0,
+        appointment_type: {
+          type_name: '',
+          description: '',
+        },
+        appointment_type_id: null,
+        staff_id: null,
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error setting schedule:', err.message)
+  }
+}
+
+const handleScheduleClick = async (schedule) => {
+  selectedSchedule.value = schedule
+  await fetchAppointments(schedule.schedule_id)
+  showModal.value = true
+}
+
+const editSchedule = () => {
+  // Populate the edit form with the selected schedule data
+  editScheduleData.value = {
+    schedule_date: selectedSchedule.value.schedule_date,
+    start_time: selectedSchedule.value.start_time,
+    end_time: selectedSchedule.value.end_time,
+    available_slots: selectedSchedule.value.available_slots,
+  }
+  showEditModal.value = true
+}
+
+const updateSchedule = async () => {
+  try {
+    const { error } = await supabase
+      .from('schedules')
+      .update({
+        schedule_date: editScheduleData.value.schedule_date,
+        start_time: editScheduleData.value.start_time,
+        end_time: editScheduleData.value.end_time,
+        available_slots: editScheduleData.value.available_slots,
+      })
+      .eq('schedule_id', selectedSchedule.value.schedule_id)
+
+    if (error) {
+      console.error('Error updating schedule:', error.message)
+    } else {
+      showEditModal.value = false
+      showModal.value = false
+      const staffId = await fetchStaffId()
+      if (staffId) {
+        await fetchMySchedules(staffId)
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error updating schedule:', err.message)
+  }
+}
+
+const deleteSchedule = async () => {
+  try {
+    const { error } = await supabase
+      .from('schedules')
+      .delete()
+      .eq('schedule_id', selectedSchedule.value.schedule_id)
+
+    if (error) {
+      console.error('Error deleting schedule:', error.message)
+    } else {
+      showModal.value = false
+      const staffId = await fetchStaffId()
+      if (staffId) {
+        await fetchMySchedules(staffId)
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error deleting schedule:', err.message)
+  }
+}
+
+onMounted(async () => {
+  await fetchAvailableSchedules()
+  const staffId = await fetchStaffId()
+  if (staffId) {
+    await fetchMySchedules(staffId)
+  }
+})
+</script>
 
 <style scoped>
 .hover-card {
