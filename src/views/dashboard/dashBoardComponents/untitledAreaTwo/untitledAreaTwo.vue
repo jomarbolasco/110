@@ -21,17 +21,45 @@ const cancelAppointment = async () => {
   if (!selectedSchedule.value) return
 
   try {
-    const { error } = await supabase
+    // Step 1: Cancel the appointment
+    const { error: appointmentError } = await supabase
       .from('appointments')
       .update({ status: 'cancelled' })
       .eq('appointment_id', selectedSchedule.value.appointment_id)
 
-    if (error) {
-      console.error('Error cancelling appointment:', error.message)
-    } else {
-      await userStore.fetchBookedSchedules()
-      closeModal()
+    if (appointmentError) {
+      console.error('Error cancelling appointment:', appointmentError.message)
+      return
     }
+
+    // Step 2: Retrieve the current available slots
+    const { data: scheduleData, error: fetchError } = await supabase
+      .from('schedules')
+      .select('available_slots')
+      .eq('schedule_id', selectedSchedule.value.schedules.schedule_id)
+      .single()
+
+    if (fetchError) {
+      console.error('Error fetching schedule:', fetchError.message)
+      return
+    }
+
+    const currentAvailableSlots = scheduleData.available_slots
+
+    // Step 3: Increment the available slots
+    const { error: slotError } = await supabase
+      .from('schedules')
+      .update({ available_slots: currentAvailableSlots + 1 })
+      .eq('schedule_id', selectedSchedule.value.schedules.schedule_id)
+
+    if (slotError) {
+      console.error('Error updating available slots:', slotError.message)
+      return
+    }
+
+    // Step 4: Refresh the user's booked schedules
+    await userStore.fetchBookedSchedules()
+    closeModal()
   } catch (err) {
     console.error('Unexpected error cancelling appointment:', err.message)
   }
