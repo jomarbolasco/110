@@ -140,4 +140,8 @@ watch(route, () => {
 .active-item .v-icon {
   color: white; /* Ensure the icon color is visible */
 }
+
+.active {
+  font-weight: bold;
+}
 </style>
