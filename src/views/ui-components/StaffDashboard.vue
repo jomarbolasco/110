@@ -15,7 +15,7 @@
       </v-btn>
     </v-col>
 
-    <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'schedules'">
+    <v-col cols="12" lg="12" class="d-flex align-items-stretch" v-if="activeTab === 'schedules'">
       <v-card class="w-100">
         <v-card-title>Available Schedules</v-card-title>
         <v-card-text>
@@ -161,6 +161,9 @@
                     <v-icon class="mr-2" color="blue darken-2">mdi-calendar</v-icon>
                     Status: <strong>{{ appointment.status }}</strong>
                   </div>
+                  <v-btn color="primary" text="elevated" @click="showReason(appointment.reason)"
+                    >View Reason</v-btn
+                  >
                 </v-card-text>
               </v-card>
             </v-col>
@@ -174,11 +177,15 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="green darken-1" text @click="editSchedule">Modify</v-btn>
-        <v-btn v-if="appointments.length === 0" color="red darken-1" text @click="deleteSchedule"
+        <v-btn color="green darken-1" text="elevated" @click="editSchedule">Modify</v-btn>
+        <v-btn
+          v-if="appointments.length === 0"
+          color="red darken-1"
+          text="elevated"
+          @click="deleteSchedule"
           >Delete</v-btn
         >
-        <v-btn color="blue darken-1" text @click="showModal = false">Close</v-btn>
+        <v-btn color="blue darken-1" text="elevated" @click="showModal = false">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -220,7 +227,23 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue darken-1" text @click="showEditModal = false">Close</v-btn>
+        <v-btn color="blue darken-1" text="elevated" @click="showEditModal = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Modal for viewing reason -->
+  <v-dialog v-model="showReasonModal" max-width="600px">
+    <v-card>
+      <v-card-title>
+        <span class="headline">Appointment Reason</span>
+      </v-card-title>
+      <v-card-text>
+        <p>{{ appointmentReason }}</p>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue darken-1" text="elevated" @click="showReasonModal = false">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -238,6 +261,8 @@ const selectedSchedule = ref(null)
 const appointments = ref([])
 const showModal = ref(false)
 const showEditModal = ref(false)
+const showReasonModal = ref(false)
+const appointmentReason = ref('')
 const newSchedule = ref({
   schedule_date: '',
   start_time: '',
@@ -345,7 +370,7 @@ const fetchAppointments = async (scheduleId) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select('appointment_id, patient_id, appointment_date_time, status, patients(name)')
+      .select('appointment_id, patient_id, appointment_date_time, status, reason, patients(name)')
       .eq('schedule_id', scheduleId)
 
     if (error) {
@@ -488,6 +513,11 @@ const deleteSchedule = async () => {
   } catch (err) {
     console.error('Unexpected error deleting schedule:', err.message)
   }
+}
+
+const showReason = (reason) => {
+  appointmentReason.value = reason
+  showReasonModal.value = true
 }
 
 onMounted(async () => {
