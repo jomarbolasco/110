@@ -123,6 +123,10 @@
                   <v-icon class="mr-2" color="green darken-2">mdi-account-multiple</v-icon>
                   Available Slots: <strong>{{ schedule.available_slots }}</strong>
                 </div>
+                <div>
+                  <v-icon class="mr-2" color="blue darken-2">mdi-account-group</v-icon>
+                  Appointments: <strong>{{ schedule.appointment_count }}</strong>
+                </div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -348,6 +352,9 @@ const fetchMySchedules = async (staffId) => {
           type_name,
           description,
           appointment_type_id
+        ),
+        appointments (
+          appointment_id
         )
       `,
       )
@@ -357,7 +364,10 @@ const fetchMySchedules = async (staffId) => {
       console.error('Error fetching my schedules:', error.message)
       mySchedules.value = []
     } else {
-      mySchedules.value = data
+      mySchedules.value = data.map((schedule) => ({
+        ...schedule,
+        appointment_count: schedule.appointments.length,
+      }))
     }
   } catch (err) {
     console.error('Unexpected error fetching my schedules:', err.message)
