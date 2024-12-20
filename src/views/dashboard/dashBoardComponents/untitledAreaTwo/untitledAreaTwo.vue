@@ -1,115 +1,150 @@
-<script setup lang="ts">
-import { ref } from 'vue'
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useUserStore } from '@/stores/userStore'
+import { supabase } from '@/components/util/supabase'
 
-const select = ref('March')
-const items = ref(['March', 'April', 'May', 'June'])
+const userStore = useUserStore()
+const selectedSchedule = ref(null)
+const showModal = ref(false)
 
-const monthtable = ref([
-  {
-    id: 1,
-    activestate: '',
-    leadname: 'Sunil Joshi',
-    leademail: 'Web Designer',
-    projectname: 'Elite Admin',
-    statuscolor: 'blue lighten-1 white--text',
-    statustext: 'Low',
-    money: '$3.9K',
-  },
-  {
-    id: 2,
-    activestate: '',
-    leadname: 'Andrew',
-    leademail: 'Project Manager',
-    projectname: 'Real Homes',
-    statuscolor: 'info',
-    statustext: 'Medium',
-    money: '$23.9K',
-  },
-  {
-    id: 3,
-    activestate: '',
-    leadname: 'Bhavesh patel',
-    leademail: 'Developer',
-    projectname: 'MedicalPro Theme',
-    statuscolor: 'warning',
-    statustext: 'High',
-    money: '$12.9K',
-  },
-  {
-    id: 4,
-    activestate: '',
-    leadname: 'Nirav Joshi',
-    leademail: 'Frontend Eng',
-    projectname: 'Elite Admin',
-    statuscolor: 'error',
-    statustext: 'Low',
-    money: '$10.9K',
-  },
-])
+const openModal = (schedule) => {
+  selectedSchedule.value = schedule
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+  selectedSchedule.value = null
+}
+
+const cancelAppointment = async () => {
+  if (!selectedSchedule.value) return
+
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'cancelled' })
+      .eq('appointment_id', selectedSchedule.value.appointment_id)
+
+    if (error) {
+      console.error('Error cancelling appointment:', error.message)
+    } else {
+      await userStore.fetchBookedSchedules()
+      closeModal()
+    }
+  } catch (err) {
+    console.error('Unexpected error cancelling appointment:', err.message)
+  }
+}
+
+const deleteAppointment = async () => {
+  if (!selectedSchedule.value) return
+
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('appointment_id', selectedSchedule.value.appointment_id)
+
+    if (error) {
+      console.error('Error deleting appointment:', error.message)
+    } else {
+      await userStore.fetchBookedSchedules()
+      closeModal()
+    }
+  } catch (err) {
+    console.error('Unexpected error deleting appointment:', err.message)
+  }
+}
+
+onMounted(async () => {
+  await userStore.fetchBookedSchedules()
+})
 </script>
 
 <template>
   <v-card class="w-100 h-100">
+    <v-card-title>Your Booked Schedules</v-card-title>
     <v-card-text>
-      <div class="d-sm-flex align-center">
-        <div>
-          <h2 class="title text-h6 font-weight-medium">Sample Area</h2>
-        </div>
-        <v-spacer></v-spacer>
-        <div class="ml-auto">
-          <v-select
-            v-model="select"
-            :items="items"
-            variant="outlined"
-            dense
-            hide-details
-          ></v-select>
-        </div>
-      </div>
-      <v-table class="month-table mt-7">
-        <template v-slot:default>
-          <thead>
-            <tr>
-              <th class="font-weight-medium text-subtitle-1">Id</th>
-              <th class="font-weight-medium text-subtitle-1">Assigned</th>
-              <th class="font-weight-medium text-subtitle-1">Name</th>
-              <th class="font-weight-medium text-subtitle-1">Priority</th>
-              <th class="font-weight-medium text-subtitle-1">Budget</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="item in monthtable"
-              :key="item.leadname"
-              :class="item.activestate"
-              class="month-item"
-            >
-              <td>{{ item.id }}</td>
-              <td>
-                <h4 class="font-weight-bold text-no-wrap">
-                  {{ item.leadname }}
-                </h4>
-                <h6 class="text-no-wrap font-weight-regular text-body-2 text-grey-darken-1">
-                  {{ item.leademail }}
-                </h6>
-              </td>
-              <td>
-                <h5 class="font-weight-medium text-no-wrap text-body-2 text-grey-darken-1">
-                  {{ item.projectname }}
-                </h5>
-              </td>
-              <td>
-                <v-chip class="ma-2" :color="item.statuscolor" size="small" label>{{
-                  item.statustext
-                }}</v-chip>
-              </td>
-              <td>
-                <h4>{{ item.money }}</h4>
-              </td>
-            </tr>
-          </tbody>
-        </template>
-      </v-table>
+      <v-container>
+        <v-row v-if="userStore.bookedSchedules.length > 0" dense>
+          <v-col
+            v-for="schedule in userStore.bookedSchedules"
+            :key="schedule.appointment_id"
+            cols="12"
+            md="6"
+          >
+            <v-card class="mb-4 hover-card" outlined @click="openModal(schedule)">
+              <v-card-title>
+                <strong>{{ schedule.schedules.appointment_types.type_name }}</strong>
+              </v-card-title>
+              <v-card-subtitle>
+                on {{ new Date(schedule.appointment_date_time).toLocaleString() }}
+              </v-card-subtitle>
+              <v-card-text>
+                <div>
+                  Status: <strong>{{ schedule.status }}</strong>
+                </div>
+                <div>Reason: {{ schedule.reason }}</div>
+                <div v-if="schedule.schedules.medical_staff.name">
+                  <strong>Assigned Staff:</strong> {{ schedule.schedules.medical_staff.name }}
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+        <v-row v-else>
+          <v-col cols="12">
+            <v-alert type="info" border="start" colored-border>
+              No booked schedules found.
+            </v-alert>
+          </v-col>
+        </v-row>
+      </v-container>
     </v-card-text>
   </v-card>
+
+  <v-dialog v-model="showModal" max-width="600px">
+    <v-card>
+      <v-card-title>
+        <span class="text-h5">Modify Appointment</span>
+      </v-card-title>
+      <v-card-text>
+        <div>
+          <strong>Type:</strong> {{ selectedSchedule?.schedules?.appointment_types?.type_name }}
+        </div>
+        <div>
+          <strong>Date:</strong>
+          {{ new Date(selectedSchedule?.appointment_date_time).toLocaleString() }}
+        </div>
+        <div><strong>Status:</strong> {{ selectedSchedule?.status }}</div>
+        <div><strong>Reason:</strong> {{ selectedSchedule?.reason }}</div>
+        <div v-if="selectedSchedule?.schedules?.medical_staff?.name">
+          <strong>Assigned Staff:</strong> {{ selectedSchedule.schedules.medical_staff.name }}
+        </div>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+          v-if="selectedSchedule?.status !== 'cancelled'"
+          color="red"
+          text
+          @click="cancelAppointment"
+          >Cancel Appointment</v-btn
+        >
+        <v-btn v-else color="red" text @click="deleteAppointment">Delete Appointment</v-btn>
+        <v-btn color="blue darken-1" text @click="closeModal">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
+
+<style scoped>
+.hover-card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.hover-card:hover {
+  transform: scale(1.02);
+}
+</style>

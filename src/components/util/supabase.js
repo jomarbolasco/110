@@ -35,16 +35,3 @@ export const createAppointment = async (appointmentData) => {
 
   return data
 }
-
-// Fetch Appointments for Staff
-export const fetchAppointmentsForStaff = async (staff_id) => {
-  const { data, error } = await supabase
-    .from('Appointments')
-    .select('appointment_id, patient_id, appointment_date_time, status, Patients(name)')
-    .eq('staff_id', staff_id)
-
-  if (error) {
-    throw new Error(`Failed to fetch appointments: ${error.message}`)
-  }
-  return data
-}

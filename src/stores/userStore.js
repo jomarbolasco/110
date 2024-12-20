@@ -5,6 +5,7 @@ import { supabase } from '@/components/util/supabase'
 export const useUserStore = defineStore('user', {
   state: () => ({
     user: null, // Holds user info
+    bookedSchedules: [], // Holds booked schedules
   }),
   actions: {
     async setUser(userData) {
@@ -36,10 +37,53 @@ export const useUserStore = defineStore('user', {
               role: session.session.user.user_metadata?.role || 'Normal User', // Default to 'Normal User'
             },
           }
+
+          // Fetch booked schedules for the user
+          await this.fetchBookedSchedules()
         }
       } catch (err) {
         console.error('Unexpected error initializing user:', err.message)
         this.user = null
+      }
+    },
+    async fetchBookedSchedules() {
+      if (!this.user) return
+
+      try {
+        const { data, error } = await supabase
+          .from('appointments')
+          .select(
+            `
+            appointment_id,
+            appointment_date_time,
+            status,
+            reason,
+            schedules (
+              schedule_id,
+              schedule_date,
+              start_time,
+              end_time,
+              available_slots,
+              medical_staff (
+                name
+              ),
+              appointment_types (
+                type_name
+              )
+            )
+          `,
+          )
+          .eq('booked_by_user_id', this.user.id)
+
+        if (error) {
+          console.error('Error fetching booked schedules:', error.message)
+          this.bookedSchedules = []
+        } else {
+          this.bookedSchedules = data
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching booked schedules:', err.message)
+        this.bookedSchedules = []
       }
     },
   },
