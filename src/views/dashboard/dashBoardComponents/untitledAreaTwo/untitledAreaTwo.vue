@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { fetchBookedSchedules } from '@/components/util/supabase'
+import { fetchBookedAppointments } from '@/components/util/supabase'
+import { useUserStore } from '@/stores/userStore' // Assuming you have a user store to get the logged-in user's ID
 
-const schedules = ref([])
+const appointments = ref([])
 const loading = ref(true)
 const error = ref(null)
 
-const loadSchedules = async () => {
+const userStore = useUserStore()
+const userId = userStore.user.id // Get the logged-in user's ID
+
+const loadAppointments = async () => {
   try {
-    const data = await fetchBookedSchedules()
-    schedules.value = data
+    const data = await fetchBookedAppointments(userId)
+    appointments.value = data
   } catch (err) {
     error.value = err.message
   } finally {
@@ -17,54 +21,32 @@ const loadSchedules = async () => {
   }
 }
 
-onMounted(loadSchedules)
+onMounted(loadAppointments)
 </script>
 
 <template>
-  <v-card>
-    <v-card-title>Booked Schedules</v-card-title>
-    <v-card-text>
-      <div v-if="loading">Loading schedules...</div>
+  <v-responsive>
+    <div>
+      <h2>Booked Appointments</h2>
+      <div v-if="loading">Loading appointments...</div>
       <div v-else-if="error">{{ error }}</div>
+      <div v-else-if="appointments.length === 0">You don't have any appointments.</div>
       <div v-else>
-        <v-data-table :items="schedules" class="elevation-1">
-          <template v-slot:top>
-            <v-toolbar flat>
-              <v-toolbar-title>Schedules</v-toolbar-title>
-              <v-divider class="mx-4" inset vertical></v-divider>
-            </v-toolbar>
-          </template>
-          <template v-slot:item.schedule_id="{ item }">
-            <span>{{ item.schedule_id }}</span>
-          </template>
-          <template v-slot:item.medical_staff="{ item }">
-            <span>{{ item.medical_staff?.name }}</span>
-          </template>
-          <template v-slot:item.appointment_types="{ item }">
-            <span>{{ item.appointment_types?.type_name }}</span>
-          </template>
-          <template v-slot:item.schedule_date="{ item }">
-            <span>{{ item.schedule_date }}</span>
-          </template>
-          <template v-slot:item.start_time="{ item }">
-            <span>{{ item.start_time }}</span>
-          </template>
-          <template v-slot:item.end_time="{ item }">
-            <span>{{ item.end_time }}</span>
-          </template>
-          <template v-slot:item.available_slots="{ item }">
-            <span>{{ item.available_slots }}</span>
-          </template>
-          <template v-slot:item.appointments="{ item }">
-            <ul>
-              <li v-for="appointment in item.appointments" :key="appointment.appointment_id">
-                {{ appointment.patients?.name }} - {{ appointment.appointment_date_time }} -
-                {{ appointment.status }}
-              </li>
-            </ul>
-          </template>
-        </v-data-table>
+        <v-list>
+          <v-list-item v-for="appointment in appointments" :key="appointment.appointment_id">
+            <v-list-item-content>
+              <v-list-item-title>{{ appointment.patients?.name }}</v-list-item-title>
+              <v-list-item-subtitle>
+                {{ appointment.schedules.schedule_date }} -
+                {{ appointment.schedules.start_time }} to {{ appointment.schedules.end_time }}<br />
+                {{ appointment.schedules.medical_staff?.name }} -
+                {{ appointment.schedules.appointment_types?.type_name }}<br />
+                Status: {{ appointment.status }}
+              </v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
       </div>
-    </v-card-text>
-  </v-card>
+    </div>
+  </v-responsive>
 </template>
