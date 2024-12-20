@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '@/components/util/supabase'
 import { useUserStore } from '@/stores/userStore'
 
 const userStore = useUserStore()
+const router = useRouter()
 const availableSchedules = ref([])
 const selectedSchedule = ref(null)
 const showModal = ref(false)
@@ -101,7 +103,9 @@ const bookAppointment = async () => {
         console.error('Error updating available slots:', updateError.message)
       } else {
         await fetchAvailableSchedules()
+        userStore.fetchBookedSchedules()
         closeModal()
+        // router.push('/') // Redirect to the dashboard
       }
     }
   } catch (err) {
