@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/userStore'
 
 const userStore = useUserStore()
 const availableSchedules = ref([])
+const mySchedules = ref([])
 const newSchedule = ref({
   schedule_date: '',
   start_time: '',
@@ -49,6 +50,36 @@ const fetchAvailableSchedules = async () => {
   } catch (err) {
     console.error('Unexpected error fetching available schedules:', err.message)
     availableSchedules.value = []
+  }
+}
+
+const fetchMySchedules = async (staffId) => {
+  try {
+    const { data, error } = await supabase
+      .from('schedules')
+      .select(
+        `
+        schedule_id,
+        schedule_date,
+        start_time,
+        end_time,
+        available_slots,
+        appointment_types (
+          type_name
+        )
+      `,
+      )
+      .eq('staff_id', staffId)
+
+    if (error) {
+      console.error('Error fetching my schedules:', error.message)
+      mySchedules.value = []
+    } else {
+      mySchedules.value = data
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching my schedules:', err.message)
+    mySchedules.value = []
   }
 }
 
@@ -117,6 +148,7 @@ const setSchedule = async () => {
       console.error('Error setting schedule:', scheduleError.message)
     } else {
       await fetchAvailableSchedules()
+      await fetchMySchedules(staffId)
       // Reset the form
       newSchedule.value = {
         schedule_date: '',
@@ -138,6 +170,10 @@ const setSchedule = async () => {
 
 onMounted(async () => {
   await fetchAvailableSchedules()
+  const staffId = await fetchStaffId()
+  if (staffId) {
+    await fetchMySchedules(staffId)
+  }
 })
 </script>
 
@@ -246,6 +282,36 @@ onMounted(async () => {
           </v-form>
         </v-card-text>
       </v-card>
+    </v-col>
+
+    <v-col cols="12" sm="12">
+      <h2>My Schedules</h2>
+      <v-container>
+        <v-row v-if="mySchedules.length > 0" dense>
+          <v-col v-for="schedule in mySchedules" :key="schedule.schedule_id" cols="12" md="6">
+            <v-card class="mb-4 hover-card" outlined>
+              <v-card-title>
+                <strong>{{ schedule.appointment_types.type_name }}</strong>
+              </v-card-title>
+              <v-card-subtitle>
+                {{ new Date(schedule.schedule_date).toLocaleDateString() }} from
+                {{ schedule.start_time }} to {{ schedule.end_time }}
+              </v-card-subtitle>
+              <v-card-text>
+                <div>
+                  <v-icon class="mr-2" color="green darken-2">mdi-account-multiple</v-icon>
+                  Available Slots: <strong>{{ schedule.available_slots }}</strong>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+        <v-row v-else>
+          <v-col cols="12">
+            <v-alert type="info" border="start" colored-border> No schedules found. </v-alert>
+          </v-col>
+        </v-row>
+      </v-container>
     </v-col>
   </v-row>
 </template>
