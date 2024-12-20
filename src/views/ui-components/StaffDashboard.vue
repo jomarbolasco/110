@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
+import { useUserStore } from '@/stores/userStore'
 
+const userStore = useUserStore()
 const availableSchedules = ref([])
 const newSchedule = ref({
   schedule_date: '',
   start_time: '',
   end_time: '',
   available_slots: 0,
+  appointment_type: {
+    type_name: '',
+    description: '',
+  },
   appointment_type_id: null,
   staff_id: null,
-})
-const newAppointmentType = ref({
-  type_name: '',
-  description: '',
 })
 const activeTab = ref('schedules')
 
@@ -50,11 +52,69 @@ const fetchAvailableSchedules = async () => {
   }
 }
 
+const fetchStaffId = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('medical_staff')
+      .select('staff_id')
+      .eq('user_id', userStore.user.id)
+      .single()
+
+    if (error) {
+      console.error('Error fetching staff ID:', error.message)
+      return null
+    } else {
+      return data.staff_id
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching staff ID:', err.message)
+    return null
+  }
+}
+
 const setSchedule = async () => {
   try {
-    const { error } = await supabase.from('schedules').insert([newSchedule.value])
-    if (error) {
-      console.error('Error setting schedule:', error.message)
+    // Fetch the staff ID
+    const staffId = await fetchStaffId()
+    if (!staffId) {
+      console.error('Staff ID not found')
+      return
+    }
+
+    // Insert the new appointment type first
+    const { data: appointmentTypeData, error: appointmentTypeError } = await supabase
+      .from('appointment_types')
+      .insert([newSchedule.value.appointment_type])
+      .select('appointment_type_id')
+      .single()
+
+    if (appointmentTypeError) {
+      console.error('Error setting appointment type:', appointmentTypeError.message)
+      return
+    }
+
+    console.log('Appointment Type Data:', appointmentTypeData)
+
+    // Set the appointment_type_id in the new schedule
+    newSchedule.value.appointment_type_id = appointmentTypeData.appointment_type_id
+
+    // Set the staff_id from the fetched staff ID
+    newSchedule.value.staff_id = staffId
+
+    // Insert the new schedule
+    const { error: scheduleError } = await supabase.from('schedules').insert([
+      {
+        schedule_date: newSchedule.value.schedule_date,
+        start_time: newSchedule.value.start_time,
+        end_time: newSchedule.value.end_time,
+        available_slots: newSchedule.value.available_slots,
+        appointment_type_id: newSchedule.value.appointment_type_id,
+        staff_id: newSchedule.value.staff_id,
+      },
+    ])
+
+    if (scheduleError) {
+      console.error('Error setting schedule:', scheduleError.message)
     } else {
       await fetchAvailableSchedules()
       // Reset the form
@@ -63,29 +123,16 @@ const setSchedule = async () => {
         start_time: '',
         end_time: '',
         available_slots: 0,
+        appointment_type: {
+          type_name: '',
+          description: '',
+        },
         appointment_type_id: null,
         staff_id: null,
       }
     }
   } catch (err) {
     console.error('Unexpected error setting schedule:', err.message)
-  }
-}
-
-const setAppointmentType = async () => {
-  try {
-    const { error } = await supabase.from('appointment_types').insert([newAppointmentType.value])
-    if (error) {
-      console.error('Error setting appointment type:', error.message)
-    } else {
-      // Reset the form
-      newAppointmentType.value = {
-        type_name: '',
-        description: '',
-      }
-    }
-  } catch (err) {
-    console.error('Unexpected error setting appointment type:', err.message)
   }
 }
 
@@ -102,12 +149,6 @@ onMounted(async () => {
     <v-col cols="12" sm="12">
       <v-btn @click="activeTab = 'schedules'" :color="activeTab === 'schedules' ? 'primary' : ''">
         View Schedules
-      </v-btn>
-      <v-btn
-        @click="activeTab = 'setAppointmentType'"
-        :color="activeTab === 'setAppointmentType' ? 'primary' : ''"
-      >
-        Set Appointment Type
       </v-btn>
       <v-btn
         @click="activeTab = 'setSchedule'"
@@ -162,32 +203,6 @@ onMounted(async () => {
       </v-card>
     </v-col>
 
-    <v-col
-      cols="12"
-      lg="6"
-      class="d-flex align-items-stretch"
-      v-if="activeTab === 'setAppointmentType'"
-    >
-      <v-card class="w-100">
-        <v-card-title>Set Appointment Type</v-card-title>
-        <v-card-text>
-          <v-form @submit.prevent="setAppointmentType">
-            <v-text-field
-              v-model="newAppointmentType.type_name"
-              label="Type Name"
-              required
-            ></v-text-field>
-            <v-textarea
-              v-model="newAppointmentType.description"
-              label="Description"
-              rows="3"
-            ></v-textarea>
-            <v-btn type="submit" color="primary">Set Appointment Type</v-btn>
-          </v-form>
-        </v-card-text>
-      </v-card>
-    </v-col>
-
     <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'setSchedule'">
       <v-card class="w-100">
         <v-card-title>Set a Schedule</v-card-title>
@@ -218,17 +233,15 @@ onMounted(async () => {
               required
             ></v-text-field>
             <v-text-field
-              v-model="newSchedule.appointment_type_id"
-              label="Appointment Type ID"
-              type="number"
+              v-model="newSchedule.appointment_type.type_name"
+              label="Appointment Type Name"
               required
             ></v-text-field>
-            <v-text-field
-              v-model="newSchedule.staff_id"
-              label="Staff ID"
-              type="number"
-              required
-            ></v-text-field>
+            <v-textarea
+              v-model="newSchedule.appointment_type.description"
+              label="Appointment Type Description"
+              rows="3"
+            ></v-textarea>
             <v-btn type="submit" color="primary">Set Schedule</v-btn>
           </v-form>
         </v-card-text>
