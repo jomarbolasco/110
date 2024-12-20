@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { supabase } from '@/components/util/supabase'
+import { format } from 'date-fns'
 
 const userStore = useUserStore()
 const selectedSchedule = ref(null)
@@ -82,6 +83,15 @@ const deleteAppointment = async () => {
   }
 }
 
+const formatSchedule = (schedule) => {
+  return {
+    ...schedule,
+    formattedDateTime: format(new Date(schedule.appointment_date_time), 'MMMM d, yyyy h:mm a'),
+  }
+}
+
+const formattedSchedules = computed(() => userStore.bookedSchedules.map(formatSchedule))
+
 onMounted(async () => {
   await userStore.fetchBookedSchedules()
 })
@@ -95,9 +105,9 @@ onMounted(async () => {
     </v-card-title>
     <v-card-text>
       <v-container>
-        <v-row v-if="userStore.bookedSchedules.length > 0" dense>
+        <v-row v-if="formattedSchedules.length > 0" dense>
           <v-col
-            v-for="schedule in userStore.bookedSchedules"
+            v-for="schedule in formattedSchedules"
             :key="schedule.appointment_id"
             cols="12"
             md="6"
@@ -109,7 +119,7 @@ onMounted(async () => {
               </v-card-title>
               <v-card-subtitle>
                 <v-icon class="mr-1" color="grey">mdi-calendar-clock</v-icon>
-                {{ new Date(schedule.appointment_date_time).toLocaleString() }}
+                {{ schedule.formattedDateTime }}
               </v-card-subtitle>
               <v-card-text>
                 <div>
@@ -117,7 +127,7 @@ onMounted(async () => {
                   Status: <strong>{{ schedule.status }}</strong>
                 </div>
                 <div>
-                  <v-icon class="mr-1" color="grey">mdi-pencil-outline</v-icon>
+                  <v-icon class="mr-1" color="grey">mdi-comment</v-icon>
                   Reason: {{ schedule.reason }}
                 </div>
                 <div v-if="schedule.schedules.medical_staff.name">
@@ -152,7 +162,11 @@ onMounted(async () => {
         </div>
         <div>
           <strong>Date:</strong>
-          {{ new Date(selectedSchedule?.appointment_date_time).toLocaleString() }}
+          {{
+            selectedSchedule
+              ? format(new Date(selectedSchedule.appointment_date_time), 'MMMM d, yyyy h:mm a')
+              : ''
+          }}
         </div>
         <div><strong>Status:</strong> {{ selectedSchedule?.status }}</div>
         <div><strong>Reason:</strong> {{ selectedSchedule?.reason }}</div>
