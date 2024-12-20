@@ -100,17 +100,6 @@ onMounted(fetchSchedules)
 <style scoped>
 .schedule-page {
   padding: 20px;
-  font-family: Arial, sans-serif;
-}
-
-h1 {
-  margin-bottom: 20px;
-}
-
-.loading,
-.error {
-  color: #ff0000;
-  font-weight: bold;
 }
 
 .schedules-table {
@@ -127,7 +116,30 @@ h1 {
 }
 
 .schedules-table th {
-  background-color: gray;
-  font-weight: bold;
+  background-color: #f2f2f2;
+  color: #333;
+}
+
+.schedules-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.schedules-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.schedules-table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #4caf50;
+  color: white;
+}
+
+.loading,
+.error {
+  margin-top: 20px;
+  font-size: 18px;
+  color: #333;
 }
 </style>

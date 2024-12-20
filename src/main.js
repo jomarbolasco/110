@@ -1,15 +1,13 @@
 import { createApp } from 'vue'
+import App from './App.vue'
 import { createPinia } from 'pinia'
-import { useUserStore } from '@/stores/userStore'
-
-import '@mdi/font/css/materialdesignicons.css'
-import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
+import 'vuetify/styles' // Ensure Vuetify styles are imported
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
-
-import App from './App.vue'
 import router from './router'
+
+import { useUserStore } from '@/stores/userStore'
 
 const pinia = createPinia() // Create Pinia instance
 
@@ -26,10 +24,6 @@ const app = createApp(App)
 app.use(pinia) // Register Pinia
 app.use(router)
 app.use(vuetify)
-
-// Now safely use the store
-// const userStore = useUserStore(pinia) // Pass the Pinia instance to initialize the store
-// await userStore.initializeUser() // Initialize user session after the store is available
 
 const initializeApp = async () => {
   const userStore = useUserStore(pinia) // Pass the Pinia instance to initialize the store

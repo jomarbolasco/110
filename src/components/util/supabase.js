@@ -39,12 +39,43 @@ export const createAppointment = async (appointmentData) => {
 // Fetch Appointments for Staff
 export const fetchAppointmentsForStaff = async (staff_id) => {
   const { data, error } = await supabase
-    .from('Appointments')
-    .select('appointment_id, patient_id, appointment_date_time, status, Patients(name)')
+    .from('appointments')
+    .select('appointment_id, patient_id, appointment_date_time, status, patients(name)')
     .eq('staff_id', staff_id)
 
   if (error) {
     throw new Error(`Failed to fetch appointments: ${error.message}`)
+  }
+  return data
+}
+
+// Fetch Booked Schedules
+export const fetchBookedSchedules = async () => {
+  const { data, error } = await supabase.from('schedules').select(`
+      schedule_id,
+      schedule_date,
+      start_time,
+      end_time,
+      available_slots,
+      medical_staff (
+        name
+      ),
+      appointment_types (
+        type_name
+      ),
+      appointments (
+        appointment_id,
+        patient_id,
+        appointment_date_time,
+        status,
+        patients (
+          name
+        )
+      )
+    `)
+
+  if (error) {
+    throw new Error(`Failed to fetch booked schedules: ${error.message}`)
   }
   return data
 }

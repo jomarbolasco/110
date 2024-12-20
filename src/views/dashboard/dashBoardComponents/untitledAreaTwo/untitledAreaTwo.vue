@@ -1,115 +1,70 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { fetchBookedSchedules } from '@/components/util/supabase'
 
-const select = ref('March')
-const items = ref(['March', 'April', 'May', 'June'])
+const schedules = ref([])
+const loading = ref(true)
+const error = ref(null)
 
-const monthtable = ref([
-  {
-    id: 1,
-    activestate: '',
-    leadname: 'Sunil Joshi',
-    leademail: 'Web Designer',
-    projectname: 'Elite Admin',
-    statuscolor: 'blue lighten-1 white--text',
-    statustext: 'Low',
-    money: '$3.9K',
-  },
-  {
-    id: 2,
-    activestate: '',
-    leadname: 'Andrew',
-    leademail: 'Project Manager',
-    projectname: 'Real Homes',
-    statuscolor: 'info',
-    statustext: 'Medium',
-    money: '$23.9K',
-  },
-  {
-    id: 3,
-    activestate: '',
-    leadname: 'Bhavesh patel',
-    leademail: 'Developer',
-    projectname: 'MedicalPro Theme',
-    statuscolor: 'warning',
-    statustext: 'High',
-    money: '$12.9K',
-  },
-  {
-    id: 4,
-    activestate: '',
-    leadname: 'Nirav Joshi',
-    leademail: 'Frontend Eng',
-    projectname: 'Elite Admin',
-    statuscolor: 'error',
-    statustext: 'Low',
-    money: '$10.9K',
-  },
-])
+const loadSchedules = async () => {
+  try {
+    const data = await fetchBookedSchedules()
+    schedules.value = data
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadSchedules)
 </script>
 
 <template>
-  <v-card class="w-100 h-100">
+  <v-card>
+    <v-card-title>Booked Schedules</v-card-title>
     <v-card-text>
-      <div class="d-sm-flex align-center">
-        <div>
-          <h2 class="title text-h6 font-weight-medium">Sample Area</h2>
-        </div>
-        <v-spacer></v-spacer>
-        <div class="ml-auto">
-          <v-select
-            v-model="select"
-            :items="items"
-            variant="outlined"
-            dense
-            hide-details
-          ></v-select>
-        </div>
+      <div v-if="loading">Loading schedules...</div>
+      <div v-else-if="error">{{ error }}</div>
+      <div v-else>
+        <v-data-table :items="schedules" class="elevation-1">
+          <template v-slot:top>
+            <v-toolbar flat>
+              <v-toolbar-title>Schedules</v-toolbar-title>
+              <v-divider class="mx-4" inset vertical></v-divider>
+            </v-toolbar>
+          </template>
+          <template v-slot:item.schedule_id="{ item }">
+            <span>{{ item.schedule_id }}</span>
+          </template>
+          <template v-slot:item.medical_staff="{ item }">
+            <span>{{ item.medical_staff?.name }}</span>
+          </template>
+          <template v-slot:item.appointment_types="{ item }">
+            <span>{{ item.appointment_types?.type_name }}</span>
+          </template>
+          <template v-slot:item.schedule_date="{ item }">
+            <span>{{ item.schedule_date }}</span>
+          </template>
+          <template v-slot:item.start_time="{ item }">
+            <span>{{ item.start_time }}</span>
+          </template>
+          <template v-slot:item.end_time="{ item }">
+            <span>{{ item.end_time }}</span>
+          </template>
+          <template v-slot:item.available_slots="{ item }">
+            <span>{{ item.available_slots }}</span>
+          </template>
+          <template v-slot:item.appointments="{ item }">
+            <ul>
+              <li v-for="appointment in item.appointments" :key="appointment.appointment_id">
+                {{ appointment.patients?.name }} - {{ appointment.appointment_date_time }} -
+                {{ appointment.status }}
+              </li>
+            </ul>
+          </template>
+        </v-data-table>
       </div>
-      <v-table class="month-table mt-7">
-        <template v-slot:default>
-          <thead>
-            <tr>
-              <th class="font-weight-medium text-subtitle-1">Id</th>
-              <th class="font-weight-medium text-subtitle-1">Assigned</th>
-              <th class="font-weight-medium text-subtitle-1">Name</th>
-              <th class="font-weight-medium text-subtitle-1">Priority</th>
-              <th class="font-weight-medium text-subtitle-1">Budget</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="item in monthtable"
-              :key="item.leadname"
-              :class="item.activestate"
-              class="month-item"
-            >
-              <td>{{ item.id }}</td>
-              <td>
-                <h4 class="font-weight-bold text-no-wrap">
-                  {{ item.leadname }}
-                </h4>
-                <h6 class="text-no-wrap font-weight-regular text-body-2 text-grey-darken-1">
-                  {{ item.leademail }}
-                </h6>
-              </td>
-              <td>
-                <h5 class="font-weight-medium text-no-wrap text-body-2 text-grey-darken-1">
-                  {{ item.projectname }}
-                </h5>
-              </td>
-              <td>
-                <v-chip class="ma-2" :color="item.statuscolor" size="small" label>{{
-                  item.statustext
-                }}</v-chip>
-              </td>
-              <td>
-                <h4>{{ item.money }}</h4>
-              </td>
-            </tr>
-          </tbody>
-        </template>
-      </v-table>
     </v-card-text>
   </v-card>
 </template>
