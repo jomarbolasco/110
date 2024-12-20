@@ -1,6 +1,5 @@
-// src/store/userStore.js
 import { defineStore } from 'pinia'
-import { supabase } from '@/components/util/supabase'
+import { supabase, cancelAppointment } from '@/components/util/supabase'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -84,6 +83,15 @@ export const useUserStore = defineStore('user', {
       } catch (err) {
         console.error('Unexpected error fetching booked schedules:', err.message)
         this.bookedSchedules = []
+      }
+    },
+    async cancelUserAppointment(appointmentId, scheduleId) {
+      try {
+        await cancelAppointment(appointmentId, scheduleId)
+        // Refresh booked schedules after cancellation
+        await this.fetchBookedSchedules()
+      } catch (err) {
+        console.error('Error canceling appointment:', err.message)
       }
     },
   },
