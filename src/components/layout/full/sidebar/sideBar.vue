@@ -61,10 +61,7 @@ const filteredSidebarMenu = computed(() => {
 
 const isActive = (item) => route.path === item.to
 
-const activeItemTitle = computed(() => {
-  const activeItem = filteredSidebarMenu.value.find((item) => isActive(item))
-  return activeItem ? activeItem.title : ''
-})
+// Removed unused activeItemTitle computed property
 
 // Method to navigate to the dashboard
 const goToDashboard = () => {
@@ -97,7 +94,7 @@ watch(route, () => {
               <v-avatar class="me-3">
                 <v-icon class="feather-sm v-icon v-icon--size-default">{{ item.icon }}</v-icon>
               </v-avatar>
-              <v-list-item-title v-text="item.title" class="item-title"></v-list-item-title>
+              <v-list-item-title class="item-title">{{ item.title }}</v-list-item-title>
             </div>
           </v-list-item>
         </template>

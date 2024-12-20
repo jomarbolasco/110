@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/userStore'
@@ -9,7 +10,7 @@ const userStore = useUserStore()
 const router = useRouter()
 
 // Alert state
-const alertMessage = ref<string>('')
+const alertMessage = ref<String>('')
 const alertType = ref<'error' | 'success' | 'info' | 'warning'>('info') // Initialize with a valid type
 
 // Logout function
@@ -27,7 +28,7 @@ const logout = async () => {
     setTimeout(async () => {
       await router.push('/')
       console.log('Redirected to home') // Log for debugging
-    }, 2000) // 2 seconds delay
+    }, 1000) // 2 seconds delay
   } catch (error) {
     console.error('Error during logout:', error)
     alertMessage.value = 'Error during logout. Please try again.'

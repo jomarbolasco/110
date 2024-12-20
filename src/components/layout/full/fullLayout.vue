@@ -50,3 +50,20 @@ onMounted(() => {
     </v-main>
   </v-app>
 </template>
+
+<style scoped>
+.v-topbar {
+  /* background-color: #ad19d2; Change to your desired color */
+  color: white;
+}
+
+.v-topbar h2 {
+  margin-left: 20px;
+  font-size: 24px;
+  font-family: 'Roboto', sans-serif;
+}
+
+.v-topbar .v-app-bar-nav-icon {
+  color: white;
+}
+</style>
