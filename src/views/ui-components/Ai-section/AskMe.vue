@@ -1,86 +1,77 @@
 <template>
-  <v-alert type="info" class="mb-4" color="yellow">
-    This section is under maintenance. Please check back later.
-  </v-alert>
-  <v-container class="my-5">
-    <h1>Ask about your health</h1>
-    <v-form @submit.prevent="submitQuery">
-      <v-textarea
-        v-model="query"
-        label="Ask me anything about your illness"
-        outlined
-        rows="5"
-      ></v-textarea>
-      <v-btn type="submit" color="primary" :loading="loading" :disabled="loading"> Submit </v-btn>
-    </v-form>
-    <p v-if="response">{{ response }}</p>
-    <p v-if="errorMessage" style="color: red">{{ errorMessage }}</p>
+  <v-container>
+    <v-row>
+      <v-col cols="12">
+        <h1>Ask About Your Illness</h1>
+      </v-col>
+      <v-col cols="12">
+        <v-alert type="warning" border="start" colored-border>
+          This page is currently unavailable and under maintenance. Please check back later.
+        </v-alert>
+      </v-col>
+      <v-col cols="12">
+        <v-form @submit.prevent="askQuestion">
+          <v-textarea
+            v-model="question"
+            label="Describe your symptoms or ask about your illness"
+            rows="5"
+            required
+          ></v-textarea>
+          <v-btn type="submit" color="primary" :loading="loading">Ask</v-btn>
+        </v-form>
+      </v-col>
+      <v-col cols="12" v-if="response">
+        <v-card class="mt-4">
+          <v-card-title>Response</v-card-title>
+          <v-card-text>{{ response }}</v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { supabase } from '@/components/util/supabase'
+import axios from 'axios'
 
-const query = ref('')
+const question = ref('')
 const response = ref('')
 const loading = ref(false)
-const errorMessage = ref('')
 
-const submitQuery = async () => {
+const askQuestion = async () => {
   loading.value = true
-  errorMessage.value = ''
-
   try {
-    // Get the current session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    const result = await axios.post(
+      'https://api-inference.huggingface.co/models/gpt2',
+      {
+        inputs: question.value,
+        parameters: {
+          max_length: 150,
+          temperature: 0.7,
+        },
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_HUGGING_FACE_API_KEY}`,
+        },
+      },
+    )
 
-    if (!session?.user) {
-      throw new Error('User not logged in')
-    }
-
-    const user_id = session.user.id // Fetching the user ID from the session
-
-    // Insert user query into Supabase
-    const { data: queryData, error: queryError } = await supabase
-      .from('user_queries')
-      .insert([{ user_id, query_text: query.value }])
-      .select()
-      .single()
-
-    if (queryError) throw queryError
-
-    // Call the AI API to get the response (replace with your actual AI API call)
-    const aiResponse = await fetch('http://localhost:3000/api/ai-response', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query.value }),
-    })
-
-    if (!aiResponse.ok) {
-      const errorDetail = await aiResponse.text()
-      throw new Error(`Failed to fetch AI response: ${errorDetail}`)
-    }
-
-    const aiResponseData = await aiResponse.json()
-
-    response.value = aiResponseData.message
-
-    // Insert AI response into Supabase
-    const { error: responseError } = await supabase
-      .from('ai_responses')
-      .insert([{ query_id: queryData.query_id, response_text: aiResponseData.message }])
-
-    if (responseError) throw responseError
+    response.value = result.data[0].generated_text
   } catch (error) {
-    console.error('Error submitting query:', error.message)
-    errorMessage.value = error.message
+    console.error('Error fetching response:', error)
+    response.value = 'Sorry, there was an error generating a response. Please try again later.'
   } finally {
     loading.value = false
   }
 }
+
+console.log('API Key:', import.meta.env.VITE_HUGGING_FACE_API_KEY)
 </script>
 
-<style scoped></style>
+<style scoped>
+.mt-4 {
+  margin-top: 1rem;
+}
+</style>
