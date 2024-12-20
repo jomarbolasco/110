@@ -65,8 +65,8 @@ const onLoginFormSubmit = async () => {
       loginMessage.value = error.message
     } else {
       const user = data.user
-      if (user.user_metadata.role === 'admin') {
-        router.replace('/admin')
+      if (user.user_metadata.role === 'Medical Staff') {
+        router.replace('/ui-components/StaffDashboard')
       } else {
         router.replace('/dashboard')
       }
