@@ -78,7 +78,7 @@ const bookAppointment = async () => {
   if (!selectedSchedule.value || !patientId.value) return
 
   try {
-    const { error } = await supabase.from('appointments').insert({
+    const { error: insertError } = await supabase.from('appointments').insert({
       patient_id: patientId.value, // Use the fetched patient ID
       schedule_id: selectedSchedule.value.schedule_id,
       appointment_date_time: new Date(
@@ -89,11 +89,20 @@ const bookAppointment = async () => {
       booked_by_user_id: userStore.user.id,
     })
 
-    if (error) {
-      console.error('Error booking appointment:', error.message)
+    if (insertError) {
+      console.error('Error booking appointment:', insertError.message)
     } else {
-      await fetchAvailableSchedules()
-      closeModal()
+      const { error: updateError } = await supabase
+        .from('schedules')
+        .update({ available_slots: selectedSchedule.value.available_slots - 1 })
+        .eq('schedule_id', selectedSchedule.value.schedule_id)
+
+      if (updateError) {
+        console.error('Error updating available slots:', updateError.message)
+      } else {
+        await fetchAvailableSchedules()
+        closeModal()
+      }
     }
   } catch (err) {
     console.error('Unexpected error booking appointment:', err.message)
