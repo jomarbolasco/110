@@ -21,7 +21,6 @@ const cancelAppointment = async () => {
   if (!selectedSchedule.value) return
 
   try {
-    // Step 1: Cancel the appointment
     const { error: appointmentError } = await supabase
       .from('appointments')
       .update({ status: 'cancelled' })
@@ -32,7 +31,6 @@ const cancelAppointment = async () => {
       return
     }
 
-    // Step 2: Retrieve the current available slots
     const { data: scheduleData, error: fetchError } = await supabase
       .from('schedules')
       .select('available_slots')
@@ -46,7 +44,6 @@ const cancelAppointment = async () => {
 
     const currentAvailableSlots = scheduleData.available_slots
 
-    // Step 3: Increment the available slots
     const { error: slotError } = await supabase
       .from('schedules')
       .update({ available_slots: currentAvailableSlots + 1 })
@@ -57,10 +54,9 @@ const cancelAppointment = async () => {
       return
     }
 
-    // Step 4: Refresh the user's booked schedules
     await userStore.fetchBookedSchedules()
     closeModal()
-    window.location.reload() // Refresh the browser
+    window.location.reload()
   } catch (err) {
     console.error('Unexpected error cancelling appointment:', err.message)
   }
@@ -93,7 +89,10 @@ onMounted(async () => {
 
 <template>
   <v-card class="w-100 h-100">
-    <v-card-title>Your Booked Schedules</v-card-title>
+    <v-card-title>
+      <v-icon class="mr-2" color="white">mdi-calendar</v-icon>
+      Your Booked Schedules
+    </v-card-title>
     <v-card-text>
       <v-container>
         <v-row v-if="userStore.bookedSchedules.length > 0" dense>
@@ -105,18 +104,25 @@ onMounted(async () => {
           >
             <v-card class="mb-4 hover-card" outlined @click="openModal(schedule)">
               <v-card-title>
+                <v-icon class="mr-2" color="blue">mdi-clock-outline</v-icon>
                 <strong>{{ schedule.schedules.appointment_types.type_name }}</strong>
               </v-card-title>
               <v-card-subtitle>
-                on {{ new Date(schedule.appointment_date_time).toLocaleString() }}
+                <v-icon class="mr-1" color="grey">mdi-calendar-clock</v-icon>
+                {{ new Date(schedule.appointment_date_time).toLocaleString() }}
               </v-card-subtitle>
               <v-card-text>
                 <div>
+                  <v-icon class="mr-1" color="green">mdi-checkbox-marked-circle</v-icon>
                   Status: <strong>{{ schedule.status }}</strong>
                 </div>
-                <div>Reason: {{ schedule.reason }}</div>
+                <div>
+                  <v-icon class="mr-1" color="grey">mdi-pencil-outline</v-icon>
+                  Reason: {{ schedule.reason }}
+                </div>
                 <div v-if="schedule.schedules.medical_staff.name">
-                  <strong>Assigned Staff:</strong> {{ schedule.schedules.medical_staff.name }}
+                  <v-icon class="mr-1" color="blue">mdi-account</v-icon>
+                  Assigned Staff: {{ schedule.schedules.medical_staff.name }}
                 </div>
               </v-card-text>
             </v-card>
@@ -125,6 +131,7 @@ onMounted(async () => {
         <v-row v-else>
           <v-col cols="12">
             <v-alert type="info" border="start" colored-border>
+              <v-icon class="mr-2">mdi-information-outline</v-icon>
               No booked schedules found.
             </v-alert>
           </v-col>
@@ -136,7 +143,8 @@ onMounted(async () => {
   <v-dialog v-model="showModal" max-width="600px">
     <v-card>
       <v-card-title>
-        <span class="text-h5">Modify Appointment</span>
+        <v-icon class="mr-2" color="blue">mdi-calendar-edit</v-icon>
+        Appointment
       </v-card-title>
       <v-card-text>
         <div>
@@ -159,10 +167,18 @@ onMounted(async () => {
           color="red"
           text
           @click="cancelAppointment"
-          >Cancel Appointment</v-btn
         >
-        <v-btn v-else color="red" text @click="deleteAppointment">Delete Appointment</v-btn>
-        <v-btn color="blue darken-1" text @click="closeModal">Close</v-btn>
+          <v-icon left>mdi-cancel</v-icon>
+          Cancel Appointment
+        </v-btn>
+        <v-btn v-else color="red" text @click="deleteAppointment">
+          <v-icon left>mdi-delete</v-icon>
+          Delete Appointment
+        </v-btn>
+        <v-btn color="blue darken-1" text @click="closeModal">
+          <v-icon left>mdi-close</v-icon>
+          Close
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -171,9 +187,41 @@ onMounted(async () => {
 <style scoped>
 .hover-card {
   cursor: pointer;
-  transition: transform 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 .hover-card:hover {
   transform: scale(1.02);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.v-card-title {
+  background-color: #1976d2;
+  color: white;
+  padding: 16px;
+  font-weight: bold;
+}
+
+.v-card-subtitle {
+  color: #616161;
+  font-size: 14px;
+}
+
+.v-alert {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.v-btn {
+  margin: 8px;
+}
+
+.text-h5 {
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 </style>
