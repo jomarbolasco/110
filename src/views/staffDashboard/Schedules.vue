@@ -63,7 +63,7 @@ onMounted(fetchSchedules)
 </script>
 
 <template>
-  <div class="schedule-page">
+  <div class="schedule-page overflow-auto">
     <h1>Schedules</h1>
 
     <div v-if="loading" class="loading">Loading schedules...</div>

@@ -9,10 +9,10 @@
       </div>
 
       <!-- Patient Name -->
-      <!-- <div class="form-group">
+      <div class="form-group">
         <label for="name">Patient Name</label>
         <input id="name" v-model="formData.name" type="text" required placeholder="Your name" />
-      </div> -->
+      </div>
 
       <!-- Appointment Type -->
       <div class="form-group">
@@ -117,6 +117,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
+import { name } from '@vue/eslint-config-prettier/skip-formatting'
 
 const calendarEvents = ref([]) // This is no longer needed
 const calendarOptions = ref({}) // This is no longer needed
@@ -256,6 +257,7 @@ const bookAppointment = async () => {
     // Book the appointment
     const { error: appointmentError } = await supabase.from('appointments').insert([
       {
+        name: formData.value.name,
         patient_id,
         staff_id: null,
         appointment_date_time: new Date(),
