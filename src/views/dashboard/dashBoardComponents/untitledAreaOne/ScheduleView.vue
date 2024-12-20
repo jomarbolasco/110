@@ -1,8 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
+import { useUserStore } from '@/stores/userStore'
 
+const userStore = useUserStore()
 const availableSchedules = ref([])
+const selectedSchedule = ref(null)
+const showModal = ref(false)
+const reason = ref('')
+const patientId = ref(null)
 
 const fetchAvailableSchedules = async () => {
   try {
@@ -37,8 +43,66 @@ const fetchAvailableSchedules = async () => {
   }
 }
 
+const fetchPatientId = async () => {
+  if (!userStore.user) return
+
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('patient_id')
+      .eq('user_id', userStore.user.id)
+      .single()
+
+    if (error) {
+      console.error('Error fetching patient ID:', error.message)
+    } else {
+      patientId.value = data.patient_id
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching patient ID:', err.message)
+  }
+}
+
+const openModal = (schedule) => {
+  selectedSchedule.value = schedule
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+  selectedSchedule.value = null
+  reason.value = ''
+}
+
+const bookAppointment = async () => {
+  if (!selectedSchedule.value || !patientId.value) return
+
+  try {
+    const { error } = await supabase.from('appointments').insert({
+      patient_id: patientId.value, // Use the fetched patient ID
+      schedule_id: selectedSchedule.value.schedule_id,
+      appointment_date_time: new Date(
+        selectedSchedule.value.schedule_date + ' ' + selectedSchedule.value.start_time,
+      ),
+      reason: reason.value,
+      status: 'scheduled',
+      booked_by_user_id: userStore.user.id,
+    })
+
+    if (error) {
+      console.error('Error booking appointment:', error.message)
+    } else {
+      await fetchAvailableSchedules()
+      closeModal()
+    }
+  } catch (err) {
+    console.error('Unexpected error booking appointment:', err.message)
+  }
+}
+
 onMounted(async () => {
   await fetchAvailableSchedules()
+  await fetchPatientId()
 })
 </script>
 
@@ -54,7 +118,12 @@ onMounted(async () => {
             cols="12"
             md="6"
           >
-            <v-card class="mb-4" outlined color="grey lighten-5">
+            <v-card
+              class="mb-4 hover-card"
+              outlined
+              color="grey lighten-5"
+              @click="openModal(schedule)"
+            >
               <v-card-title class="text-h6">
                 <v-icon class="mr-2" color="blue darken-2">mdi-calendar</v-icon>
                 {{ schedule.appointment_types.type_name }}
@@ -89,4 +158,37 @@ onMounted(async () => {
       </v-container>
     </v-card-text>
   </v-card>
+
+  <v-dialog v-model="showModal" max-width="600px">
+    <v-card>
+      <v-card-title>
+        <span class="text-h5">Book Appointment</span>
+      </v-card-title>
+      <v-card-text>
+        <div><strong>Type:</strong> {{ selectedSchedule?.appointment_types?.type_name }}</div>
+        <div>
+          <strong>Date:</strong>
+          {{ new Date(selectedSchedule?.schedule_date).toLocaleDateString() }} from
+          {{ selectedSchedule?.start_time }} to {{ selectedSchedule?.end_time }}
+        </div>
+        <div><strong>Assigned Staff:</strong> {{ selectedSchedule?.medical_staff?.name }}</div>
+        <v-textarea v-model="reason" label="Reason for Appointment" rows="3"></v-textarea>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="green darken-1" text @click="bookAppointment">Book Appointment</v-btn>
+        <v-btn color="blue darken-1" text @click="closeModal">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
+
+<style scoped>
+.hover-card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.hover-card:hover {
+  transform: scale(1.02);
+}
+</style>
