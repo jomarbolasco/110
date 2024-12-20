@@ -42,7 +42,9 @@ onMounted(async () => {
         </v-row>
         <v-row v-else>
           <v-col cols="12">
-            <v-alert type="info" border="left" colored-border> No booked schedules found. </v-alert>
+            <v-alert type="info" border="start" colored-border>
+              No booked schedules found.
+            </v-alert>
           </v-col>
         </v-row>
       </v-container>
