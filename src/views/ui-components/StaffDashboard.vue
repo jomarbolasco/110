@@ -2,10 +2,15 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 import { useUserStore } from '@/stores/userStore'
+import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+const router = useRouter()
 const availableSchedules = ref([])
 const mySchedules = ref([])
+const selectedSchedule = ref(null)
+const appointments = ref([])
+const showModal = ref(false)
 const newSchedule = ref({
   schedule_date: '',
   start_time: '',
@@ -103,6 +108,25 @@ const fetchStaffId = async () => {
   }
 }
 
+const fetchAppointments = async (scheduleId) => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('appointment_id, patient_id, appointment_date_time, status, patients(name)')
+      .eq('schedule_id', scheduleId)
+
+    if (error) {
+      console.error('Error fetching appointments:', error.message)
+      appointments.value = []
+    } else {
+      appointments.value = data
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching appointments:', err.message)
+    appointments.value = []
+  }
+}
+
 const setSchedule = async () => {
   try {
     // Fetch the staff ID
@@ -166,6 +190,12 @@ const setSchedule = async () => {
   } catch (err) {
     console.error('Unexpected error setting schedule:', err.message)
   }
+}
+
+const handleScheduleClick = async (schedule) => {
+  selectedSchedule.value = schedule
+  await fetchAppointments(schedule.schedule_id)
+  showModal.value = true
 }
 
 onMounted(async () => {
@@ -289,7 +319,7 @@ onMounted(async () => {
       <v-container>
         <v-row v-if="mySchedules.length > 0" dense>
           <v-col v-for="schedule in mySchedules" :key="schedule.schedule_id" cols="12" md="6">
-            <v-card class="mb-4 hover-card" outlined>
+            <v-card class="mb-4 hover-card" outlined @click="handleScheduleClick(schedule)">
               <v-card-title>
                 <strong>{{ schedule.appointment_types.type_name }}</strong>
               </v-card-title>
@@ -314,6 +344,49 @@ onMounted(async () => {
       </v-container>
     </v-col>
   </v-row>
+
+  <!-- Modal for displaying appointments -->
+  <v-dialog v-model="showModal" max-width="600px">
+    <v-card>
+      <v-card-title>
+        <span class="headline"
+          >Appointments for {{ selectedSchedule?.appointment_types?.type_name }}</span
+        >
+      </v-card-title>
+      <v-card-text>
+        <v-container>
+          <v-row v-if="appointments.length > 0" dense>
+            <v-col v-for="appointment in appointments" :key="appointment.appointment_id" cols="12">
+              <v-card class="mb-4" outlined>
+                <v-card-title>
+                  <strong>{{ appointment.patients?.name || 'No Name' }}</strong>
+                </v-card-title>
+                <v-card-subtitle>
+                  Appointment Date:
+                  {{ new Date(appointment.appointment_date_time).toLocaleString() }}
+                </v-card-subtitle>
+                <v-card-text>
+                  <div>
+                    <v-icon class="mr-2" color="blue darken-2">mdi-calendar</v-icon>
+                    Status: <strong>{{ appointment.status }}</strong>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+          <v-row v-else>
+            <v-col cols="12">
+              <v-alert type="info" border="start" colored-border> No appointments found. </v-alert>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue darken-1" text="true" @click="showModal = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>
