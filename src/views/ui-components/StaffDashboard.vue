@@ -15,7 +15,7 @@
       </v-btn>
     </v-col>
 
-    <v-col cols="12" lg="12" class="d-flex align-items-stretch" v-if="activeTab === 'schedules'">
+    <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'schedules'">
       <v-card class="w-100">
         <v-card-title>Available Schedules</v-card-title>
         <v-card-text>
@@ -161,7 +161,7 @@
                     <v-icon class="mr-2" color="blue darken-2">mdi-calendar</v-icon>
                     Status: <strong>{{ appointment.status }}</strong>
                   </div>
-                  <v-btn color="primary" text="elevated" @click="showReason(appointment.reason)"
+                  <v-btn color="primary" text="tonal" @click="showReason(appointment.reason)"
                     >View Reason</v-btn
                   >
                 </v-card-text>
@@ -177,15 +177,15 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="green darken-1" text="elevated" @click="editSchedule">Modify</v-btn>
+        <v-btn color="green darken-1" text="tonal" @click="editSchedule">Modify</v-btn>
         <v-btn
           v-if="appointments.length === 0"
           color="red darken-1"
-          text="elevated"
+          text="tonal"
           @click="deleteSchedule"
           >Delete</v-btn
         >
-        <v-btn color="blue darken-1" text="elevated" @click="showModal = false">Close</v-btn>
+        <v-btn color="blue darken-1" text="tonal" @click="showModal = false">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -222,12 +222,22 @@
             type="number"
             required
           ></v-text-field>
+          <v-text-field
+            v-model="editScheduleData.appointment_type.type_name"
+            label="Appointment Type Name"
+            required
+          ></v-text-field>
+          <v-textarea
+            v-model="editScheduleData.appointment_type.description"
+            label="Appointment Type Description"
+            rows="3"
+          ></v-textarea>
           <v-btn type="submit" color="primary">Save Changes</v-btn>
         </v-form>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue darken-1" text="elevated" @click="showEditModal = false">Close</v-btn>
+        <v-btn color="blue darken-1" text="tonal" @click="showEditModal = false">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -243,7 +253,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue darken-1" text="elevated" @click="showReasonModal = false">Close</v-btn>
+        <v-btn color="blue darken-1" text="tonal" @click="showReasonModal = false">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -280,6 +290,11 @@ const editScheduleData = ref({
   start_time: '',
   end_time: '',
   available_slots: 0,
+  appointment_type: {
+    type_name: '',
+    description: '',
+  },
+  appointment_type_id: null,
 })
 const activeTab = ref('schedules')
 
@@ -298,7 +313,9 @@ const fetchAvailableSchedules = async () => {
           name
         ),
         appointment_types (
-          type_name
+          type_name,
+          description,
+          appointment_type_id
         )
       `,
       )
@@ -328,7 +345,9 @@ const fetchMySchedules = async (staffId) => {
         end_time,
         available_slots,
         appointment_types (
-          type_name
+          type_name,
+          description,
+          appointment_type_id
         )
       `,
       )
@@ -463,6 +482,11 @@ const editSchedule = () => {
     start_time: selectedSchedule.value.start_time,
     end_time: selectedSchedule.value.end_time,
     available_slots: selectedSchedule.value.available_slots,
+    appointment_type: {
+      type_name: selectedSchedule.value.appointment_types.type_name,
+      description: selectedSchedule.value.appointment_types.description,
+    },
+    appointment_type_id: selectedSchedule.value.appointment_types.appointment_type_id,
   }
   showEditModal.value = true
 }
@@ -476,17 +500,30 @@ const updateSchedule = async () => {
         start_time: editScheduleData.value.start_time,
         end_time: editScheduleData.value.end_time,
         available_slots: editScheduleData.value.available_slots,
+        appointment_type_id: editScheduleData.value.appointment_type_id,
       })
       .eq('schedule_id', selectedSchedule.value.schedule_id)
 
     if (error) {
       console.error('Error updating schedule:', error.message)
     } else {
-      showEditModal.value = false
-      showModal.value = false
-      const staffId = await fetchStaffId()
-      if (staffId) {
-        await fetchMySchedules(staffId)
+      const { error: appointmentTypeError } = await supabase
+        .from('appointment_types')
+        .update({
+          type_name: editScheduleData.value.appointment_type.type_name,
+          description: editScheduleData.value.appointment_type.description,
+        })
+        .eq('appointment_type_id', editScheduleData.value.appointment_type_id)
+
+      if (appointmentTypeError) {
+        console.error('Error updating appointment type:', appointmentTypeError.message)
+      } else {
+        showEditModal.value = false
+        showModal.value = false
+        const staffId = await fetchStaffId()
+        if (staffId) {
+          await fetchMySchedules(staffId)
+        }
       }
     }
   } catch (err) {
