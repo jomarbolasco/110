@@ -3,6 +3,19 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 
 const availableSchedules = ref([])
+const newSchedule = ref({
+  schedule_date: '',
+  start_time: '',
+  end_time: '',
+  available_slots: 0,
+  appointment_type_id: null,
+  staff_id: null,
+})
+const newAppointmentType = ref({
+  type_name: '',
+  description: '',
+})
+const activeTab = ref('schedules')
 
 const fetchAvailableSchedules = async () => {
   try {
@@ -37,6 +50,45 @@ const fetchAvailableSchedules = async () => {
   }
 }
 
+const setSchedule = async () => {
+  try {
+    const { error } = await supabase.from('schedules').insert([newSchedule.value])
+    if (error) {
+      console.error('Error setting schedule:', error.message)
+    } else {
+      await fetchAvailableSchedules()
+      // Reset the form
+      newSchedule.value = {
+        schedule_date: '',
+        start_time: '',
+        end_time: '',
+        available_slots: 0,
+        appointment_type_id: null,
+        staff_id: null,
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error setting schedule:', err.message)
+  }
+}
+
+const setAppointmentType = async () => {
+  try {
+    const { error } = await supabase.from('appointment_types').insert([newAppointmentType.value])
+    if (error) {
+      console.error('Error setting appointment type:', error.message)
+    } else {
+      // Reset the form
+      newAppointmentType.value = {
+        type_name: '',
+        description: '',
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error setting appointment type:', err.message)
+  }
+}
+
 onMounted(async () => {
   await fetchAvailableSchedules()
 })
@@ -47,7 +99,25 @@ onMounted(async () => {
     <v-col cols="12" sm="12">
       <h1>Staff Dashboard</h1>
     </v-col>
-    <v-col cols="12" lg="6" class="d-flex align-items-stretch">
+    <v-col cols="12" sm="12">
+      <v-btn @click="activeTab = 'schedules'" :color="activeTab === 'schedules' ? 'primary' : ''">
+        View Schedules
+      </v-btn>
+      <v-btn
+        @click="activeTab = 'setAppointmentType'"
+        :color="activeTab === 'setAppointmentType' ? 'primary' : ''"
+      >
+        Set Appointment Type
+      </v-btn>
+      <v-btn
+        @click="activeTab = 'setSchedule'"
+        :color="activeTab === 'setSchedule' ? 'primary' : ''"
+      >
+        Set Schedule
+      </v-btn>
+    </v-col>
+
+    <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'schedules'">
       <v-card class="w-100">
         <v-card-title>Available Schedules</v-card-title>
         <v-card-text>
@@ -88,6 +158,79 @@ onMounted(async () => {
               </v-col>
             </v-row>
           </v-container>
+        </v-card-text>
+      </v-card>
+    </v-col>
+
+    <v-col
+      cols="12"
+      lg="6"
+      class="d-flex align-items-stretch"
+      v-if="activeTab === 'setAppointmentType'"
+    >
+      <v-card class="w-100">
+        <v-card-title>Set Appointment Type</v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="setAppointmentType">
+            <v-text-field
+              v-model="newAppointmentType.type_name"
+              label="Type Name"
+              required
+            ></v-text-field>
+            <v-textarea
+              v-model="newAppointmentType.description"
+              label="Description"
+              rows="3"
+            ></v-textarea>
+            <v-btn type="submit" color="primary">Set Appointment Type</v-btn>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-col>
+
+    <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'setSchedule'">
+      <v-card class="w-100">
+        <v-card-title>Set a Schedule</v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="setSchedule">
+            <v-text-field
+              v-model="newSchedule.schedule_date"
+              label="Schedule Date"
+              type="date"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newSchedule.start_time"
+              label="Start Time"
+              type="time"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newSchedule.end_time"
+              label="End Time"
+              type="time"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newSchedule.available_slots"
+              label="Available Slots"
+              type="number"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newSchedule.appointment_type_id"
+              label="Appointment Type ID"
+              type="number"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newSchedule.staff_id"
+              label="Staff ID"
+              type="number"
+              required
+            ></v-text-field>
+            <v-btn type="submit" color="primary">Set Schedule</v-btn>
+          </v-form>
         </v-card-text>
       </v-card>
     </v-col>
