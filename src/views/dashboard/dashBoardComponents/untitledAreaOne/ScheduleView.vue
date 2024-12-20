@@ -159,7 +159,7 @@ onMounted(async () => {
         </v-row>
         <v-row v-else>
           <v-col cols="12">
-            <v-alert type="info" border="left" colored-border>
+            <v-alert type="info" border="start" colored-border>
               No available schedules found.
             </v-alert>
           </v-col>
