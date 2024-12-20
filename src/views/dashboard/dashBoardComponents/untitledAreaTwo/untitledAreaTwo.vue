@@ -92,80 +92,106 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-card class="w-100 h-100">
-    <v-card-title>Your Booked Schedules</v-card-title>
-    <v-card-text>
-      <v-container>
-        <v-row v-if="userStore.bookedSchedules.length > 0" dense>
-          <v-col
-            v-for="schedule in userStore.bookedSchedules"
-            :key="schedule.appointment_id"
-            cols="12"
-            md="6"
-          >
-            <v-card class="mb-4 hover-card" outlined @click="openModal(schedule)">
-              <v-card-title>
-                <strong>{{ schedule.schedules.appointment_types.type_name }}</strong>
-              </v-card-title>
-              <v-card-subtitle>
-                on {{ new Date(schedule.appointment_date_time).toLocaleString() }}
-              </v-card-subtitle>
-              <v-card-text>
-                <div>
-                  Status: <strong>{{ schedule.status }}</strong>
-                </div>
-                <div>Reason: {{ schedule.reason }}</div>
-                <div v-if="schedule.schedules.medical_staff.name">
-                  <strong>Assigned Staff:</strong> {{ schedule.schedules.medical_staff.name }}
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-        <v-row v-else>
-          <v-col cols="12">
-            <v-alert type="info" border="start" colored-border>
-              No booked schedules found.
-            </v-alert>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-card-text>
-  </v-card>
-
-  <v-dialog v-model="showModal" max-width="600px">
-    <v-card>
+  <v-container class="py-5">
+    <v-card class="w-100 h-100">
       <v-card-title>
-        <span class="text-h5">Modify Appointment</span>
+        <v-icon class="mr-2" color="primary">mdi-calendar</v-icon>
+        Your Booked Schedules
       </v-card-title>
       <v-card-text>
-        <div>
-          <strong>Type:</strong> {{ selectedSchedule?.schedules?.appointment_types?.type_name }}
-        </div>
-        <div>
-          <strong>Date:</strong>
-          {{ new Date(selectedSchedule?.appointment_date_time).toLocaleString() }}
-        </div>
-        <div><strong>Status:</strong> {{ selectedSchedule?.status }}</div>
-        <div><strong>Reason:</strong> {{ selectedSchedule?.reason }}</div>
-        <div v-if="selectedSchedule?.schedules?.medical_staff?.name">
-          <strong>Assigned Staff:</strong> {{ selectedSchedule.schedules.medical_staff.name }}
-        </div>
+        <v-container>
+          <v-row v-if="userStore.bookedSchedules.length > 0" dense>
+            <v-col
+              v-for="schedule in userStore.bookedSchedules"
+              :key="schedule.appointment_id"
+              cols="12"
+              md="6"
+            >
+              <v-card class="mb-4 hover-card" outlined @click="openModal(schedule)">
+                <v-card-title>
+                  <v-icon class="mr-2" color="primary">mdi-calendar-check</v-icon>
+                  <strong>{{ schedule.schedules.appointment_types.type_name }}</strong>
+                </v-card-title>
+                <v-card-subtitle>
+                  <v-icon class="mr-2" color="primary">mdi-clock</v-icon>
+                  on {{ new Date(schedule.appointment_date_time).toLocaleString() }}
+                </v-card-subtitle>
+                <v-card-text>
+                  <div>
+                    <v-icon class="mr-2" color="green darken-2">mdi-check-circle</v-icon>
+                    Status: <strong>{{ schedule.status }}</strong>
+                  </div>
+                  <div>
+                    <v-icon class="mr-2" color="blue darken-2">mdi-comment</v-icon>
+                    Reason: {{ schedule.reason }}
+                  </div>
+                  <div v-if="schedule.schedules.medical_staff.name">
+                    <v-icon class="mr-2" color="orange darken-2">mdi-account</v-icon>
+                    <strong>Assigned Staff:</strong> {{ schedule.schedules.medical_staff.name }}
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+          <v-row v-else>
+            <v-col cols="12">
+              <v-alert type="info" border="start" colored-border>
+                No booked schedules found.
+              </v-alert>
+            </v-col>
+          </v-row>
+        </v-container>
       </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn
-          v-if="selectedSchedule?.status !== 'cancelled'"
-          color="red"
-          text
-          @click="cancelAppointment"
-          >Cancel Appointment</v-btn
-        >
-        <v-btn v-else color="red" text @click="deleteAppointment">Delete Appointment</v-btn>
-        <v-btn color="blue darken-1" text @click="closeModal">Close</v-btn>
-      </v-card-actions>
     </v-card>
-  </v-dialog>
+
+    <v-dialog v-model="showModal" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <v-icon class="mr-2" color="primary">mdi-pencil</v-icon>
+          <span class="text-h5">Modify Appointment</span>
+        </v-card-title>
+        <v-card-text>
+          <div>
+            <v-icon class="mr-2" color="primary">mdi-calendar</v-icon>
+            <strong>Type:</strong> {{ selectedSchedule?.schedules?.appointment_types?.type_name }}
+          </div>
+          <div>
+            <v-icon class="mr-2" color="primary">mdi-clock</v-icon>
+            <strong>Date:</strong>
+            {{ new Date(selectedSchedule?.appointment_date_time).toLocaleString() }}
+          </div>
+          <div>
+            <v-icon class="mr-2" color="green darken-2">mdi-check-circle</v-icon>
+            <strong>Status:</strong> {{ selectedSchedule?.status }}
+          </div>
+          <div>
+            <v-icon class="mr-2" color="blue darken-2">mdi-comment</v-icon>
+            <strong>Reason:</strong> {{ selectedSchedule?.reason }}
+          </div>
+          <div v-if="selectedSchedule?.schedules?.medical_staff?.name">
+            <v-icon class="mr-2" color="orange darken-2">mdi-account</v-icon>
+            <strong>Assigned Staff:</strong> {{ selectedSchedule.schedules.medical_staff.name }}
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            v-if="selectedSchedule?.status !== 'cancelled'"
+            color="red"
+            text
+            @click="cancelAppointment"
+            ><v-icon class="mr-2">mdi-cancel</v-icon>Cancel Appointment</v-btn
+          >
+          <v-btn v-else color="red" text @click="deleteAppointment">
+            <v-icon class="mr-2">mdi-delete</v-icon>Delete Appointment
+          </v-btn>
+          <v-btn color="blue darken-1" text @click="closeModal">
+            <v-icon class="mr-2">mdi-close</v-icon>Close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
 </template>
 
 <style scoped>
@@ -175,5 +201,29 @@ onMounted(async () => {
 }
 .hover-card:hover {
   transform: scale(1.02);
+}
+.v-container {
+  background-color: #423e3e;
+  padding: 20px;
+  border-radius: 8px;
+}
+.v-card-title {
+  font-weight: bold;
+  color: #3f51b5;
+  display: flex;
+  align-items: center;
+}
+.v-card-subtitle {
+  color: #757575;
+  display: flex;
+  align-items: center;
+}
+.v-btn {
+  margin: 5px;
+}
+.v-card-text div {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
 }
 </style>
