@@ -17,7 +17,7 @@
 
     <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'schedules'">
       <v-card class="w-100">
-        <v-card-title>Available Schedules</v-card-title>
+        <v-card-title class="avail-sched-title">Available Schedules</v-card-title>
         <v-card-text>
           <v-container>
             <v-row v-if="availableSchedules.length > 0" dense>
@@ -590,7 +590,7 @@ onMounted(async () => {
   transform: scale(1.02);
 }
 .v-card-title {
-  background-color: #1976d2;
+  background: linear-gradient(90deg, rgba(236, 62, 62, 0.678), purple);
   color: white;
   padding: 16px;
   font-weight: bold;

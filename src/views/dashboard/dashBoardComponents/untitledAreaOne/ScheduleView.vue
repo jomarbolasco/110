@@ -208,4 +208,11 @@ onMounted(async () => {
 .hover-card:hover {
   transform: scale(1.02);
 }
+
+.v-card-title {
+  background: linear-gradient(90deg, rgba(236, 62, 62, 0.678), purple);
+  color: white;
+  padding: 16px;
+  font-weight: bold;
+}
 </style>
