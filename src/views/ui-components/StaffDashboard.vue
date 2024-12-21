@@ -17,7 +17,7 @@
 
     <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'schedules'">
       <v-card class="w-100">
-        <v-card-title>Available Schedules</v-card-title>
+        <v-card-title class="avail-sched-title">Available Schedules</v-card-title>
         <v-card-text>
           <v-container>
             <v-row v-if="availableSchedules.length > 0" dense>
@@ -105,23 +105,25 @@
       </v-card>
     </v-col>
 
-    <v-col cols="12" sm="12">
+    <v-col cols="12" sm="6">
       <h2>My Schedules</h2>
       <v-container>
         <v-row v-if="mySchedules.length > 0" dense>
           <v-col v-for="schedule in mySchedules" :key="schedule.schedule_id" cols="12" md="6">
             <v-card class="mb-4 hover-card" outlined @click="handleScheduleClick(schedule)">
               <v-card-title>
+                <v-icon class="mr-2" color="blue">mdi-calendar</v-icon>
                 <strong>{{ schedule.appointment_types.type_name }}</strong>
               </v-card-title>
               <v-card-subtitle>
-                {{ new Date(schedule.schedule_date).toLocaleDateString() }} from
-                {{ schedule.start_time }} to {{ schedule.end_time }}
+                <v-icon class="mr-1" color="grey">mdi-calendar-clock</v-icon>
+                {{ schedule.formattedDate }} - {{ schedule.formattedStartTime }} to
+                {{ schedule.formattedEndTime }}
               </v-card-subtitle>
               <v-card-text>
                 <div>
-                  <v-icon class="mr-2" color="green darken-2">mdi-account-multiple</v-icon>
-                  Available Slots: <strong>{{ schedule.available_slots }}</strong>
+                  <v-icon class="mr-1" color="grey">mdi-comment</v-icon>
+                  {{ schedule.appointment_types.description }}
                 </div>
               </v-card-text>
             </v-card>
@@ -129,7 +131,10 @@
         </v-row>
         <v-row v-else>
           <v-col cols="12">
-            <v-alert type="info" border="start" colored-border> No schedules found. </v-alert>
+            <v-alert type="info" border="start" colored-border>
+              <v-icon class="mr-2">mdi-information-outline</v-icon>
+              No schedules found.
+            </v-alert>
           </v-col>
         </v-row>
       </v-container>
@@ -263,6 +268,7 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/components/util/supabase'
 import { useUserStore } from '@/stores/userStore'
+import { format } from 'date-fns'
 
 const userStore = useUserStore()
 const availableSchedules = ref([])
@@ -348,6 +354,9 @@ const fetchMySchedules = async (staffId) => {
           type_name,
           description,
           appointment_type_id
+        ),
+        appointments (
+          appointment_id
         )
       `,
       )
@@ -357,7 +366,13 @@ const fetchMySchedules = async (staffId) => {
       console.error('Error fetching my schedules:', error.message)
       mySchedules.value = []
     } else {
-      mySchedules.value = data
+      mySchedules.value = data.map((schedule) => ({
+        ...schedule,
+        appointment_count: schedule.appointments.length,
+        formattedDate: format(new Date(schedule.schedule_date), 'MMMM d, yyyy'),
+        formattedStartTime: format(new Date(`1970-01-01T${schedule.start_time}`), 'h:mm a'),
+        formattedEndTime: format(new Date(`1970-01-01T${schedule.end_time}`), 'h:mm a'),
+      }))
     }
   } catch (err) {
     console.error('Unexpected error fetching my schedules:', err.message)
@@ -573,5 +588,31 @@ onMounted(async () => {
 }
 .hover-card:hover {
   transform: scale(1.02);
+}
+.v-card-title {
+  background: linear-gradient(90deg, rgba(236, 62, 62, 0.678), purple);
+  color: white;
+  padding: 16px;
+  font-weight: bold;
+}
+
+.v-card-subtitle {
+  color: #616161;
+  font-size: 14px;
+}
+
+.v-alert {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.v-btn {
+  margin: 8px;
+}
+
+.text-h5 {
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 </style>

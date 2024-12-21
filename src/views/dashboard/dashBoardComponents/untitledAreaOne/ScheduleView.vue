@@ -1,11 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-// import { useRouter } from 'vue-router'
 import { supabase } from '@/components/util/supabase'
 import { useUserStore } from '@/stores/userStore'
+import { format } from 'date-fns'
 
 const userStore = useUserStore()
-// const router = useRouter()
 const availableSchedules = ref([])
 const selectedSchedule = ref(null)
 const showModal = ref(false)
@@ -37,7 +36,12 @@ const fetchAvailableSchedules = async () => {
       console.error('Error fetching available schedules:', error.message)
       availableSchedules.value = []
     } else {
-      availableSchedules.value = data
+      availableSchedules.value = data.map((schedule) => ({
+        ...schedule,
+        formattedDate: format(new Date(schedule.schedule_date), 'MMMM d, yyyy'),
+        formattedStartTime: format(new Date(`1970-01-01T${schedule.start_time}`), 'h:mm a'),
+        formattedEndTime: format(new Date(`1970-01-01T${schedule.end_time}`), 'h:mm a'),
+      }))
     }
   } catch (err) {
     console.error('Unexpected error fetching available schedules:', err.message)
@@ -143,8 +147,8 @@ onMounted(async () => {
               </v-card-title>
               <v-card-subtitle>
                 <v-icon class="mr-2" color="blue darken-2">mdi-clock</v-icon>
-                {{ new Date(schedule.schedule_date).toLocaleDateString() }} from
-                {{ schedule.start_time }} to {{ schedule.end_time }}
+                {{ schedule.formattedDate }} from {{ schedule.formattedStartTime }} to
+                {{ schedule.formattedEndTime }}
               </v-card-subtitle>
               <v-card-text>
                 <v-row>
@@ -181,8 +185,8 @@ onMounted(async () => {
         <div><strong>Type:</strong> {{ selectedSchedule?.appointment_types?.type_name }}</div>
         <div>
           <strong>Date:</strong>
-          {{ new Date(selectedSchedule?.schedule_date).toLocaleDateString() }} from
-          {{ selectedSchedule?.start_time }} to {{ selectedSchedule?.end_time }}
+          {{ selectedSchedule?.formattedDate }} from {{ selectedSchedule?.formattedStartTime }} to
+          {{ selectedSchedule?.formattedEndTime }}
         </div>
         <div><strong>Assigned Staff:</strong> {{ selectedSchedule?.medical_staff?.name }}</div>
         <v-textarea v-model="reason" label="Reason for Appointment" rows="3"></v-textarea>
@@ -203,5 +207,12 @@ onMounted(async () => {
 }
 .hover-card:hover {
   transform: scale(1.02);
+}
+
+.v-card-title {
+  background: linear-gradient(90deg, rgba(236, 62, 62, 0.678), purple);
+  color: white;
+  padding: 16px;
+  font-weight: bold;
 }
 </style>
