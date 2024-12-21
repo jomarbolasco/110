@@ -31,43 +31,52 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import axios from 'axios'
+import { ref } from 'vue'
 
 const question = ref('')
 const response = ref('')
 const loading = ref(false)
+const error = ref(null)
 
 const askQuestion = async () => {
   loading.value = true
+  error.value = null
   try {
-    const result = await axios.post(
-      'https://api-inference.huggingface.co/models/gpt2',
-      {
-        inputs: question.value,
-        parameters: {
-          max_length: 150,
-          temperature: 0.7,
-        },
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_HUGGING_FACE_API_KEY}`,
-        },
-      },
-    )
+    console.log('Question:', question.value) // Log the question value
+    console.log('Authorization Token:', import.meta.env.VITE_COHERE_API_KEY) // Log the token
 
-    response.value = result.data[0].generated_text
-  } catch (error) {
-    console.error('Error fetching response:', error)
-    response.value = 'Sorry, there was an error generating a response. Please try again later.'
+    const payload = {
+      model: 'command-xlarge-nightly',
+      prompt: question.value,
+      max_tokens: 150,
+      temperature: 0.7,
+    }
+    console.log('Payload:', payload) // Log the payload
+
+    const result = await axios.post('https://api.cohere.ai/generate', payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_COHERE_API_KEY}`,
+      },
+    })
+
+    console.log('Result:', result) // Log the result
+
+    if (result.data && result.data.text) {
+      response.value = result.data.text
+    } else {
+      throw new Error('Unexpected response structure')
+    }
+  } catch (err) {
+    error.value = 'An error occurred while fetching the response.'
+    console.error('Error details:', err.response ? err.response.data : err.message) // Log error details
   } finally {
     loading.value = false
   }
 }
 
-console.log('API Key:', import.meta.env.VITE_HUGGING_FACE_API_KEY)
+console.log('API Key:', import.meta.env.VITE_COHERE_API_KEY)
 </script>
 
 <style scoped>
