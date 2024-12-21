@@ -112,7 +112,21 @@ onMounted(async () => {
             cols="12"
             md="6"
           >
-            <v-card class="mb-4 hover-card" outlined @click="openModal(schedule)">
+            <v-card
+              class="mb-4 hover-card"
+              outlined
+              @click="openModal(schedule)"
+              :color="
+                schedule.status === 'scheduled'
+                  ? 'success'
+                  : schedule.status === 'cancelled'
+                    ? 'warning'
+                    : ''
+              "
+              :text-color="
+                schedule.status === 'scheduled' || schedule.status === 'cancelled' ? 'white' : ''
+              "
+            >
               <v-card-title>
                 <v-icon class="mr-2" color="blue">mdi-clock-outline</v-icon>
                 <strong>{{ schedule.schedules.appointment_types.type_name }}</strong>
@@ -212,15 +226,8 @@ onMounted(async () => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.v-card-title {
-  background-color: #1976d2;
-  color: white;
-  padding: 16px;
-  font-weight: bold;
-}
-
 .v-card-subtitle {
-  color: #616161;
+  color: black;
   font-size: 14px;
 }
 
@@ -239,7 +246,7 @@ onMounted(async () => {
   font-weight: bold;
 }
 .v-card-title {
-  background: linear-gradient(90deg, rgba(236, 62, 62, 0.678), purple);
+  /* background: linear-gradient(90deg, rgba(236, 62, 62, 0.678), purple); */
   color: white;
   padding: 16px;
   font-weight: bold;
