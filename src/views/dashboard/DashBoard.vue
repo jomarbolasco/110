@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import HeroSectionView from './dashBoardComponents/heroSection/heroSectionView.vue'
 import ScheduleView from './dashBoardComponents/untitledAreaOne/ScheduleView.vue'
 import UntitledAreaTwo from './dashBoardComponents/untitledAreaTwo/untitledAreaTwo.vue'
