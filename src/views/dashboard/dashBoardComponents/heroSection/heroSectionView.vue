@@ -1,40 +1,27 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-const elementVisible = ref(false)
-
-onMounted(() => {
-  setTimeout(() => (elementVisible.value = true), 10)
-})
-</script>
-
 <script>
+const gradients = [
+  ['#222'],
+  ['#42b3f4'],
+  ['red', 'orange', 'yellow'],
+  ['purple', 'violet'],
+  ['#00c6ff', '#F0F', '#FF0'],
+  ['#f72047', '#ffd200', '#1feaea'],
+]
+
 export default {
-  data() {
-    return {
-      slides: [
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital1.png',
-        },
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital2.jpg',
-        },
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital3.jpg',
-        },
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital4.jpg',
-        },
-        {
-          image:
-            'https://onhlawoqasmyceacldah.supabase.co/storage/v1/object/public/images/samplehospital5.jpg',
-        },
-      ],
-    }
-  },
+  data: () => ({
+    width: 2,
+    radius: 10,
+    padding: 8,
+    lineCap: 'round',
+    gradient: gradients[5],
+    value: [0, 2, 5, 9, 5, 10, 3, 5, 0, 0, 1, 8, 2, 9, 0],
+    gradientDirection: 'top',
+    gradients,
+    fill: false,
+    type: 'trend',
+    autoLineWidth: false,
+  }),
 }
 </script>
 
@@ -48,46 +35,22 @@ export default {
         <div>
           <h3 class="text-h6 title font-weight-medium">New's and Update's</h3>
         </div>
-        <v-spacer></v-spacer>
-        <div class="ml-auto">
-          <div class="d-flex align-center">
-            <div class="d-flex align-center px-2">
-              <span class="text-primary">
-                <span class="text-overline">
-                  <i class="mdi mdi-brightness-1 mx-1"></i>
-                </span>
-                <span class="font-weight-regular">something</span>
-              </span>
-            </div>
-            <div class="d-flex align-center px-2">
-              <span class="text-secondary">
-                <span class="text-overline">
-                  <i class="mdi mdi-brightness-1 mx-1"></i>
-                </span>
-                <span class="font-weight-regular">anotherthing</span>
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
-      <div v-show="elementVisible">
-        <v-carousel height="200" :show-arrows="false" cycle hide-delimiter-background>
-          <v-carousel-item v-for="(slide, i) in slides" :key="i">
-            <!-- Add the image here -->
-            <v-img
-              :src="slide.image"
-              height="100%"
-              class="d-flex justify-center align-center"
-              cover
-            >
-              <!-- Overlay text -->
-              <div class="text-h2 white--text">
-                {{ slide.text }}
-              </div>
-            </v-img>
-          </v-carousel-item>
-        </v-carousel>
-      </div>
+      <v-spacer></v-spacer>
+      <v-sparkline
+        :auto-line-width="autoLineWidth"
+        :fill="fill"
+        :gradient="gradient"
+        :gradient-direction="gradientDirection"
+        :line-width="width"
+        :model-value="value"
+        :padding="padding"
+        :smooth="radius || false"
+        :stroke-linecap="lineCap"
+        :type="type"
+        :loop="true"
+        auto-draw
+      ></v-sparkline>
     </v-card-text>
   </v-card>
 </template>

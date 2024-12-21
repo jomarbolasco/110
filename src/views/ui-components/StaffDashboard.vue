@@ -105,7 +105,7 @@
       </v-card>
     </v-col>
 
-    <v-col cols="12" sm="12">
+    <v-col cols="12" sm="6">
       <h2>My Schedules</h2>
       <v-container>
         <v-row v-if="mySchedules.length > 0" dense>
