@@ -16,8 +16,8 @@ export default defineConfig({
   },
   base: '/',
   define: {
-    'process.env': {
-      VITE_HUGGING_FACE_API_KEY: process.env.VITE_HUGGING_FACE_API_KEY,
+    'import.meta.env': {
+      VITE_COHERE_API_KEY: import.meta.env.VITE_COHERE_API_KEY,
     },
   },
 })
