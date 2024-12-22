@@ -19,5 +19,6 @@ export default defineConfig({
   base: '/',
   define: {
     'import.meta.env.VITE_COHERE_API_KEY': JSON.stringify(process.env.VITE_COHERE_API_KEY),
+    'import.meta.env.VITE_NEWSAPI_KEY': JSON.stringify(process.env.VITE_NEWSAPI_KEY),
   },
 })
