@@ -48,7 +48,7 @@ const askQuestion = async () => {
 
     const payload = {
       model: 'command-xlarge-nightly',
-      prompt: question.value,
+      prompt: `This is a health-related question: ${question.value}. if not please dont answer it.`,
       max_tokens: 150,
       temperature: 0.7,
     }
