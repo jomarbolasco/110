@@ -1,10 +1,12 @@
 import { fileURLToPath, URL } from 'node:url'
 import dotenv from 'dotenv'
+import process from 'node:process'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
+// Load environment variables from .env file
 dotenv.config()
 
 export default defineConfig({
@@ -16,8 +18,6 @@ export default defineConfig({
   },
   base: '/',
   define: {
-    'import.meta.env': {
-      VITE_COHERE_API_KEY: import.meta.env.VITE_COHERE_API_KEY,
-    },
+    'import.meta.env.VITE_COHERE_API_KEY': JSON.stringify(process.env.VITE_COHERE_API_KEY),
   },
 })
