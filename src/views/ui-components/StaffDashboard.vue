@@ -145,13 +145,13 @@
   <v-dialog v-model="showModal" max-width="600px">
     <v-card>
       <v-card-title>
-        <span class="headline"
-          >Appointments for {{ selectedSchedule?.appointment_types?.type_name }}</span
-        >
+        <span class="headline">
+          Appointments for {{ selectedSchedule?.appointment_types?.type_name }}
+        </span>
       </v-card-title>
       <v-card-text>
         <v-container>
-          <v-row v-if="appointments.length > 0" dense>
+          <v-row v-if="appointments && appointments.length > 0" dense>
             <v-col v-for="appointment in appointments" :key="appointment.appointment_id" cols="12">
               <v-card class="mb-4" outlined>
                 <v-card-title>
