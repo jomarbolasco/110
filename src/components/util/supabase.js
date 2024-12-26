@@ -15,7 +15,8 @@ export const formActionDefault = {
 
 // Function to check if the schedule is in the past
 const isPastSchedule = (scheduleDate, startTime) => {
-  return new Date(scheduleDate + ' ' + startTime) < new Date()
+  const scheduleDateTime = new Date(`${scheduleDate}T${startTime}`)
+  return scheduleDateTime < new Date()
 }
 
 // Create Appointment function

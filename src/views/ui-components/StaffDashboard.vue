@@ -64,6 +64,9 @@
       <v-card class="w-100">
         <v-card-title>Set a Schedule</v-card-title>
         <v-card-text>
+          <v-alert v-if="showAlert" type="error" dismissible @click:close="showAlert = false">
+            {{ alertMessage }}
+          </v-alert>
           <v-form @submit.prevent="setSchedule">
             <v-text-field
               v-model="newSchedule.schedule_date"
@@ -419,7 +422,22 @@ const fetchAppointments = async (scheduleId) => {
   }
 }
 
+const isPastSchedule = (scheduleDate) => {
+  const scheduleDateTime = new Date(scheduleDate).setHours(0, 0, 0, 0)
+  const currentDateTime = new Date().setHours(0, 0, 0, 0)
+  return scheduleDateTime < currentDateTime
+}
+
+const showAlert = ref(false)
+const alertMessage = ref('')
+
 const setSchedule = async () => {
+  if (isPastSchedule(newSchedule.value.schedule_date)) {
+    alertMessage.value = 'Cannot set a schedule for a past date.'
+    showAlert.value = true
+    return
+  }
+
   try {
     // Fetch the staff ID
     const staffId = await fetchStaffId()

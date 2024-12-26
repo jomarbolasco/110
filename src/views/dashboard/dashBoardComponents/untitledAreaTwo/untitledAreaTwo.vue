@@ -7,6 +7,8 @@ import { format } from 'date-fns'
 const userStore = useUserStore()
 const selectedSchedule = ref(null)
 const showModal = ref(false)
+const showAlert = ref(false)
+const alertMessage = ref('')
 
 const openModal = (schedule) => {
   selectedSchedule.value = schedule
@@ -23,7 +25,11 @@ const isPastSchedule = (schedule) => {
 }
 
 const cancelAppointment = async () => {
-  if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) return
+  if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) {
+    alertMessage.value = 'Cannot cancel an appointment for a past schedule.'
+    showAlert.value = true
+    return
+  }
 
   try {
     const { error: appointmentError } = await supabase
@@ -68,7 +74,11 @@ const cancelAppointment = async () => {
 }
 
 const deleteAppointment = async () => {
-  if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) return
+  if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) {
+    alertMessage.value = 'Cannot delete an appointment for a past schedule.'
+    showAlert.value = true
+    return
+  }
 
   try {
     const { error } = await supabase
@@ -109,6 +119,9 @@ onMounted(async () => {
     </v-card-title>
     <v-card-text>
       <v-container>
+        <v-alert v-if="showAlert" type="error" dismissible @click:close="showAlert = false">
+          {{ alertMessage }}
+        </v-alert>
         <v-row v-if="formattedSchedules.length > 0" dense>
           <v-col
             v-for="schedule in formattedSchedules"
