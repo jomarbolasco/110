@@ -86,10 +86,17 @@ const isPastSchedule = (schedule) => {
   return new Date(schedule.schedule_date + 'T' + schedule.start_time) < new Date()
 }
 
+const showAlertWithTimeout = (message) => {
+  alertMessage.value = message
+  showAlert.value = true
+  setTimeout(() => {
+    showAlert.value = false
+  }, 3000)
+}
+
 const bookAppointment = async () => {
   if (!selectedSchedule.value || !patientId.value || isPastSchedule(selectedSchedule.value)) {
-    alertMessage.value = 'Cannot book an appointment for a past schedule.'
-    showAlert.value = true
+    showAlertWithTimeout('Cannot book an appointment for a past schedule.')
     return
   }
 
@@ -138,9 +145,6 @@ onMounted(async () => {
     <v-card-title class="text-h5">Available Schedules</v-card-title>
     <v-card-text>
       <v-container>
-        <v-alert v-if="showAlert" type="error" dismissible @click:close="showAlert = false">
-          {{ alertMessage }}
-        </v-alert>
         <v-row v-if="availableSchedules.length > 0" dense>
           <v-col
             v-for="schedule in availableSchedules"
@@ -195,6 +199,9 @@ onMounted(async () => {
         <span class="text-h5">Book Appointment</span>
       </v-card-title>
       <v-card-text>
+        <v-alert v-if="showAlert" type="error" dismissible @click:close="showAlert = false">
+          {{ alertMessage }}
+        </v-alert>
         <div><strong>Type:</strong> {{ selectedSchedule?.appointment_types?.type_name }}</div>
         <div>
           <strong>Date:</strong>

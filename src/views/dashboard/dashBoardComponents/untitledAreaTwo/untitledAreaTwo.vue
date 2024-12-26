@@ -24,10 +24,17 @@ const isPastSchedule = (schedule) => {
   return new Date(schedule.appointment_date_time) < new Date()
 }
 
+const showAlertWithTimeout = (message) => {
+  alertMessage.value = message
+  showAlert.value = true
+  setTimeout(() => {
+    showAlert.value = false
+  }, 3000)
+}
+
 const cancelAppointment = async () => {
   if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) {
-    alertMessage.value = 'Cannot cancel an appointment for a past schedule.'
-    showAlert.value = true
+    showAlertWithTimeout('Cannot cancel an appointment for a past schedule.')
     return
   }
 
@@ -75,8 +82,7 @@ const cancelAppointment = async () => {
 
 const deleteAppointment = async () => {
   if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) {
-    alertMessage.value = 'Cannot delete an appointment for a past schedule.'
-    showAlert.value = true
+    showAlertWithTimeout('Cannot delete an appointment for a past schedule.')
     return
   }
 
@@ -119,9 +125,6 @@ onMounted(async () => {
     </v-card-title>
     <v-card-text>
       <v-container>
-        <v-alert v-if="showAlert" type="error" dismissible @click:close="showAlert = false">
-          {{ alertMessage }}
-        </v-alert>
         <v-row v-if="formattedSchedules.length > 0" dense>
           <v-col
             v-for="schedule in formattedSchedules"
@@ -188,6 +191,9 @@ onMounted(async () => {
         Appointment
       </v-card-title>
       <v-card-text>
+        <v-alert v-if="showAlert" type="error" dismissible @click:close="showAlert = false">
+          {{ alertMessage }}
+        </v-alert>
         <div>
           <strong>Type:</strong> {{ selectedSchedule?.schedules?.appointment_types?.type_name }}
         </div>
