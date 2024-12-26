@@ -74,7 +74,6 @@ const cancelAppointment = async () => {
 
     await userStore.fetchBookedSchedules()
     closeModal()
-    window.location.reload()
   } catch (err) {
     console.error('Unexpected error cancelling appointment:', err.message)
   }
