@@ -18,8 +18,12 @@ const closeModal = () => {
   selectedSchedule.value = null
 }
 
+const isPastSchedule = (schedule) => {
+  return new Date(schedule.appointment_date_time) < new Date()
+}
+
 const cancelAppointment = async () => {
-  if (!selectedSchedule.value) return
+  if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) return
 
   try {
     const { error: appointmentError } = await supabase
@@ -64,7 +68,7 @@ const cancelAppointment = async () => {
 }
 
 const deleteAppointment = async () => {
-  if (!selectedSchedule.value) return
+  if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) return
 
   try {
     const { error } = await supabase

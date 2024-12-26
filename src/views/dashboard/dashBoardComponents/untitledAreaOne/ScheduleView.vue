@@ -80,8 +80,12 @@ const closeModal = () => {
   reason.value = ''
 }
 
+const isPastSchedule = (schedule) => {
+  return new Date(schedule.schedule_date + ' ' + schedule.start_time) < new Date()
+}
+
 const bookAppointment = async () => {
-  if (!selectedSchedule.value || !patientId.value) return
+  if (!selectedSchedule.value || !patientId.value || isPastSchedule(selectedSchedule.value)) return
 
   try {
     const { error: insertError } = await supabase.from('appointments').insert({
