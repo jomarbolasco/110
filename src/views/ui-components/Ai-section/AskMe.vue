@@ -30,6 +30,7 @@
 <script setup>
 import axios from 'axios'
 import { ref } from 'vue'
+import { supabase } from '@/components/util/supabase' // Import supabase client
 
 const question = ref('')
 const response = ref('')
@@ -42,7 +43,7 @@ const askQuestion = async () => {
   try {
     const payload = {
       model: 'command-xlarge-nightly',
-      prompt: `This is a health-related question: ${question.value}. if not please dont answer it.`,
+      prompt: `This is a health-related question: ${question.value}. Please provide an answer and suggest possible medicines that could be used.`,
       max_tokens: 150,
       temperature: 0.7,
     }
@@ -56,12 +57,29 @@ const askQuestion = async () => {
 
     if (result.data && result.data.text) {
       response.value = result.data.text
-    } else {
-      throw new Error('Unexpected response structure')
+
+      // Get the current user
+      const { data: user, error: userError } = await supabase.auth.getUser()
+      if (userError) {
+        throw new Error('Error fetching user details')
+      }
+
+      // Save the response to the ai_responses table
+      const { error: insertError } = await supabase.from('ai_responses').insert([
+        {
+          user_id: user.id, // Use the fetched user ID
+          question: question.value,
+          response: response.value,
+        },
+      ])
+
+      if (insertError) {
+        console.error('Error saving AI response:', insertError.message)
+      }
     }
   } catch (err) {
+    console.error(err)
     error.value = 'An error occurred while fetching the response.'
-    console.error('Error details:', err.response ? err.response.data : err.message)
   } finally {
     loading.value = false
   }

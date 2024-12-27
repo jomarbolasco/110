@@ -98,6 +98,14 @@ add column name VARCHAR(255);
 
 -- added AI tables
 
+-- Creating the AI_Responses table
+CREATE TABLE ai_responses (
+    response_id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id),
+    question TEXT NOT NULL,
+    response TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Altering the Past_Schedules table to add foreign key constraints
 ALTER TABLE past_schedules
