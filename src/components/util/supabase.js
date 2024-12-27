@@ -48,21 +48,6 @@ export const createAppointment = async (appointmentData) => {
 
 // Cancel Appointment function
 export const cancelAppointment = async (appointmentId, scheduleId) => {
-  // Fetch schedule details to check if it's in the past
-  const { data: scheduleDetails, error: fetchScheduleError } = await supabase
-    .from('schedules')
-    .select('schedule_date, start_time')
-    .eq('schedule_id', scheduleId)
-    .single()
-
-  if (fetchScheduleError) {
-    throw new Error(`Failed to fetch schedule: ${fetchScheduleError.message}`)
-  }
-
-  if (isPastSchedule(scheduleDetails.schedule_date, scheduleDetails.start_time)) {
-    throw new Error('Cannot cancel an appointment for a past schedule.')
-  }
-
   console.log(`Canceling appointment with ID: ${appointmentId} for schedule ID: ${scheduleId}`)
 
   const { error: cancelError } = await supabase

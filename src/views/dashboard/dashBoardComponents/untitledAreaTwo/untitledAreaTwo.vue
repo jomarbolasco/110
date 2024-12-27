@@ -80,8 +80,8 @@ const cancelAppointment = async () => {
 }
 
 const deleteAppointment = async () => {
-  if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) {
-    showAlertWithTimeout('Cannot delete an appointment for a past schedule.')
+  if (!selectedSchedule.value) {
+    showAlertWithTimeout('Cannot delete an appointment without a selected schedule.')
     return
   }
 
