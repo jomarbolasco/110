@@ -38,9 +38,9 @@ const logout = async () => {
 
 // Profile menu items
 const profile = ref([
-  { title: 'My Profile', desc: 'Account Settings', action: () => router.push('/profile') },
-  { title: 'My Inbox', desc: 'Messages & Emails', action: () => router.push('/inbox') },
-  { title: 'My Tasks', desc: 'To-do and Daily Tasks', action: () => router.push('/tasks') },
+  // { title: 'My Profile', desc: 'Account Settings', action: () => router.push('/profile') },
+  // { title: 'My Inbox', desc: 'Messages & Emails', action: () => router.push('/inbox') },
+  // { title: 'My Tasks', desc: 'To-do and Daily Tasks', action: () => router.push('/tasks') },
 ])
 </script>
 
