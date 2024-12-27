@@ -98,3 +98,19 @@ add column name VARCHAR(255);
 
 -- added AI tables
 
+
+-- Altering the Past_Schedules table to add foreign key constraints
+ALTER TABLE past_schedules
+ADD CONSTRAINT fk_past_schedules_staff_id
+FOREIGN KEY (staff_id) REFERENCES medical_staff(staff_id),
+ADD CONSTRAINT fk_past_schedules_appointment_type_id
+FOREIGN KEY (appointment_type_id) REFERENCES appointment_types(appointment_type_id);
+
+-- Altering the Past_Appointments table to add foreign key constraints
+ALTER TABLE past_appointments
+ADD CONSTRAINT fk_past_appointments_patient_id
+FOREIGN KEY (patient_id) REFERENCES patients(patient_id),
+ADD CONSTRAINT fk_past_appointments_staff_id
+FOREIGN KEY (staff_id) REFERENCES medical_staff(staff_id),
+ADD CONSTRAINT fk_past_appointments_schedule_id
+FOREIGN KEY (schedule_id) REFERENCES schedules(schedule_id);
