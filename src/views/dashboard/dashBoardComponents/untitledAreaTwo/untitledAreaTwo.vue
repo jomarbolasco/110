@@ -7,6 +7,8 @@ import { format } from 'date-fns'
 const userStore = useUserStore()
 const selectedSchedule = ref(null)
 const showModal = ref(false)
+const showAlert = ref(false)
+const alertMessage = ref('')
 
 const openModal = (schedule) => {
   selectedSchedule.value = schedule
@@ -18,8 +20,23 @@ const closeModal = () => {
   selectedSchedule.value = null
 }
 
+const isPastSchedule = (schedule) => {
+  return new Date(schedule.appointment_date_time) < new Date()
+}
+
+const showAlertWithTimeout = (message) => {
+  alertMessage.value = message
+  showAlert.value = true
+  setTimeout(() => {
+    showAlert.value = false
+  }, 3000)
+}
+
 const cancelAppointment = async () => {
-  if (!selectedSchedule.value) return
+  if (!selectedSchedule.value || isPastSchedule(selectedSchedule.value)) {
+    showAlertWithTimeout('Cannot cancel an appointment for a past schedule.')
+    return
+  }
 
   try {
     const { error: appointmentError } = await supabase
@@ -57,14 +74,16 @@ const cancelAppointment = async () => {
 
     await userStore.fetchBookedSchedules()
     closeModal()
-    window.location.reload()
   } catch (err) {
     console.error('Unexpected error cancelling appointment:', err.message)
   }
 }
 
 const deleteAppointment = async () => {
-  if (!selectedSchedule.value) return
+  if (!selectedSchedule.value) {
+    showAlertWithTimeout('Cannot delete an appointment without a selected schedule.')
+    return
+  }
 
   try {
     const { error } = await supabase
@@ -171,6 +190,9 @@ onMounted(async () => {
         Appointment
       </v-card-title>
       <v-card-text>
+        <v-alert v-if="showAlert" type="error" dismissible @click:close="showAlert = false">
+          {{ alertMessage }}
+        </v-alert>
         <div>
           <strong>Type:</strong> {{ selectedSchedule?.schedules?.appointment_types?.type_name }}
         </div>

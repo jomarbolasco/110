@@ -10,6 +10,8 @@ const selectedSchedule = ref(null)
 const showModal = ref(false)
 const reason = ref('')
 const patientId = ref(null)
+const showAlert = ref(false)
+const alertMessage = ref('')
 
 const fetchAvailableSchedules = async () => {
   try {
@@ -80,8 +82,23 @@ const closeModal = () => {
   reason.value = ''
 }
 
+const isPastSchedule = (schedule) => {
+  return new Date(schedule.schedule_date + 'T' + schedule.start_time) < new Date()
+}
+
+const showAlertWithTimeout = (message) => {
+  alertMessage.value = message
+  showAlert.value = true
+  setTimeout(() => {
+    showAlert.value = false
+  }, 3000)
+}
+
 const bookAppointment = async () => {
-  if (!selectedSchedule.value || !patientId.value) return
+  if (!selectedSchedule.value || !patientId.value || isPastSchedule(selectedSchedule.value)) {
+    showAlertWithTimeout('Cannot book an appointment for a past schedule.')
+    return
+  }
 
   try {
     const { error: insertError } = await supabase.from('appointments').insert({
@@ -182,6 +199,9 @@ onMounted(async () => {
         <span class="text-h5">Book Appointment</span>
       </v-card-title>
       <v-card-text>
+        <v-alert v-if="showAlert" type="error" dismissible @click:close="showAlert = false">
+          {{ alertMessage }}
+        </v-alert>
         <div><strong>Type:</strong> {{ selectedSchedule?.appointment_types?.type_name }}</div>
         <div>
           <strong>Date:</strong>
