@@ -143,7 +143,7 @@ const onRegisterFormSubmit = async () => {
       // Step 3: Redirect after successful registration
       messageType.value = 'success'
       registerMessage.value = 'Registration successful!'
-      router.replace('/dashboard')
+      router.replace('/ui-components/StaffDashboard')
     }
   } catch (error) {
     registerMessage.value = 'An unexpected error occurred. Please try again.'
@@ -151,11 +151,6 @@ const onRegisterFormSubmit = async () => {
   } finally {
     loading.value = false
   }
-}
-
-// Function to handle "Forgot Password" click
-const forgotPassword = () => {
-  router.push('/forgot-password')
 }
 </script>
 
@@ -218,12 +213,12 @@ const forgotPassword = () => {
                               ></v-text-field>
 
                               <v-row>
-                                <v-col cols="12" sm="7">
-                                  <v-checkbox
+                                <v-col cols="12" sm="12">
+                                  <!-- <v-checkbox
                                     label="Remember Me"
                                     class="mt-n1"
                                     color="blue"
-                                  ></v-checkbox>
+                                  ></v-checkbox> -->
                                 </v-col>
                                 <!-- <v-col cols="12" sm="5">
                                   <span class="caption blue--text" @click="forgotPassword"
