@@ -60,6 +60,34 @@ CREATE TABLE appointments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Creating the Past_Schedules table
+CREATE TABLE past_schedules (
+    past_schedule_id SERIAL PRIMARY KEY,
+    schedule_id INT,
+    staff_id INT,
+    appointment_type_id INT,
+    schedule_date DATE,
+    start_time TIME,
+    end_time TIME,
+    available_slots INT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- Creating the Past_Appointments table
+CREATE TABLE past_appointments (
+    past_appointment_id SERIAL PRIMARY KEY,
+    appointment_id INT,
+    patient_id INT,
+    staff_id INT,
+    appointment_date_time TIMESTAMP,
+    schedule_id INT,
+    reason TEXT,
+    status VARCHAR(50),
+    booked_by_user_id UUID,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
 
 ALTER TABLE schedules
 ADD CONSTRAINT fk_staff_id

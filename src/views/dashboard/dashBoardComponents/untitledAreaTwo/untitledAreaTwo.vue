@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore'
-import { supabase } from '@/components/util/supabase'
+import { supabase, movePastSchedules, movePastAppointments } from '@/components/util/supabase'
 import { format } from 'date-fns'
 
 const userStore = useUserStore()
@@ -112,6 +112,8 @@ const formatSchedule = (schedule) => {
 const formattedSchedules = computed(() => userStore.bookedSchedules.map(formatSchedule))
 
 onMounted(async () => {
+  await movePastSchedules()
+  await movePastAppointments()
   await userStore.fetchBookedSchedules()
 })
 </script>
