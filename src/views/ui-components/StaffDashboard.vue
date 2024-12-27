@@ -13,6 +13,18 @@
       >
         Set Schedule
       </v-btn>
+      <v-btn
+        @click="activeTab = 'pastSchedules'"
+        :color="activeTab === 'pastSchedules' ? 'primary' : ''"
+      >
+        View Past Schedules
+      </v-btn>
+      <v-btn
+        @click="activeTab = 'pastAppointments'"
+        :color="activeTab === 'pastAppointments' ? 'primary' : ''"
+      >
+        View Past Appointments
+      </v-btn>
     </v-col>
 
     <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'schedules'">
@@ -104,6 +116,97 @@
             ></v-textarea>
             <v-btn type="submit" color="primary">Set Schedule</v-btn>
           </v-form>
+        </v-card-text>
+      </v-card>
+    </v-col>
+
+    <v-col cols="12" lg="6" class="d-flex align-items-stretch" v-if="activeTab === 'pastSchedules'">
+      <v-card class="w-100">
+        <v-card-title class="avail-sched-title">Past Schedules</v-card-title>
+        <v-card-text>
+          <v-container>
+            <v-row v-if="pastSchedules.length > 0" dense>
+              <v-col
+                v-for="schedule in pastSchedules"
+                :key="schedule.past_schedule_id"
+                cols="12"
+                md="6"
+              >
+                <v-card class="mb-4 hover-card" outlined>
+                  <v-card-title>
+                    <strong>{{ schedule.appointment_types.type_name }}</strong>
+                  </v-card-title>
+                  <v-card-subtitle>
+                    {{ new Date(schedule.schedule_date).toLocaleDateString() }} from
+                    {{ schedule.start_time }} to {{ schedule.end_time }}
+                  </v-card-subtitle>
+                  <v-card-text>
+                    <div>
+                      <v-icon class="mr-2" color="grey">mdi-comment</v-icon>
+                      {{ schedule.appointment_types.description }}
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+            <v-row v-else>
+              <v-col cols="12">
+                <v-alert type="info" border="start" colored-border>
+                  No past schedules found.
+                </v-alert>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+      </v-card>
+    </v-col>
+
+    <v-col
+      cols="12"
+      lg="6"
+      class="d-flex align-items-stretch"
+      v-if="activeTab === 'pastAppointments'"
+    >
+      <v-card class="w-100">
+        <v-card-title class="avail-sched-title">Past Appointments</v-card-title>
+        <v-card-text>
+          <v-container>
+            <v-row v-if="pastAppointments.length > 0" dense>
+              <v-col
+                v-for="appointment in pastAppointments"
+                :key="appointment.past_appointment_id"
+                cols="12"
+                md="6"
+              >
+                <v-card class="mb-4 hover-card" outlined>
+                  <v-card-title>
+                    <strong>{{ appointment.patients?.name || 'No Name' }}</strong>
+                  </v-card-title>
+                  <v-card-subtitle>
+                    Appointment Date:
+                    {{ new Date(appointment.appointment_date_time).toLocaleString() }}
+                  </v-card-subtitle>
+                  <v-card-text>
+                    <div>
+                      <v-icon class="mr-2" color="blue darken-2">mdi-calendar</v-icon>
+                      Status: <strong>{{ appointment.status }}</strong>
+                    </div>
+                    <div>
+                      <v-icon class="mr-2" color="grey">mdi-comment</v-icon>
+                      Reason: <strong>{{ appointment.reason }}</strong>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+            <v-row v-else>
+              <v-col cols="12">
+                <v-alert type="info" border="start" colored-border>
+                  No past appointments found.
+                </v-alert>
+              </v-col>
+            </v-row>
+          </v-container>
         </v-card-text>
       </v-card>
     </v-col>
@@ -269,13 +372,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { supabase } from '@/components/util/supabase'
+import { supabase, movePastSchedules, movePastAppointments } from '@/components/util/supabase'
 import { useUserStore } from '@/stores/userStore'
 import { format } from 'date-fns'
 
 const userStore = useUserStore()
 const availableSchedules = ref([])
 const mySchedules = ref([])
+const pastSchedules = ref([])
+const pastAppointments = ref([])
 const selectedSchedule = ref(null)
 const appointments = ref([])
 const showModal = ref(false)
@@ -380,6 +485,75 @@ const fetchMySchedules = async (staffId) => {
   } catch (err) {
     console.error('Unexpected error fetching my schedules:', err.message)
     mySchedules.value = []
+  }
+}
+
+const fetchPastSchedules = async () => {
+  try {
+    const { data, error } = await supabase.from('past_schedules').select(
+      `
+        past_schedule_id,
+        schedule_date,
+        start_time,
+        end_time,
+        available_slots,
+        medical_staff (
+          name
+        ),
+        appointment_types (
+          type_name,
+          description,
+          appointment_type_id
+        )
+      `,
+    )
+
+    if (error) {
+      console.error('Error fetching past schedules:', error.message)
+      pastSchedules.value = []
+    } else {
+      pastSchedules.value = data
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching past schedules:', err.message)
+    pastSchedules.value = []
+  }
+}
+
+const fetchPastAppointments = async () => {
+  try {
+    const { data, error } = await supabase.from('past_appointments').select(
+      `
+        past_appointment_id,
+        appointment_date_time,
+        status,
+        reason,
+        patients (
+          name
+        ),
+        schedules (
+          schedule_date,
+          start_time,
+          end_time,
+          medical_staff (
+            name
+          ),
+          appointment_types (
+            type_name
+          )
+        )
+      `,
+    )
+
+    if (error) {
+      console.error('Error fetching past appointments:', error.message)
+      pastAppointments.value = []
+    } else {
+      pastAppointments.value = data
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching past appointments:', err.message)
+    pastAppointments.value = []
   }
 }
 
@@ -591,11 +765,15 @@ const showReason = (reason) => {
 }
 
 onMounted(async () => {
+  await movePastSchedules()
+  await movePastAppointments()
   await fetchAvailableSchedules()
   const staffId = await fetchStaffId()
   if (staffId) {
     await fetchMySchedules(staffId)
   }
+  await fetchPastSchedules()
+  await fetchPastAppointments()
 })
 </script>
 

@@ -60,6 +60,34 @@ CREATE TABLE appointments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Creating the Past_Schedules table
+CREATE TABLE past_schedules (
+    past_schedule_id SERIAL PRIMARY KEY,
+    schedule_id INT,
+    staff_id INT,
+    appointment_type_id INT,
+    schedule_date DATE,
+    start_time TIME,
+    end_time TIME,
+    available_slots INT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- Creating the Past_Appointments table
+CREATE TABLE past_appointments (
+    past_appointment_id SERIAL PRIMARY KEY,
+    appointment_id INT,
+    patient_id INT,
+    staff_id INT,
+    appointment_date_time TIMESTAMP,
+    schedule_id INT,
+    reason TEXT,
+    status VARCHAR(50),
+    booked_by_user_id UUID,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
 
 ALTER TABLE schedules
 ADD CONSTRAINT fk_staff_id
@@ -70,3 +98,27 @@ add column name VARCHAR(255);
 
 -- added AI tables
 
+-- Creating the AI_Responses table
+CREATE TABLE ai_responses (
+    response_id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id),
+    question TEXT NOT NULL,
+    response TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Altering the Past_Schedules table to add foreign key constraints
+ALTER TABLE past_schedules
+ADD CONSTRAINT fk_past_schedules_staff_id
+FOREIGN KEY (staff_id) REFERENCES medical_staff(staff_id),
+ADD CONSTRAINT fk_past_schedules_appointment_type_id
+FOREIGN KEY (appointment_type_id) REFERENCES appointment_types(appointment_type_id);
+
+-- Altering the Past_Appointments table to add foreign key constraints
+ALTER TABLE past_appointments
+ADD CONSTRAINT fk_past_appointments_patient_id
+FOREIGN KEY (patient_id) REFERENCES patients(patient_id),
+ADD CONSTRAINT fk_past_appointments_staff_id
+FOREIGN KEY (staff_id) REFERENCES medical_staff(staff_id),
+ADD CONSTRAINT fk_past_appointments_schedule_id
+FOREIGN KEY (schedule_id) REFERENCES schedules(schedule_id);

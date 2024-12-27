@@ -16,19 +16,19 @@ const sidebarMenu = ref([
     to: '/ui-components/StaffDashboard',
     roles: ['Medical Staff'],
   },
-  {
-    title: 'Appointments',
-    icon: 'mdi-form-dropdown',
-    to: '/ui-components/Appointments',
-    roles: ['Normal User'], // Accessible only by Normal Users
-  },
+  // {
+  //   title: 'Appointments',
+  //   icon: 'mdi-form-dropdown',
+  //   to: '/ui-components/Appointments',
+  //   roles: ['Normal User'], // Accessible only by Normal Users
+  // },
 
-  {
-    title: 'Manage Schedules',
-    icon: 'mdi-form-dropdown',
-    to: '/ui-components/buttons',
-    roles: ['Medical Staff'], // Accessible only by Medical Staff
-  },
+  // {
+  //   title: 'Manage Schedules',
+  //   icon: 'mdi-form-dropdown',
+  //   to: '/ui-components/buttons',
+  //   roles: ['Medical Staff'], // Accessible only by Medical Staff
+  // },
   {
     title: 'Ask me Doc!',
     icon: 'mdi-exclamation-thick',

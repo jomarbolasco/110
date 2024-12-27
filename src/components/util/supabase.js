@@ -89,3 +89,125 @@ export const cancelAppointment = async (appointmentId, scheduleId) => {
 
   console.log(`Available slots updated for schedule ID: ${scheduleId}`)
 }
+
+// Function to move past schedules to past_schedules table
+export const movePastSchedules = async () => {
+  const currentDate = new Date().toISOString().split('T')[0]
+
+  const { data: pastSchedules, error: fetchError } = await supabase
+    .from('schedules')
+    .select('*')
+    .lt('schedule_date', currentDate)
+
+  if (fetchError) {
+    console.error('Error fetching past schedules:', fetchError.message)
+    return
+  }
+
+  if (pastSchedules.length > 0) {
+    const { error: insertError } = await supabase.from('past_schedules').insert(
+      pastSchedules.map(
+        ({
+          schedule_id,
+          staff_id,
+          appointment_type_id,
+          schedule_date,
+          start_time,
+          end_time,
+          available_slots,
+          created_at,
+          updated_at,
+        }) => ({
+          schedule_id,
+          staff_id,
+          appointment_type_id,
+          schedule_date,
+          start_time,
+          end_time,
+          available_slots,
+          created_at,
+          updated_at,
+        }),
+      ),
+    )
+
+    if (insertError) {
+      console.error('Error inserting past schedules:', insertError.message)
+      return
+    }
+
+    const { error: deleteError } = await supabase
+      .from('schedules')
+      .delete()
+      .in(
+        'schedule_id',
+        pastSchedules.map((schedule) => schedule.schedule_id),
+      )
+
+    if (deleteError) {
+      console.error('Error deleting past schedules:', deleteError.message)
+    }
+  }
+}
+
+// Function to move past appointments to past_appointments table
+export const movePastAppointments = async () => {
+  const currentDate = new Date().toISOString()
+
+  const { data: pastAppointments, error: fetchError } = await supabase
+    .from('appointments')
+    .select('*')
+    .lt('appointment_date_time', currentDate)
+
+  if (fetchError) {
+    console.error('Error fetching past appointments:', fetchError.message)
+    return
+  }
+
+  if (pastAppointments.length > 0) {
+    const { error: insertError } = await supabase.from('past_appointments').insert(
+      pastAppointments.map(
+        ({
+          appointment_id,
+          patient_id,
+          staff_id,
+          appointment_date_time,
+          schedule_id,
+          reason,
+          status,
+          booked_by_user_id,
+          created_at,
+          updated_at,
+        }) => ({
+          appointment_id,
+          patient_id,
+          staff_id,
+          appointment_date_time,
+          schedule_id,
+          reason,
+          status,
+          booked_by_user_id,
+          created_at,
+          updated_at,
+        }),
+      ),
+    )
+
+    if (insertError) {
+      console.error('Error inserting past appointments:', insertError.message)
+      return
+    }
+
+    const { error: deleteError } = await supabase
+      .from('appointments')
+      .delete()
+      .in(
+        'appointment_id',
+        pastAppointments.map((appointment) => appointment.appointment_id),
+      )
+
+    if (deleteError) {
+      console.error('Error deleting past appointments:', deleteError.message)
+    }
+  }
+}
