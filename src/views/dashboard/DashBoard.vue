@@ -2,7 +2,7 @@
 import HeroSectionView from './dashBoardComponents/heroSection/heroSectionView.vue'
 import ScheduleView from './dashBoardComponents/untitledAreaOne/ScheduleView.vue'
 import UntitledAreaTwo from './dashBoardComponents/untitledAreaTwo/untitledAreaTwo.vue'
-import UntitledAreaThree from './dashBoardComponents/untitledAreaThree/untitledAreaThree.vue'
+// import UntitledAreaThree from './dashBoardComponents/untitledAreaThree/untitledAreaThree.vue'
 </script>
 
 <template>
@@ -17,7 +17,7 @@ import UntitledAreaThree from './dashBoardComponents/untitledAreaThree/untitledA
       <UntitledAreaTwo />
     </v-col>
     <v-col cols="12" sm="12">
-      <UntitledAreaThree />
+      <!-- <UntitledAreaThree /> -->
     </v-col>
   </v-row>
 </template>
