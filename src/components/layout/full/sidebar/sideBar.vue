@@ -100,11 +100,11 @@ watch(route, () => {
         </template>
       </v-list>
     </div>
-    <div class="pa-4 ma-4 bg-light-primary rounded-lg text-center position-absolute bottom-0">
+    <div
+      class="footer-container pa-4 ma-4 bg-light-primary rounded-lg text-center position-absolute bottom-0"
+    >
       <img src="./images/logofavicon.png" width="100" height="100" />
       <h4 class="font-weight-regular mb-3">HospiAPP</h4>
-      <v-btn class="mb-2" href="" block>Sample button</v-btn>
-      <v-btn color="info" href="" block>Button sample</v-btn>
     </div>
   </div>
 </template>
@@ -140,5 +140,13 @@ watch(route, () => {
 
 .active {
   font-weight: bold;
+}
+
+.footer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 </style>
